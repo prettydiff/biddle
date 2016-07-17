@@ -41,11 +41,10 @@
             if (a[0].indexOf("biddle") > 0) {
                 a.splice(0, 1);
             }
-            //if (a.length < 1) {
-                hashCmd("biddle.js", function () {console.log(hash);});
+            if (a.length < 1) {
                 // output version number and help info here
-                //return process.exit(0);
-            //}
+                return process.exit(0);
+            }
             a[0] = a[0].toLowerCase();
             return a;
         }()),
