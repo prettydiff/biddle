@@ -29,7 +29,7 @@
                 }
                 stdout = stdout.replace(/\s+/g, "");
                 stdout = stdout.replace(filepath, "");
-                stdout = stdout.replace("SHA512hasoffile:", "");
+                stdout = stdout.replace("SHA512hashoffile:", "");
                 stdout = stdout.replace("CertUtil:-hashfilecommandcompletedsuccessfully.", "");
                 hash   = stdout;
                 callback();
