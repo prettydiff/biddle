@@ -8,53 +8,40 @@
         fs        = require("fs"),
         http      = require("http"),
         https     = require("https"),
+        dir       = "",
         hash      = "",
-        childish  = function biddle_childish() {},
-        hashCmd   = function biddle_hashCmd(filepath, callback) {
-            var platform = process.platform.replace(/\s+/g, ""),
-                cmd      = "";
-            if (platform === "darwin") {
-                cmd = "shasum -a 512 " + filepath;
-            } else if (platform === "win32" || platform === "win64") {
-                cmd = "certUtil -hashfile " + filepath + " SHA512";
-            } else {
-                cmd = "sha512sum " + filepath;
-            }
-            child(cmd, function biddle_hashCmd_exec(err, stdout, stderr) {
-                if (err !== null) {
-                    return errout(err);
-                }
-                if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
-                    return errout(stderr);
-                }
-                stdout = stdout.replace(/\s+/g, "");
-                stdout = stdout.replace(filepath, "");
-                stdout = stdout.replace("SHA512hashoffile:", "");
-                stdout = stdout.replace("CertUtil:-hashfilecommandcompletedsuccessfully.", "");
-                hash   = stdout;
-                callback();
-            });
+        version   = "",
+        platform  = process.platform.replace(/\s+/g, "").toLowerCase(),
+        errout    = function biddle_errout(message) {
+            console.log(message);
+            process.exit(1);
         },
-        input     = (function () {
+        input     = (function biddle_input() {
             var a = process.argv;
             a.splice(0, 1);
             if (a[0].indexOf("biddle") > 0) {
                 a.splice(0, 1);
             }
             if (a.length < 1) {
-                // output version number and help info here
-                return process.exit(0);
+                fs.readFile("readme.md", "utf8", function biddle_input_readme(err, readme) {
+                    if (err !== null && err !== undefined) {
+                        return errout(err);
+                    }
+                    console.log(readme);
+                    process.exit(0);
+                });
+                a = ["", "", ""];
             }
             a[0] = a[0].toLowerCase();
             return a;
         }()),
-        errout    = function biddle_errout(message) {
-            console.log(message);
-            process.exit(1);
-        },
-        dir       = "",
+        command   = input[0].toLowerCase(),
         fileName  = (function biddle_writeFile_fileName() {
-            var paths = input[0].split("/");
+            var paths = [];
+            if (input[1] === undefined) {
+                return errout("Error: unrecognized command '" + command + "'");
+            }
+            paths = input[1].split("/");
             if (paths[paths.length - 1].length > 0) {
                 return paths[paths.length - 1];
             }
@@ -123,6 +110,78 @@
             });
             return input[2];
         }()),
+        hashCmd   = function biddle_hashCmd(filepath, callback) {
+            var cmd = "";
+            if (platform === "darwin") {
+                cmd = "shasum -a 512 " + filepath;
+            } else if (platform === "win32" || platform === "win64") {
+                cmd = "certUtil -hashfile " + filepath + " SHA512";
+            } else {
+                cmd = "sha512sum " + filepath;
+            }
+            child(cmd, function biddle_hashCmd_exec(err, stdout, stderr) {
+                if (err !== null) {
+                    return errout(err);
+                }
+                if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
+                    return errout(stderr);
+                }
+                stdout = stdout.replace(/\s+/g, "");
+                stdout = stdout.replace(filepath, "");
+                stdout = stdout.replace("SHA512hashoffile:", "");
+                stdout = stdout.replace("CertUtil:-hashfilecommandcompletedsuccessfully.", "");
+                hash   = stdout;
+                callback();
+            });
+        },
+        tar       = function biddle_tar(compress) {
+            //cjf - create bz2
+            //czf - create gzip
+            //xjf - unpack bz2
+            //xzf - unpack gzip
+            //
+            //windows - "tartool2_beta/tartool.exe cjf tar_name " + filepath
+            //linux   - "tar cjf tar_name " + filepath
+            var app = (platform === "win32" || platform === "win64")
+                    ? "tartool2_beta/tartool.exe "
+                    : "tar ",
+                pak = (compress === true)
+                    ? "c"
+                    : "x",
+                opt = (compress === false && fileName.indexOf("tar.gz") > 0)
+                    ? "z"
+                    : "j",
+                bz2 = (compress === true)
+                    ? "publications" + path.sep + fileName + ".tar.bz2"
+                    : "",
+                spc = (compress === true)
+                    ? " "
+                    : "",
+                cmd = app + pak + opt + "f " + bz2 + spc + input[1];
+            child(cmd, function biddle_tar_child(err, stdout, stderr) {
+                var callback = function biddle_tar_child_callback() {
+                    if (compress === true) {
+                        fs.stat(bz2, function biddle_tar_child_callback_stat(errstat, stat) {
+                            if (errstat !== null) {
+                                return errout(errstat);
+                            }
+                            //hash is updated
+                            //write hash to file
+                            //both hash and tar filenames must be versioned
+                            console.log("File " + bz2 + " written at " + commas(stat.size) + " bytes.");
+                        });
+                    }
+                };
+                if (err !== null) {
+                    return errout(err);
+                }
+                if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
+                    return errout(stderr);
+                }
+                hashCmd(bz2, callback);
+                return stdout;
+            });
+        },
         commas    = function biddle_commas(number) {
             var str = String(number),
                 arr = [],
@@ -138,10 +197,9 @@
             } while (a > 3);
             return arr.join("");
         },
-        command   = input[0].toLowerCase(),
         writeFile = function biddle_writeFile(fileData) {
             fs
-                .writeFile(fileName, fileData, function biddle_writeFile_callback(err) {
+                .writeFile("downloads" + path.sep + fileName, fileData, function biddle_writeFile_callback(err) {
                     if (err !== null) {
                         return errout(err);
                     }
@@ -194,5 +252,9 @@
         get(false);
     } else if (command === "install") {
         get(true);
+    } else if (command === "publish") {
+        tar(true);
+    } else {
+        console.log("Error: unrecognized command '" + command + "'");
     }
 }());
