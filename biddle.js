@@ -1,6 +1,5 @@
-/*global */
 /*jshint laxbreak: true*/
-/*jslint node: true*/
+/*jslint node: true, for: true*/
 (function biddle() {
     "use strict";
     var child     = require("child_process").exec,
@@ -16,6 +15,162 @@
             console.log(message);
             process.exit(1);
         },
+        help      = function biddle_help() {
+            fs.readFile("readme.md", "utf8", function biddle_input_readme(err, readme) {
+                var lines = [],
+                    list  = [],
+                    ind   = "",
+                    elist = function () {
+                        var listlen = list.length;
+                        if (listlen > 0) {
+                            do {
+                                listlen -= 1;
+                                ind = ind.slice(2);
+                                list.pop();
+                            } while (listlen > 0);
+                        }
+                    },
+                    b     = 0,
+                    len   = 0,
+                    ens   = "\x1B[0m", //end - text formatting
+                    bld   = "\x1B[1m", //text formatting - bold
+                    itl   = "\x1B[3m", //text formatting - italics
+                    und   = "\x1B[4m", //underline
+                    enu   = "\x1B[24m", //end - underline
+                    red   = "\x1B[31m", //color - red
+                    grn   = "\x1B[32m", //color - green
+                    tan   = "\x1B[33m", //color - tan
+                    cyn   = "\x1B[36m", //color - cyan
+                    enc   = "\x1B[39m", //end - color
+                    parse = function biddle_help_readme_parse(listitem) {
+                        var chars = lines[b].split(""),
+                            final = chars.length,
+                            s     = (/\s/),
+                            x     = 0,
+                            y     = ind.length,
+                            z     = 0,
+                            endln = (isNaN(input[1]) === false)
+                                ? Number(input[1])
+                                : 100,
+                            quote = "",
+                            wrap  = function biddle_help_readme_parse_wrap() {
+                                if (s.test(chars[x]) === true) {
+                                    chars[x] = (listitem === true)
+                                        ? "\n  " + ind
+                                        : "\n" + ind;
+                                } else {
+                                    z = x;
+                                    do {
+                                        z -= 1;
+                                    } while (s.test(chars[z]) === false && z > x - endln);
+                                    if (chars[z] === " ") {
+                                        chars[z] = (listitem === true)
+                                            ? "\n  " + ind
+                                            : "\n" + ind;
+                                    }
+                                }
+                            };
+                        chars.splice(0, 0, ind);
+                        for (x = y; x < final; x += 1) {
+                            if (quote === "") {
+                                if (chars[x - 1] === "*" && chars[x] === "*") {
+                                    quote = "**";
+                                    chars.splice(x - 1, 2);
+                                    chars[x - 1] = bld + chars[x - 1];
+                                    final -= 2;
+                                } else if (chars[x - 1] === "*" && ((x === 1 && chars[x] !== " ") || x !== 1)) {
+                                    quote = "*";
+                                    chars.splice(x - 1, 1);
+                                    chars[x - 1] = itl + tan + chars[x - 1];
+                                    final -= 1;
+                                } else if (chars[x - 1] === "`") {
+                                    quote = "`";
+                                } else if (chars[x - 2] === "]" && chars[x - 1] === "(") {
+                                    quote = ")";
+                                    chars[x - 1] = chars[x - 1] + cyn;
+                                }
+                            } else if (chars[x] === "`" && quote === "`") {
+                                quote = "";
+                            } else if (chars[x] === ")" && quote === ")") {
+                                quote = "";
+                                chars[x - 1] = chars[x - 1] + enc;
+                                if ((x + y) / endln > 1 && chars[x + 1] === " ") {
+                                    x += 1;
+                                    wrap();
+                                }
+                            } else if (chars[x] === "*" && chars[x + 1] === "*" && quote === "**") {
+                                quote = "";
+                                chars.splice(x, 2);
+                                chars[x - 1] = chars[x - 1] + ens;
+                                final -= 2;
+                            } else if (chars[x] === "*" && quote === "*") {
+                                quote = "";
+                                chars.splice(x, 1);
+                                chars[x - 1] = chars[x - 1] + enc + ens;
+                                final -= 1;
+                            }
+                            if ((y + x) % endln === 0 && quote !== "`") {
+                                wrap();
+                            }
+                        }
+                        if (quote === "**") {
+                            chars.pop();
+                            chars.push(ens);
+                        } else if (quote === "*") {
+                            chars.pop();
+                            chars.push(enc + ens);
+                        } else if (quote === ")") {
+                            chars[chars.length - 2] = chars[chars.length - 2] + enc;
+                        }
+                        lines[b] = chars.join("");
+                    };
+                if (err !== null && err !== undefined) {
+                    return errout(err);
+                }
+                readme = readme.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+                lines  = readme.split("\n");
+                len    = lines.length;
+                console.log("");
+                for (b = 0; b < len; b += 1) {
+                    if (lines[b].indexOf("#### ") === 0) {
+                        elist();
+                        ind = "      ";
+                        lines[b] = ind + und + bld + tan + lines[b].slice(5) + enc + ens + enu;
+                    } else if (lines[b].indexOf("### ") === 0) {
+                        elist();
+                        ind = "    ";
+                        lines[b] = ind + und + bld + grn + lines[b].slice(4) + enc + ens + enu;
+                    } else if (lines[b].indexOf("## ") === 0) {
+                        elist();
+                        ind = "  ";
+                        lines[b] = ind + und + bld + cyn + lines[b].slice(3) + enc + ens + enu;
+                    } else if (lines[b].indexOf("# ") === 0) {
+                        elist();
+                        ind = "";
+                        lines[b] = und + bld + red + lines[b].slice(2) + enc + ens + enu;
+                    } else if ((/\s*\*\s/).test(lines[b]) === true) {
+                        if (list[list.length - 1] !== "*") {
+                            list.push("*");
+                            ind = ind + "  ";
+                        }
+                        parse(true);
+                        lines[b] = lines[b].replace("*", bld + red + "*" + enc + ens);
+                    } else if ((/\s*-\s/).test(lines[b]) === true) {
+                        if (list[list.length - 1] !== "-") {
+                            list.push("-");
+                            ind = ind + "  ";
+                        }
+                        parse(true);
+                        lines[b] = lines[b].replace("-", bld + red + "-" + enc + ens);
+                    } else {
+                        elist();
+                        parse(false);
+                    }
+                    console.log(lines[b]);
+                }
+                process.exit(0);
+            });
+        },
         input     = (function biddle_input() {
             var a = process.argv;
             a.splice(0, 1);
@@ -23,13 +178,7 @@
                 a.splice(0, 1);
             }
             if (a.length < 1) {
-                fs.readFile("readme.md", "utf8", function biddle_input_readme(err, readme) {
-                    if (err !== null && err !== undefined) {
-                        return errout(err);
-                    }
-                    console.log(readme);
-                    process.exit(0);
-                });
+                help();
                 a = ["", "", ""];
             }
             a[0] = a[0].toLowerCase();
@@ -258,6 +407,8 @@
         hashCmd(input[1], function () {
             console.log(hash);
         });
+    } else if (command === "help" || command === "" || command === "?") {
+        help();
     } else {
         console.log("Error: unrecognized command '" + command + "'");
     }

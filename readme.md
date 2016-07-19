@@ -1,4 +1,4 @@
-﻿# biddle
+# biddle
 
 *A package management application without a package management service.*
 
@@ -43,7 +43,10 @@ The application runs from the command line and takes four arguments:
 Commands are the third command line argument, second if the optional *node* argument is absent.  Commands are case insensitive.
 
 * **get** Merely downloads the requested resource and saves it as a file with the same filename. If the filename is not provided in the URI the final directory up to the domain name will become the filename, and if for some reason that doesn't work the default filename is *download.xxx*.
-* **install** Downloads the requested resource, but decompresses and unpackages the tarball before writing files to disk.
+* **hash** Provides a SHA512 hash against a resource.
+* **help** Prints the readme.md file contents to console in a human friendly way.
+* **install** (not written yet) Downloads the requested resource, but decompresses and unpackages the tarball before writing files to disk.
+* **publish** (not written yet) Writes a tar.bz2 file with version number to the publications directory.
 
 ## Dependencies
 
