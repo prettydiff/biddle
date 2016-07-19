@@ -254,6 +254,10 @@
         get(true);
     } else if (command === "publish") {
         tar(true);
+    } else if (command === "hash") {
+        hashCmd(input[1], function () {
+            console.log(hash);
+        });
     } else {
         console.log("Error: unrecognized command '" + command + "'");
     }
