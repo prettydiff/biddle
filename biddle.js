@@ -7,7 +7,6 @@
         fs        = require("fs"),
         http      = require("http"),
         https     = require("https"),
-        dir       = "",
         hash      = "",
         version   = "",
         platform  = process.platform.replace(/\s+/g, "").toLowerCase(),
@@ -256,7 +255,6 @@
             if (input[2] !== "\\" && input[2] !== "/") {
                 input[2] = input[2].replace(/(\/|\\)$/, "");
             }
-            dir = process.cwd();
             fs.stat(input[2], function biddle_directory_stat(err, stats) {
                 var dirs   = [],
                     ind    = 0,
@@ -272,8 +270,6 @@
                                         }
                                         if (ind < len) {
                                             biggle_directory_stat_restat();
-                                        } else {
-                                            process.chdir(input[2]);
                                         }
                                     });
                                 }
@@ -285,8 +281,6 @@
                                 }
                                 if (ind < len) {
                                     biggle_directory_stat_restat();
-                                } else {
-                                    process.chdir(input[2]);
                                 }
                             });
                     };
@@ -394,21 +388,21 @@
             return arr.join("");
         },
         writeFile = function biddle_writeFile(fileData) {
+            var address = (typeof input[2] === "string")
+                ? input[2] + path.sep + fileName
+                : "downloads" + path.sep + fileName;
             fs
-                .writeFile("downloads" + path.sep + fileName, fileData, function biddle_writeFile_callback(err) {
+                .writeFile(address, fileData, function biddle_writeFile_callback(err) {
                     if (err !== null) {
                         return errout(err);
                     }
                     if (command === "get") {
-                        fs.stat("downloads" + path.sep + fileName, function biddle_writeFile_callback_getstat(errstat, stat) {
+                        fs.stat(address, function biddle_writeFile_callback_getstat(errstat, stat) {
                             if (errstat !== null) {
                                 return errout(errstat);
                             }
-                            console.log("File downloads" + path.sep + fileName + " written at " + commas(stat.size) + " bytes.");
+                            console.log("File " + address + " written at " + commas(stat.size) + " bytes.");
                         });
-                    }
-                    if (dir !== "") {
-                        process.chdir(dir);
                     }
                 });
         },
