@@ -1,5 +1,4 @@
 # biddle
-
 *A package management application without a package management service.*
 
 ## License
@@ -7,11 +6,9 @@
 * [GPLv2](https://opensource.org/licenses/GPL-2.0)
 
 ## Version
-
 0.0.2
 
 ## Project Status
-
 **Unstable and in early developement.**
 
 * The **get** command is fully operational, but demands examination for edge cases
@@ -19,11 +16,9 @@
 * No work on packaging or versioning has started
 
 ## About
-
 This application is a cross-OS solution to creating tarballs for distribution and fetching files via HTTP(S).  The project's goal is to provide a universal application distribution utility that is language agnostic, operating system independent, and platform independent.  The only additional requirement for distributing application packages is online storage on a web server.  This application provides all the client utilities to retrieve and unpackage applications.
 
 ## API
-
 The application runs from the command line and takes four arguments:
 
 * **runtime environment** Typically this would be Node.js, but it could be something additional in the future.  If globally installed and added to the shell's path then this first argument is unnecessary.
@@ -39,14 +34,27 @@ The application runs from the command line and takes four arguments:
 * `node biddle/biddle.js get http://example.com/application.js ../downloads/example.com`
 
 ## Supported commands
+Commands are the third command line argument, or second if the optional *node* argument is absent.  Commands are case insensitive.
 
-Commands are the third command line argument, second if the optional *node* argument is absent.  Commands are case insensitive.
+### get
+Merely downloads the requested resource and saves it as a file with the same filename. If the filename is not provided in the URI the final directory up to the domain name will become the filename, and if for some reason that doesn't work the default filename is *download.xxx*.
 
-* **get** Merely downloads the requested resource and saves it as a file with the same filename. If the filename is not provided in the URI the final directory up to the domain name will become the filename, and if for some reason that doesn't work the default filename is *download.xxx*.
-* **hash** Provides a SHA512 hash against a resource.
-* **help** Prints the readme.md file contents to console in a human friendly way.
-* **install** (not written yet) Downloads the requested resource, but decompresses and unpackages the tarball before writing files to disk.
-* **publish** (not written yet) Writes a tar.bz2 file with version number to the publications directory.
+Download a file to the default location, which is the provided *downloads* directory.
+`node biddle.js get http://google.com`
+
+### hash
+Provides a SHA512 hash against a resource.
+
+### help
+Prints the readme.md file contents to console in a human friendly way.
+
+### install
+(not written yet)
+Downloads the requested resource, but decompresses and unpackages the tarball before writing files to disk.
+
+### publish
+(not written yet)
+Writes a tar.bz2 file with version number to the publications directory.
 
 ## Dependencies
 

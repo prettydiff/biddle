@@ -43,30 +43,56 @@
                     cyn   = "\x1B[36m", //color - cyan
                     enc   = "\x1B[39m", //end - color
                     parse = function biddle_help_readme_parse(listitem) {
-                        var chars = lines[b].split(""),
+                        var chars = lines[b].replace(/`/g, "bix~").split(""),
                             final = chars.length,
                             s     = (/\s/),
                             x     = 0,
                             y     = ind.length,
-                            z     = 0,
+                            extra = 0,
+                            index = 0,
                             endln = (isNaN(input[1]) === false)
-                                ? Number(input[1])
-                                : 100,
+                                ? Number(input[1]) - y
+                                : 100 - y,
                             quote = "",
                             wrap  = function biddle_help_readme_parse_wrap() {
+                                var z = x;
+                                if (extra === 0) {
+                                    extra = (listitem === true)
+                                        ? y + 4
+                                        : y + 2;
+                                }
                                 if (s.test(chars[x]) === true) {
-                                    chars[x] = (listitem === true)
-                                        ? "\n  " + ind
-                                        : "\n" + ind;
+                                    if (listitem === true) {
+                                        chars[x] = "\n  " + ind;
+                                        index    = 3 + y + x;
+                                    } else {
+                                        chars[x] = "\n" + ind;
+                                        index    = 1 + y + x;
+                                    }
+                                    if (chars[x - 1] === " ") {
+                                        chars[x - 1] = "";
+                                    } else if (chars[x + 1] === " ") {
+                                        chars.splice(x + 1, 1);
+                                        final -= 1;
+                                    }
                                 } else {
-                                    z = x;
                                     do {
                                         z -= 1;
-                                    } while (s.test(chars[z]) === false && z > x - endln);
-                                    if (chars[z] === " ") {
-                                        chars[z] = (listitem === true)
-                                            ? "\n  " + ind
-                                            : "\n" + ind;
+                                    } while (s.test(chars[z]) === false && z > index);
+                                    if (z > index) {
+                                        if (listitem === true) {
+                                            chars[z] = "\n  " + ind;
+                                            index    = 3 + y + z;
+                                        } else {
+                                            chars[z] = "\n" + ind;
+                                            index    = 1 + y + z;
+                                        }
+                                        if (chars[z - 1] === " ") {
+                                            chars[z - 1] = "";
+                                        } else if (chars[z + 1] === " ") {
+                                            chars.splice(z + 1, 1);
+                                            final -= 1;
+                                        }
                                     }
                                 }
                             };
@@ -83,18 +109,30 @@
                                     chars.splice(x - 1, 1);
                                     chars[x - 1] = itl + tan + chars[x - 1];
                                     final -= 1;
-                                } else if (chars[x - 1] === "`") {
+                                } else if (chars[x - 4] === "b" && chars[x - 3] === "i" && chars[x - 2] === "x" && chars[x - 1] === "~") {
                                     quote = "`";
+                                    chars.splice(x - 4, 4);
+                                    x -= 3;
+                                    chars[x - 1] = grn + chars[x - 1];
+                                    final -= 4;
                                 } else if (chars[x - 2] === "]" && chars[x - 1] === "(") {
                                     quote = ")";
                                     chars[x - 1] = chars[x - 1] + cyn;
                                 }
-                            } else if (chars[x] === "`" && quote === "`") {
+                            } else if (chars[x - 3] === "b" && chars[x - 2] === "i" && chars[x - 1] === "x" && chars[x] === "~" && quote === "`") {
                                 quote = "";
+                                chars.splice(x - 3, 4);
+                                x -= 3;
+                                chars[x - 1] = chars[x - 1] + enc;
+                                final -= 4;
+                                if ((x - (index - extra)) / endln > 1 && chars[x + 1] === " ") {
+                                    x += 1;
+                                    wrap();
+                                }
                             } else if (chars[x] === ")" && quote === ")") {
                                 quote = "";
                                 chars[x - 1] = chars[x - 1] + enc;
-                                if ((x + y) / endln > 1 && chars[x + 1] === " ") {
+                                if ((x - (index - extra)) / endln > 1 && chars[x + 1] === " ") {
                                     x += 1;
                                     wrap();
                                 }
@@ -109,18 +147,25 @@
                                 chars[x - 1] = chars[x - 1] + enc + ens;
                                 final -= 1;
                             }
-                            if ((y + x) % endln === 0 && quote !== "`") {
+                            if ((x - (index - extra)) / endln > 1 && quote !== "`") {
                                 wrap();
                             }
                         }
                         if (quote === "**") {
                             chars.pop();
-                            chars.push(ens);
+                            chars[x - 1] = chars[x - 1] + ens;
                         } else if (quote === "*") {
                             chars.pop();
-                            chars.push(enc + ens);
+                            chars[x - 1] = chars[x - 1] + enc + ens;
                         } else if (quote === ")") {
-                            chars[chars.length - 2] = chars[chars.length - 2] + enc;
+                            chars[x - 1] = chars[x - 1] + enc;
+                        } else if (quote === "`") {
+                            chars.pop();
+                            chars[x - 4] = chars[x - 4] + enc;
+                            chars[x - 3] = "";
+                            chars[x - 2] = "";
+                            chars[x - 1] = "";
+                            chars[x]     = "";
                         }
                         lines[b] = chars.join("");
                     };
@@ -148,14 +193,14 @@
                         elist();
                         ind = "";
                         lines[b] = und + bld + red + lines[b].slice(2) + enc + ens + enu;
-                    } else if ((/\s*\*\s/).test(lines[b]) === true) {
+                    } else if ((/^(\s*\*\s)/).test(lines[b]) === true) {
                         if (list[list.length - 1] !== "*") {
                             list.push("*");
                             ind = ind + "  ";
                         }
                         parse(true);
                         lines[b] = lines[b].replace("*", bld + red + "*" + enc + ens);
-                    } else if ((/\s*-\s/).test(lines[b]) === true) {
+                    } else if ((/^(\s*-\s)/).test(lines[b]) === true) {
                         if (list[list.length - 1] !== "-") {
                             list.push("-");
                             ind = ind + "  ";
@@ -164,7 +209,9 @@
                         lines[b] = lines[b].replace("-", bld + red + "-" + enc + ens);
                     } else {
                         elist();
-                        parse(false);
+                        if (lines[b].length > 0) {
+                            parse(false);
+                        }
                     }
                     console.log(lines[b]);
                 }
@@ -353,11 +400,11 @@
                         return errout(err);
                     }
                     if (command === "get") {
-                        fs.stat(fileName, function biddle_writeFile_callback_getstat(errstat, stat) {
+                        fs.stat("downloads" + path.sep + fileName, function biddle_writeFile_callback_getstat(errstat, stat) {
                             if (errstat !== null) {
                                 return errout(errstat);
                             }
-                            console.log("File " + fileName + " written at " + commas(stat.size) + " bytes.");
+                            console.log("File downloads" + path.sep + fileName + " written at " + commas(stat.size) + " bytes.");
                         });
                     }
                     if (dir !== "") {
