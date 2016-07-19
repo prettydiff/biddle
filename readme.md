@@ -11,9 +11,16 @@
 ## Project Status
 **Unstable and in early developement.**
 
-* The **get** command is fully operational, but demands examination for edge cases
-* Working is starting on the **install** command, but it is not operational
-* No work on versioning or publication has started
+* command **get** is complete
+* command **hash** is complete
+* Work on **install** is blocked pending completion of **publish**
+* Work on **publish** is underway.
+  - First level of support will be just producing a tarball on various OSs and opening across OSs
+* No work on advanced configurations has started.  This will likely wait until after an initial launch of very basic features
+  - Publish packages by version number
+  - Create a symlink for version *latest* that points to the latest versioned tarball
+  - Allow restriction of named directories when creating a tarball so that production only packages don't have dev dependencies, build systems, unit tests, and so forth
+  - Allow packages to specify where they will install to
 
 ## About
 This application is a cross-OS solution to creating tarballs for distribution and fetching files via HTTP(S).  The project's goal is to provide a universal application distribution utility that is language agnostic, operating system independent, and platform independent.  The only additional requirement for distributing application packages is online storage on a web server.  This application provides all the client utilities to retrieve and unpackage applications.
@@ -40,10 +47,10 @@ Prints the readme.md file contents to console in a human friendly way.
 No command will still generate the readme data.
 `node biddle.js`
 
-The default text wrapping is set to 100 characters.
+The default word wrapping is set to 100 characters.
 `node biddle.js help`
 
-Set a custom text wrap limit.
+Set a custom word wrap limit.
 `node biddle.js help 80`
 
 ### install
