@@ -19,6 +19,7 @@
                 var lines = [],
                     list  = [],
                     ind   = "",
+                    listr = "",
                     elist = function () {
                         var listlen = list.length;
                         if (listlen > 0) {
@@ -178,31 +179,41 @@
                 for (b = 0; b < len; b += 1) {
                     if (lines[b].indexOf("#### ") === 0) {
                         elist();
-                        ind = "      ";
+                        ind = "    ";
                         lines[b] = ind + und + bld + tan + lines[b].slice(5) + enc + ens + enu;
+                        ind = "      ";
                     } else if (lines[b].indexOf("### ") === 0) {
                         elist();
-                        ind = "    ";
+                        ind = "  ";
                         lines[b] = ind + und + bld + grn + lines[b].slice(4) + enc + ens + enu;
+                        ind = "    ";
                     } else if (lines[b].indexOf("## ") === 0) {
                         elist();
                         ind = "  ";
-                        lines[b] = ind + und + bld + cyn + lines[b].slice(3) + enc + ens + enu;
+                        lines[b] = und + bld + cyn + lines[b].slice(3) + enc + ens + enu;
                     } else if (lines[b].indexOf("# ") === 0) {
                         elist();
                         ind = "";
                         lines[b] = und + bld + red + lines[b].slice(2) + enc + ens + enu;
                     } else if ((/^(\s*\*\s)/).test(lines[b]) === true) {
-                        if (list[list.length - 1] !== "*") {
-                            list.push("*");
+                        listr = (/^(\s*\*\s)/).exec(lines[b])[0];
+                        if (list.length === 0 || (list[list.length - 1] !== listr && list[list.length - 2] !== listr)) {
+                            list.push(listr);
                             ind = ind + "  ";
+                        } else if (list[list.length - 2] === listr) {
+                            list.pop();
+                            ind = ind.slice(2);
                         }
                         parse(true);
                         lines[b] = lines[b].replace("*", bld + red + "*" + enc + ens);
                     } else if ((/^(\s*-\s)/).test(lines[b]) === true) {
-                        if (list[list.length - 1] !== "-") {
-                            list.push("-");
+                        listr = (/^(\s*-\s)/).exec(lines[b])[0];
+                        if (list.length === 0 || (list[list.length - 1] !== listr && list[list.length - 2] !== listr)) {
+                            list.push(listr);
                             ind = ind + "  ";
+                        } else if (list[list.length - 2] === listr) {
+                            list.pop();
+                            ind = ind.slice(2);
                         }
                         parse(true);
                         lines[b] = lines[b].replace("-", bld + red + "-" + enc + ens);
