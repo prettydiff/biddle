@@ -15,6 +15,7 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
 * *integrity* - Downloaded packages will perform a hash comparison before they are unpackaged.  If the hashes don't match a failure will occur.
 * *autonomy* - There is no central authority here.  Host your own publications and manage them as you please with any name you choose.
 * *management* - There is no dependency hell here.  Dependency management will not be automated, but a means to manage and review the status of all installed/published packages will be provided.
+* *freedom* - biddle will work everywhere Node.js runs.  It can be used with any application written in any language.
 
 ## Project Status
 **Unstable and in early developement.**
