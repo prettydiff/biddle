@@ -8,6 +8,15 @@
 ## Version
 0.0.2
 
+## About
+This application is a cross-OS solution to creating tarballs for distribution and fetching files via HTTP(S).  The project's goal is to provide a universal application distribution utility that is language agnostic, operating system independent, and platform independent.  The only additional requirement for distributing application packages is online storage on a web server.  This application provides all the client utilities to retrieve and unpackage applications.
+
+biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but seeks to accomplish a few additional goals:
+
+* *integrity* - Downloaded packages will perform a hash comparison before they are unpackaged.  If the hashes don't match a failure will occur.
+* *autonomy* - There is no central authority here.  Host your own publications and manage them as you please with any name you choose.
+* *management* - There is no dependency hell here.  Dependency management will not be automated, but a means to manage and review the status of all installed/published packages will be provided.
+
 ## Project Status
 **Unstable and in early developement.**
 
@@ -24,16 +33,13 @@
 * Work on **status** is not started.  This command will compare an installed application's version against a published version to determine if out of date.
   - Must allow an app name as an argument to manually check that application or *all* to check all installed applications
   - Status automation or intervals would be nice... such as checking app versions once a week and providing a message when out of date
-* Work on **list** command is blocked pending completion of **publish**.  This command will list installed/published applications by name and will know of their publication location and installation directory.
+* Work on **list** command is blocked pending completion of **publish**.  This command will list installed/published applications by name and version and will know of their publication location and installation directory.
 * Work on **uninstall** command is blocked pending completion of **install**.
   - Must delete the application
   - Must remove the application from the **list**
 * Work on **unpublish** command is blocked pending completion of **publish**.
   - Must delete the application
   - Must remove the application from the **list**
-
-## About
-This application is a cross-OS solution to creating tarballs for distribution and fetching files via HTTP(S).  The project's goal is to provide a universal application distribution utility that is language agnostic, operating system independent, and platform independent.  The only additional requirement for distributing application packages is online storage on a web server.  This application provides all the client utilities to retrieve and unpackage applications.
 
 ## Supported commands
 Commands are the third command line argument, or second if the optional *node* argument is absent.  Commands are case insensitive, but values and local paths are case sensitive.  All local address are either absolute from the root or relative from biddle.
