@@ -2,8 +2,7 @@
 *A package management application without a package management service.*
 
 ## License
-
-* [GPLv2](https://opensource.org/licenses/GPL-2.0)
+[GPLv2](https://opensource.org/licenses/GPL-2.0)
 
 ## Version
 0.0.2
@@ -22,6 +21,8 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
 
 * command **get** is complete
 * command **hash** is complete
+* command **help** is complete
+* command **markdown** is complete
 * Work on **install** is blocked pending completion of **publish**
 * Work on **publish** is underway.
   - First level of support will be just producing a tarball on various OSs and opening across OSs
@@ -76,6 +77,15 @@ Downloads the requested resource, but decompresses and unpackages the tarball be
 ### list
 (not writte yet)
 Will list all installed or all published applications and their locations.
+
+### markdown
+Allows the internal markdown parser used by the **help** command to be supplied to a directed file to ease reading of documentation directly from the command line.
+
+The first argument after the command is the address of the file to read.
+`node biddle.js markdown applications/example/readme.md`
+
+You can also specify a custom word wrap limit.  The default is still 100.
+`node biddle.js markdown applications/example/readme.md 80`
 
 ### publish
 (not written yet)

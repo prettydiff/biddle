@@ -14,219 +14,8 @@
             console.log(message);
             process.exit(1);
         },
-        help      = function biddle_help() {
-            fs.readFile("readme.md", "utf8", function biddle_input_readme(err, readme) {
-                var lines = [],
-                    list  = [],
-                    ind   = "",
-                    listr = "",
-                    elist = function () {
-                        var listlen = list.length;
-                        if (listlen > 0) {
-                            do {
-                                listlen -= 1;
-                                ind = ind.slice(2);
-                                list.pop();
-                            } while (listlen > 0);
-                        }
-                    },
-                    b     = 0,
-                    len   = 0,
-                    ens   = "\x1B[0m", //end - text formatting
-                    bld   = "\x1B[1m", //text formatting - bold
-                    itl   = "\x1B[3m", //text formatting - italics
-                    und   = "\x1B[4m", //underline
-                    enu   = "\x1B[24m", //end - underline
-                    red   = "\x1B[31m", //color - red
-                    grn   = "\x1B[32m", //color - green
-                    tan   = "\x1B[33m", //color - tan
-                    cyn   = "\x1B[36m", //color - cyan
-                    enc   = "\x1B[39m", //end - color
-                    parse = function biddle_help_readme_parse(listitem) {
-                        var chars = lines[b].replace(/`/g, "bix~").split(""),
-                            final = chars.length,
-                            s     = (/\s/),
-                            x     = 0,
-                            y     = ind.length,
-                            extra = 0,
-                            index = 0,
-                            endln = (isNaN(input[1]) === false)
-                                ? Number(input[1]) - y
-                                : 100 - y,
-                            quote = "",
-                            wrap  = function biddle_help_readme_parse_wrap() {
-                                var z = x;
-                                if (extra === 0) {
-                                    extra = (listitem === true)
-                                        ? y + 4
-                                        : y + 2;
-                                }
-                                if (s.test(chars[x]) === true) {
-                                    if (listitem === true) {
-                                        chars[x] = "\n  " + ind;
-                                        index    = 3 + y + x;
-                                    } else {
-                                        chars[x] = "\n" + ind;
-                                        index    = 1 + y + x;
-                                    }
-                                    if (chars[x - 1] === " ") {
-                                        chars[x - 1] = "";
-                                    } else if (chars[x + 1] === " ") {
-                                        chars.splice(x + 1, 1);
-                                        final -= 1;
-                                    }
-                                } else {
-                                    do {
-                                        z -= 1;
-                                    } while (s.test(chars[z]) === false && z > index);
-                                    if (z > index) {
-                                        if (listitem === true) {
-                                            chars[z] = "\n  " + ind;
-                                            index    = 3 + y + z;
-                                        } else {
-                                            chars[z] = "\n" + ind;
-                                            index    = 1 + y + z;
-                                        }
-                                        if (chars[z - 1] === " ") {
-                                            chars[z - 1] = "";
-                                        } else if (chars[z + 1] === " ") {
-                                            chars.splice(z + 1, 1);
-                                            final -= 1;
-                                        }
-                                    }
-                                }
-                            };
-                        chars.splice(0, 0, ind);
-                        for (x = y; x < final; x += 1) {
-                            if (quote === "") {
-                                if (chars[x - 1] === "*" && chars[x] === "*") {
-                                    quote = "**";
-                                    chars.splice(x - 1, 2);
-                                    chars[x - 1] = bld + chars[x - 1];
-                                    final -= 2;
-                                } else if (chars[x - 1] === "*" && ((x === 1 && chars[x] !== " ") || x !== 1)) {
-                                    quote = "*";
-                                    chars.splice(x - 1, 1);
-                                    chars[x - 1] = itl + tan + chars[x - 1];
-                                    final -= 1;
-                                } else if (chars[x - 4] === "b" && chars[x - 3] === "i" && chars[x - 2] === "x" && chars[x - 1] === "~") {
-                                    quote = "`";
-                                    chars.splice(x - 4, 4);
-                                    x -= 3;
-                                    chars[x - 1] = grn + chars[x - 1];
-                                    final -= 4;
-                                } else if (chars[x - 2] === "]" && chars[x - 1] === "(") {
-                                    quote = ")";
-                                    chars[x - 1] = chars[x - 1] + cyn;
-                                }
-                            } else if (chars[x - 3] === "b" && chars[x - 2] === "i" && chars[x - 1] === "x" && chars[x] === "~" && quote === "`") {
-                                quote = "";
-                                chars.splice(x - 3, 4);
-                                x -= 3;
-                                chars[x - 1] = chars[x - 1] + enc;
-                                final -= 4;
-                                if ((x - (index - extra)) / endln > 1 && chars[x + 1] === " ") {
-                                    x += 1;
-                                    wrap();
-                                }
-                            } else if (chars[x] === ")" && quote === ")") {
-                                quote = "";
-                                chars[x - 1] = chars[x - 1] + enc;
-                                if ((x - (index - extra)) / endln > 1 && chars[x + 1] === " ") {
-                                    x += 1;
-                                    wrap();
-                                }
-                            } else if (chars[x] === "*" && chars[x + 1] === "*" && quote === "**") {
-                                quote = "";
-                                chars.splice(x, 2);
-                                chars[x - 1] = chars[x - 1] + ens;
-                                final -= 2;
-                            } else if (chars[x] === "*" && quote === "*") {
-                                quote = "";
-                                chars.splice(x, 1);
-                                chars[x - 1] = chars[x - 1] + enc + ens;
-                                final -= 1;
-                            }
-                            if ((x - (index - extra)) / endln > 1 && quote !== "`") {
-                                wrap();
-                            }
-                        }
-                        if (quote === "**") {
-                            chars.pop();
-                            chars[x - 1] = chars[x - 1] + ens;
-                        } else if (quote === "*") {
-                            chars.pop();
-                            chars[x - 1] = chars[x - 1] + enc + ens;
-                        } else if (quote === ")") {
-                            chars[x - 1] = chars[x - 1] + enc;
-                        } else if (quote === "`") {
-                            chars.pop();
-                            chars[x - 4] = chars[x - 4] + enc;
-                            chars[x - 3] = "";
-                            chars[x - 2] = "";
-                            chars[x - 1] = "";
-                            chars[x]     = "";
-                        }
-                        lines[b] = chars.join("");
-                    };
-                if (err !== null && err !== undefined) {
-                    return errout(err);
-                }
-                readme = readme.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-                lines  = readme.split("\n");
-                len    = lines.length;
-                console.log("");
-                for (b = 0; b < len; b += 1) {
-                    if (lines[b].indexOf("#### ") === 0) {
-                        elist();
-                        ind = "    ";
-                        lines[b] = ind + und + bld + tan + lines[b].slice(5) + enc + ens + enu;
-                        ind = "      ";
-                    } else if (lines[b].indexOf("### ") === 0) {
-                        elist();
-                        ind = "  ";
-                        lines[b] = ind + und + bld + grn + lines[b].slice(4) + enc + ens + enu;
-                        ind = "    ";
-                    } else if (lines[b].indexOf("## ") === 0) {
-                        elist();
-                        ind = "  ";
-                        lines[b] = und + bld + cyn + lines[b].slice(3) + enc + ens + enu;
-                    } else if (lines[b].indexOf("# ") === 0) {
-                        elist();
-                        ind = "";
-                        lines[b] = und + bld + red + lines[b].slice(2) + enc + ens + enu;
-                    } else if ((/^(\s*\*\s)/).test(lines[b]) === true) {
-                        listr = (/^(\s*\*\s)/).exec(lines[b])[0];
-                        if (list.length === 0 || (list[list.length - 1] !== listr && list[list.length - 2] !== listr)) {
-                            list.push(listr);
-                            ind = ind + "  ";
-                        } else if (list[list.length - 2] === listr) {
-                            list.pop();
-                            ind = ind.slice(2);
-                        }
-                        parse(true);
-                        lines[b] = lines[b].replace("*", bld + red + "*" + enc + ens);
-                    } else if ((/^(\s*-\s)/).test(lines[b]) === true) {
-                        listr = (/^(\s*-\s)/).exec(lines[b])[0];
-                        if (list.length === 0 || (list[list.length - 1] !== listr && list[list.length - 2] !== listr)) {
-                            list.push(listr);
-                            ind = ind + "  ";
-                        } else if (list[list.length - 2] === listr) {
-                            list.pop();
-                            ind = ind.slice(2);
-                        }
-                        parse(true);
-                        lines[b] = lines[b].replace("-", bld + red + "-" + enc + ens);
-                    } else {
-                        elist();
-                        if (lines[b].length > 0) {
-                            parse(false);
-                        }
-                    }
-                    console.log(lines[b]);
-                }
-                process.exit(0);
-            });
+        help      = function biddle_inithelp() {
+            return true;
         },
         input     = (function biddle_input() {
             var a = process.argv;
@@ -449,6 +238,242 @@
                 http.get(input[1], callback);
             }
         };
+    help = function biddle_help() {
+        var file = "readme.md",
+            size = input[1];
+        if (command === "markdown") {
+            file = input[1];
+            size = input[2];
+        }
+        fs.readFile(file, "utf8", function biddle_input_readme(err, readme) {
+            var lines = [],
+                list  = [],
+                ind   = "",
+                listr = "",
+                elist = function () {
+                    var listlen = list.length;
+                    if (listlen > 0) {
+                        do {
+                            listlen -= 1;
+                            ind = ind.slice(2);
+                            list.pop();
+                        } while (listlen > 0);
+                    }
+                },
+                b     = 0,
+                len   = 0,
+                ens   = "\x1B[0m", //end - text formatting
+                bld   = "\x1B[1m", //text formatting - bold
+                itl   = "\x1B[3m", //text formatting - italics
+                und   = "\x1B[4m", //underline
+                enu   = "\x1B[24m", //end - underline
+                red   = "\x1B[31m", //color - red
+                grn   = "\x1B[32m", //color - green
+                tan   = "\x1B[33m", //color - tan
+                cyn   = "\x1B[36m", //color - cyan
+                enc   = "\x1B[39m", //end - color
+                parse = function biddle_help_readme_parse(listitem) {
+                    var chars = lines[b].replace(/`/g, "bix~").split(""),
+                        final = chars.length,
+                        s     = (/\s/),
+                        x     = 0,
+                        y     = ind.length,
+                        start = 0,
+                        index = 0,
+                        math  = 0,
+                        endln = 0,
+                        quote = "",
+                        wrap  = function biddle_help_readme_parse_wrap() {
+                            var z = x,
+                                format = function biddle_help_readme_parse_wrap_format(eol) {
+                                    chars[eol] = "\n" + ind;
+                                    index      = 1 + y + eol;
+                                    if (chars[eol - 1] === " ") {
+                                        chars[eol - 1] = "";
+                                    } else if (chars[eol + 1] === " ") {
+                                        chars.splice(eol + 1, 1);
+                                        final -= 1;
+                                    }
+                                };
+                            if (s.test(chars[x]) === true) {
+                                format(x);
+                            } else {
+                                do {
+                                    z -= 1;
+                                } while (s.test(chars[z]) === false && z > index);
+                                if (z > index) {
+                                    format(z);
+                                }
+                            }
+                        };
+                    if ((/\ {4}\S/).test(lines[b]) === true) {
+                        lines[b] = grn + lines[b] + enc;
+                        return;
+                    }
+                    chars.splice(0, 0, ind);
+                    if (listitem === true) {
+                        x = list.length;
+                        do {
+                            x -= 1;
+                            y += 2;
+                            ind = ind + "  ";
+                        } while (x > 0);
+                        start = ind.length - 3;
+                    } else {
+                        start = ind.length - 1;
+                    }
+                    endln = (isNaN(size) === false)
+                        ? Number(size) - y
+                        : 100 - y;
+                    for (x = start; x < final; x += 1) {
+                        math = (x - index) / endln;
+                        if (quote === "") {
+                            if (chars[x] === "*" && chars[x + 1] === "*") {
+                                quote = "**";
+                                chars.splice(x, 2);
+                                chars[x] = bld + chars[x];
+                                final -= 2;
+                            } else if (chars[x] === "*" && ((x === start && chars[x + 1] !== " ") || x > start)) {
+                                quote = "*";
+                                chars.splice(x, 1);
+                                chars[x] = itl + tan + chars[x];
+                                final -= 1;
+                            } else if (chars[x] === "b" && chars[x + 1] === "i" && chars[x + 2] === "x" && chars[x + 3] === "~") {
+                                quote = "`";
+                                chars.splice(x, 4);
+                                chars[x] = grn + chars[x];
+                                final -= 4;
+                            } else if (chars[x - 1] === "]" && chars[x] === "(") {
+                                quote = ")";
+                                chars[x] = chars[x] + cyn;
+                            }
+                        } else if (chars[x] === "b" && chars[x + 1] === "i" && chars[x + 2] === "x" && chars[x + 3] === "~" && quote === "`") {
+                            quote = "";
+                            chars.splice(x, 4);
+                            chars[x] = chars[x] + enc;
+                            final -= 4;
+                            if (math > 1 && chars[x + 1] === " ") {
+                                x += 1;
+                                wrap();
+                            }
+                        } else if (chars[x] === ")" && quote === ")") {
+                            quote = "";
+                            chars[x] = enc + chars[x];
+                            if (math > 1 && chars[x + 1] === " ") {
+                                x += 1;
+                                wrap();
+                            }
+                        } else if (chars[x] === "*" && chars[x + 1] === "*" && quote === "**") {
+                            quote = "";
+                            chars.splice(x, 2);
+                            chars[x - 1] = chars[x - 1] + ens;
+                            final -= 2;
+                        } else if (chars[x] === "*" && quote === "*") {
+                            quote = "";
+                            chars.splice(x, 1);
+                            chars[x - 1] = chars[x - 1] + enc + ens;
+                            final -= 1;
+                        }
+                        if (math > 1 && quote !== "`") {
+                            wrap();
+                        }
+                    }
+                    if (quote === "**") {
+                        chars.pop();
+                        chars[x - 1] = chars[x - 1] + ens;
+                    } else if (quote === "*") {
+                        chars.pop();
+                        chars[x - 1] = chars[x - 1] + enc + ens;
+                    } else if (quote === ")") {
+                        chars[x - 1] = chars[x - 1] + enc;
+                    } else if (quote === "`") {
+                        chars.pop();
+                        chars[x - 4] = chars[x - 4] + enc;
+                        chars[x - 3] = "";
+                        chars[x - 2] = "";
+                        chars[x - 1] = "";
+                        chars[x]     = "";
+                    }
+                    lines[b] = chars.join("");
+                    if (listitem ===  true) {
+                        ind = ind.slice(list.length * 2);
+                    }
+                };
+            if (err !== null && err !== undefined) {
+                return errout(err);
+            }
+            readme = readme.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+            lines  = readme.split("\n");
+            len    = lines.length;
+            console.log("");
+            for (b = 0; b < len; b += 1) {
+                if (lines[b].indexOf("#### ") === 0) {
+                    elist();
+                    ind = "    ";
+                    lines[b] = ind + und + bld + tan + lines[b].slice(5) + enc + ens + enu;
+                    ind = "      ";
+                } else if (lines[b].indexOf("### ") === 0) {
+                    elist();
+                    ind = "  ";
+                    lines[b] = ind + und + bld + grn + lines[b].slice(4) + enc + ens + enu;
+                    ind = "    ";
+                } else if (lines[b].indexOf("## ") === 0) {
+                    elist();
+                    ind = "  ";
+                    lines[b] = und + bld + cyn + lines[b].slice(3) + enc + ens + enu;
+                } else if (lines[b].indexOf("# ") === 0) {
+                    elist();
+                    ind = "";
+                    lines[b] = und + bld + red + lines[b].slice(2) + enc + ens + enu;
+                } else if ((/^(\s*\*\s)/).test(lines[b]) === true) {
+                    listr = (/^(\s*\*\s)/).exec(lines[b])[0];
+                    if (list.length === 0 || (list[list.length - 1] !== listr && list[list.length - 2] !== listr)) {
+                        if ((/\s/).test(listr.charAt(0)) === true) {
+                            list.push(listr);
+                            ind = ind + "  ";
+                        } else {
+                            elist();
+                            ind = ind + "  ";
+                            list = [listr];
+                        }
+                    } else if (list[list.length - 2] === listr) {
+                        do {
+                            list.pop();
+                            ind = ind.slice(2);
+                        } while (list[list.length - 1] !== listr);
+                    }
+                    parse(true);
+                    lines[b] = lines[b].replace("*", bld + red + "*" + enc + ens);
+                } else if ((/^(\s*-\s)/).test(lines[b]) === true) {
+                    listr = (/^(\s*-\s)/).exec(lines[b])[0];
+                    if (list.length === 0 || (list[list.length - 1] !== listr && list[list.length - 2] !== listr)) {
+                        if ((/\s/).test(listr.charAt(0)) === true) {
+                            list.push(listr);
+                            ind = ind + "  ";
+                        } else {
+                            elist();
+                            ind = ind + "  ";
+                            list = [listr];
+                        }
+                    } else if (list[list.length - 2] === listr) {
+                        do {
+                            list.pop();
+                            ind = ind.slice(2);
+                        } while (list[list.length - 1] !== listr);
+                    }
+                    parse(true);
+                    lines[b] = lines[b].replace("-", bld + red + "-" + enc + ens);
+                } else {
+                    elist();
+                    if (lines[b].length > 0) {
+                        parse(false);
+                    }
+                }
+                console.log(lines[b]);
+            }
+            process.exit(0);
+        });
+    };
     if (command === "get") {
         get(false);
     } else if (command === "install") {
@@ -459,7 +484,7 @@
         hashCmd(input[1], function () {
             console.log(hash);
         });
-    } else if (command === "help" || command === "" || command === "?") {
+    } else if (command === "help" || command === "" || command === "?" || command === "markdown") {
         help();
     } else {
         console.log("Error: unrecognized command '" + command + "'");
