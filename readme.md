@@ -50,26 +50,26 @@ Commands are the third command line argument, or second if the optional *node* a
 Merely downloads the requested resource and saves it as a file with the same filename. If the filename is not provided in the URI the final directory up to the domain name will become the filename, and if for some reason that doesn't work the default filename is *download.xxx*.
 
 Download a file to the default location, which is the provided *downloads* directory.
-`node biddle.js get http://google.com`
+    node biddle.js get http://google.com
 
 Download a file to an alternate location.
-`node biddle.js get http://google.com ../mydirectory`
+    node biddle.js get http://google.com ../mydirectory
 
 ### hash
 Prints to console a SHA512 hash against a local resource.
-`node biddle.js hash downloads/myfile.tar.bz2`
+    node biddle.js hash downloads/myfile.tar.bz2
 
 ### help
 Prints the readme.md file contents to console in a human friendly way.
 
 No command will still generate the readme data.
-`node biddle.js`
+    node biddle.js
 
 The default word wrapping is set to 100 characters.
-`node biddle.js help`
+    node biddle.js help
 
 Set a custom word wrap limit.
-`node biddle.js help 80`
+    node biddle.js help 80
 
 ### install
 (not written yet)
@@ -83,10 +83,10 @@ Will list all installed or all published applications and their locations.
 Allows the internal markdown parser used by the **help** command to be supplied to a directed file to ease reading of documentation directly from the command line.
 
 The first argument after the command is the address of the file to read.
-`node biddle.js markdown applications/example/readme.md`
+    node biddle.js markdown applications/example/readme.md
 
 You can also specify a custom word wrap limit.  The default is still 100.
-`node biddle.js markdown applications/example/readme.md 80`
+    node biddle.js markdown applications/example/readme.md 80
 
 ### publish
 (not written yet)
