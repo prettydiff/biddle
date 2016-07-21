@@ -44,6 +44,7 @@
                 }
                 return paths[paths.length - 1];
             }()),
+            appName : "",
             platform: process
                 .platform
                 .replace(/\s+/g, "")
@@ -67,16 +68,16 @@
                 return arr.join("");
             },
             getpjson : function biddle_getpjson(callback) {
-                var file = data
-                    .address
-                    .split(path.sep)
-                    .pop()
-                    .join(path.sep) + "package.json";
-                fs.readFile(file, "utf8", function biddle_getpjson_callback(err, data) {
+                var file = input[1].replace(/(\/|\\)$/, "") + path.sep + "package.json";
+                fs.readFile(file, "utf8", function biddle_getpjson_callback(err, fileData) {
+                    var pjson = {};
                     if (err !== null && err !== undefined) {
                         return errout(err);
                     }
-
+                    pjson = JSON.parse(fileData);
+                    data.version = pjson.version;
+                    data.appName = pjson.name;
+                    callback();
                 });
             },
             hashCmd  : function biddle_hashCmd(filepath, callback) {
@@ -164,49 +165,41 @@
             return input[2];
         }()),
         tar       = function biddle_tar() {
-            //cjf - create bz2 czf - create gzip xjf - unpack bz2 xzf - unpack gzip
-            //
-            // windows - "tartool2_beta/tartool.exe cjf tar_name " + filepath linux   - "tar
-            // cjf tar_name " + filepath
-            var app = (data.platform === "win32" || data.platform === "win64")
-                    ? "tartool2_beta/tartool.exe "
-                    : "tar ",
-                pak = "x",
-                opt = "j",
-                bz2 = "",
-                spc = "",
-                cmd = "";
-            if (data.command === "publish") {
-                pak = "c";
-                bz2 = data.address + ".tar.bz2";
-                spc = " ";
-            } else if (data.fileName.indexOf("tar.gz") > 0) {
-                opt = "z";
-            }
-            cmd = app + pak + opt + "f " + bz2 + spc + input[1];
-            child(cmd, function biddle_tar_child(err, stdout, stderr) {
-                var callback = function biddle_tar_child_callback() {
-                    if (compress === true) {
-                        fs
-                            .stat(bz2, function biddle_tar_child_callback_stat(errstat, stat) {
-                                if (errstat !== null) {
-                                    return errout(errstat);
-                                }
-                                // hash is updated write hash to file both hash and tar filenames must be
-                                // versioned
-                                console.log("File " + bz2 + " written at " + apps.commas(stat.size) + " bytes.");
-                            });
+            var tarball = function biddle_tar_tarball() {
+                //cjf - create bz2 czf - create gzip xjf - unpack bz2 xzf - unpack gzip
+                //
+                // windows - "tartool2_beta/tartool.exe cjf tar_name " + filepath linux   - "tar
+                // cjf tar_name " + filepath
+                var app = (data.platform === "win32" || data.platform === "win64")
+                        ? "tartool2_beta/tartool.exe "
+                        : "tar ",
+                    pak = "x",
+                    opt = "j",
+                    bz2 = "",
+                    spc = "",
+                    cmd = "";
+                if (data.command === "publish") {
+                    pak = "c";
+                    bz2 = data.address + "_" + data.version + ".tar.bz2";
+                    spc = " ";
+                } else if (data.fileName.indexOf("tar.gz") > 0) {
+                    opt = "z";
+                }
+                cmd = app + pak + opt + "f " + bz2 + spc + input[1];
+                child(cmd, function biddle_tar_tarball_child(err, stdout, stderr) {
+                    if (err !== null) {
+                        return errout(err);
                     }
-                };
-                if (err !== null) {
-                    return errout(err);
-                }
-                if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
-                    return errout(stderr);
-                }
-                apps.hashCmd(bz2, callback);
-                return stdout;
-            });
+                    if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
+                        return errout(stderr);
+                    }
+                    apps.hashCmd(bz2, function biddle_tar_tarball_child_hash() {
+                        apps.writeFile(data.hash, bz2.replace(".tar.bz2", ".hash"));
+                    });
+                    return stdout;
+                });
+            };
+            apps.getpjson(tarball);
         },
         install   = function biddle_install(fileData) {
             //child("tar ");
@@ -225,7 +218,7 @@
                         if (install === true) {
                             install(file);
                         } else {
-                            apps.writeFile(file);
+                            apps.writeFile(file, data.address);
                         }
                     });
                     res.on("error", function biddle_get_callback_error(error) {
@@ -251,19 +244,22 @@
             return "publications" + path.sep + data.fileName;
         }
     }());
-    apps.writeFile = function biddle_writeFile(fileData) {
+    apps.writeFile = function biddle_writeFile(fileData, fileName, callback) {
         fs
-            .writeFile(data.address, fileData, function biddle_writeFile_callback(err) {
+            .writeFile(fileName, fileData, function biddle_writeFile_callback(err) {
                 if (err !== null) {
                     return errout(err);
                 }
-                if (data.command === "get") {
+                if (data.command === "get" || data.command === "publish") {
+                    if (data.command === "publish") {
+                        fileName = fileName.replace(".hash", ".tar.bz2");
+                    }
                     fs
-                        .stat(data.address, function biddle_writeFile_callback_getstat(errstat, stat) {
+                        .stat(fileName, function biddle_writeFile_callback_getstat(errstat, stat) {
                             if (errstat !== null) {
                                 return errout(errstat);
                             }
-                            console.log("File " + data.address + " written at " + apps.commas(stat.size) + " bytes.");
+                            console.log("File " + fileName + " written at " + apps.commas(stat.size) + " bytes.");
                         });
                 }
             });
