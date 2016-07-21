@@ -8,14 +8,14 @@
 0.0.2
 
 ## About
-This application is a cross-OS solution to creating tarballs for distribution and fetching files via HTTP(S).  The project's goal is to provide a universal application distribution utility that is language agnostic, operating system independent, and platform independent.  The only additional requirement for distributing application packages is online storage on a web server.  This application provides all the client utilities to retrieve and unpackage applications.
+This application is a cross-OS solution to creating tarballs for distribution and fetching files via HTTP(S).  The project's goal is to provide a universal application distribution utility that is language agnostic, operating system independent, and platform independent.  The only additional requirement for distributing application packages is online storage on a web server.  This application provides all the utilities to retrieve, bundle, and unpackage applications.
 
 biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but seeks to accomplish a few additional goals:
 
-* *integrity* - Downloaded packages will perform a hash comparison before they are unpackaged.  If the hashes don't match a failure will occur.
+* *integrity* - Downloaded packages will perform a hash comparison before they are unpackaged.  If the hashes don't match the tarball will be saved in the downloads directory awaiting a human touch.
 * *autonomy* - There is no central authority here.  Host your own publications and manage them as you please with any name you choose.
-* *management* - There is no dependency hell here.  Dependency management will not be automated, but a means to manage and review the status of all installed/published packages will be provided.
-* *freedom* - biddle will work everywhere Node.js runs.  It can be used with any application written in any language.
+* *management* - There is no dependency hell here.  Dependency management will not be automated, but a means to manage and review the status of all installed/published packages is provided.
+* *freedom* - biddle will work everywhere Node.js runs.  It can be used with any application written in any language whether binary or text.
 
 ## Project Status
 **Unstable and in early developement.**
@@ -44,7 +44,7 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
   - Must remove the application from the **list**
 
 ## Supported commands
-Commands are the third command line argument, or second if the optional *node* argument is absent.  Commands are case insensitive, but values and local paths are case sensitive.  All local address are either absolute from the root or relative from biddle.
+Commands are the third command line argument, or second if the optional *node* argument is absent.  Commands are case insensitive, but values and local paths are case sensitive.  All local address are either absolute from the root or relative from the current working directory.
 
 ### get
 Merely downloads the requested resource and saves it as a file with the same filename. If the filename is not provided in the URI the final directory up to the domain name will become the filename, and if for some reason that doesn't work the default filename is *download.xxx*.
