@@ -25,8 +25,8 @@
         }()),
         data      = {
             address : "",
+            appName : "",
             command : input[0].toLowerCase(),
-            hash    : "",
             fileName: (function biddle_fileName() {
                 var paths = [];
                 if (input[1] === undefined) {
@@ -44,11 +44,17 @@
                 }
                 return paths[paths.length - 1];
             }()),
-            appName : "",
+            hash    : "",
+            installed: {},
             platform: process
                 .platform
                 .replace(/\s+/g, "")
                 .toLowerCase(),
+            published: {},
+            status  : {
+                installed: false,
+                published: false
+            },
             version : ""
         },
         apps      = {
@@ -106,6 +112,24 @@
             },
             help: function biddle_inithelp() {
                 return true;
+            },
+            readlist: function biddle_readlist() {
+                var list = "";
+                if (command === "publish" || (command === "list" && input[1] === "published")) {
+                    list = "published";
+                } else if (command === "installed" || command === "status" || (command === "list" && input[1] === "installed")) {
+                    list = "installed";
+                } else {
+                    return errout("Unqualified operation: readlist() but not published or installed.");
+                }
+                fs.readFile(list + ".json", "utf8", function (err, fileData) {
+                    var jsondata = JSON.parse(fileData);
+                    if (err !== null && err !== undefined) {
+                        return errout(err);
+                    }
+                    data[list] = jsondata[list];
+                    data.status[list] = true;
+                });
             },
             writeFile: function biddle_initWriteFile() {
                 return true;

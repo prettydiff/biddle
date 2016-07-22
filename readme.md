@@ -2,7 +2,7 @@
 *A package management application without a package management service.*
 
 ## License
-[GPLv2](https://opensource.org/licenses/GPL-2.0)
+[MIT](https://opensource.org/licenses/MIT)
 
 ## Version
 0.0.3
@@ -66,12 +66,15 @@ Prints to console a SHA512 hash against a local resource.
 Prints the readme.md file contents to console in a human friendly way.
 
 No command will still generate the readme data.
+
     node biddle.js
 
 The default word wrapping is set to 100 characters.
+
     node biddle.js help
 
 Set a custom word wrap limit.
+
     node biddle.js help 80
 
 ### install
@@ -86,9 +89,11 @@ Will list all installed or all published applications and their locations.
 Allows the internal markdown parser used by the **help** command to be supplied to a directed file to ease reading of documentation directly from the command line.
 
 The first argument after the command is the address of the file to read.
+
     node biddle.js markdown applications/example/readme.md
 
 You can also specify a custom word wrap limit.  The default is still 100.
+
     node biddle.js markdown applications/example/readme.md 80
 
 ### publish
@@ -109,6 +114,7 @@ Will delete a published application by name and remove the application from the 
 
 ### windows
 Modifies the Windows path variable so that `tar` becomes globally available from the command line.  This command only needs to be run once.
+
     node biddle.js windows
 
 ## Dependencies
