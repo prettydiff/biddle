@@ -44,7 +44,7 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
   - Must remove the application from the **list**
 
 ## Windows
-Windows users must install *tar* by executing the attached installer, bsdtar_2.4.12.exe, and run the **windows** command to make tar universally available from the command line.  Without this initial setup the **install** and **publish** commands will fail.
+The application [7-Zip](http://7-zip.org/) is required.  Once this is installed run the **windows** command to add 7-Zip to the Windows path.
 
 ## Supported commands
 Commands are the third command line argument, or second if the optional *node* argument is absent.  Commands are case insensitive, but values and local paths are case sensitive.  All local address are either absolute from the root or relative from the current working directory.
@@ -114,4 +114,4 @@ Modifies the Windows path variable so that `tar` becomes globally available from
 ## Dependencies
 
 * This application is written in JavaScript and requires [Node.js](https://nodejs.org/en/).
-* [TarTools 2.0 Beta](http://tartool.codeplex.com/releases/view/85391) is included to provide Unix Tar and compression capabilities natively to Windows.  [Source code](http://tartool.codeplex.com/SourceControl/latest).
+* [7-Zip](http://www.7-zip.org/) is required for Windows users to create and read tar formats used by commands **install** and **publish**.
