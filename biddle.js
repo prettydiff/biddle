@@ -18,16 +18,16 @@
                 a.splice(0, 1);
             }
             if (a.length < 1) {
-                a = ["",  "",  ""];
+                a = ["", "", ""];
             }
             a[0] = a[0].toLowerCase();
             return a;
         }()),
         data      = {
-            address : "",
-            appName : "",
-            command : input[0].toLowerCase(),
-            fileName: (function biddle_fileName() {
+            address  : "",
+            appName  : "",
+            command  : input[0].toLowerCase(),
+            fileName : (function biddle_fileName() {
                 var paths = [];
                 if (input[1] === undefined) {
                     return errout("Error: unrecognized command '" + command + "'");
@@ -44,18 +44,15 @@
                 }
                 return paths[paths.length - 1];
             }()),
-            hash    : "",
-            installed: {},
-            platform: process
+            hash     : "",
+            installed: [],
+            platform : process
                 .platform
                 .replace(/\s+/g, "")
                 .toLowerCase(),
-            published: {},
-            status  : {
-                installed: false,
-                published: false
-            },
-            version : ""
+            packjson : {},
+            published: [],
+            version  : ""
         },
         apps      = {
             commas   : function biddle_commas(number) {
@@ -80,7 +77,7 @@
                     if (err !== null && err !== undefined) {
                         return errout(err);
                     }
-                    pjson = JSON.parse(fileData);
+                    pjson        = JSON.parse(fileData);
                     data.version = pjson.version;
                     data.appName = pjson.name;
                     callback();
@@ -110,10 +107,10 @@
                     callback();
                 });
             },
-            help: function biddle_inithelp() {
+            help     : function biddle_inithelp() {
                 return true;
             },
-            readlist: function biddle_readlist() {
+            readlist : function biddle_readlist() {
                 var list = "";
                 if (command === "publish" || (command === "list" && input[1] === "published")) {
                     list = "published";
@@ -122,72 +119,20 @@
                 } else {
                     return errout("Unqualified operation: readlist() but not published or installed.");
                 }
-                fs.readFile(list + ".json", "utf8", function (err, fileData) {
-                    var jsondata = JSON.parse(fileData);
-                    if (err !== null && err !== undefined) {
-                        return errout(err);
-                    }
-                    data[list] = jsondata[list];
-                    data.status[list] = true;
-                });
+                fs
+                    .readFile(list + ".json", "utf8", function (err, fileData) {
+                        var jsondata = JSON.parse(fileData);
+                        if (err !== null && err !== undefined) {
+                            return errout(err);
+                        }
+                        data[list]        = jsondata[list];
+                        data.status[list] = true;
+                    });
             },
             writeFile: function biddle_initWriteFile() {
                 return true;
             }
         },
-        directory = (function biddle_directory() {
-            if (typeof input[2] !== "string" || input[2].length < 1 || (/^(\s)$/).test(input[2]) === true) {
-                return "";
-            }
-            if (input[2] !== "\\" && input[2] !== "/") {
-                input[2] = input[2].replace(/(\/|\\)$/, "");
-            }
-            fs
-                .stat(input[2], function biddle_directory_stat(err, stats) {
-                    var dirs   = [],
-                        ind    = 0,
-                        len    = 0,
-                        restat = function biggle_directory_stat_restat() {
-                            fs
-                                .stat(dirs.slice(0, ind + 1).join(path.sep), function biddle_directory_stat_restat_callback(erra, stata) {
-                                    ind += 1;
-                                    if ((erra !== null && erra.toString().indexOf("no such file or directory") > 0) || (typeof erra === "object" && erra !== null && erra.code === "ENOENT")) {
-                                        return fs.mkdir(dirs.slice(0, ind).join(path.sep), function biddle_directory_stat_restat_callback_mkdir(errb) {
-                                            if (errb !== null && errb.toString().indexOf("file already exists") < 0) {
-                                                return errout(errb);
-                                            }
-                                            if (ind < len) {
-                                                biggle_directory_stat_restat();
-                                            }
-                                        });
-                                    }
-                                    if (erra !== null && erra.toString().indexOf("file already exists") < 0) {
-                                        return errout(erra);
-                                    }
-                                    if (stata.isFile() === true) {
-                                        return errout("Destination directory, '" + input[2] + "', is a file.");
-                                    }
-                                    if (ind < len) {
-                                        biggle_directory_stat_restat();
-                                    }
-                                });
-                        };
-                    if ((err !== null && err.toString().indexOf("no such file or directory") > 0) || (typeof err === "object" && err !== null && err.code === "ENOENT")) {
-                        dirs = input[2]
-                            .replace(/\\/g, "/")
-                            .split("/");
-                        len  = dirs.length;
-                        return restat();
-                    }
-                    if (err !== null && err.toString().indexOf("file already exists") < 0) {
-                        return errout(err);
-                    }
-                    if (stats.isFile() === true) {
-                        return errout("Destination directory, '" + input[2] + "', is a file.");
-                    }
-                });
-            return input[2];
-        }()),
         tar       = function biddle_tar() {
             var tarball = function biddle_tar_tarball() {
                 //cjf - create bz2 czf - create gzip xjf - unpack bz2 xzf - unpack gzip
@@ -218,9 +163,10 @@
                     if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
                         return errout(stderr);
                     }
-                    apps.hashCmd(bz2, function biddle_tar_tarball_child_hash() {
-                        apps.writeFile(data.hash, bz2.replace(".tar.bz2", ".hash"));
-                    });
+                    apps
+                        .hashCmd(bz2, function biddle_tar_tarball_child_hash() {
+                            apps.writeFile(data.hash, bz2.replace(".tar.bz2", ".hash"));
+                        });
                     return stdout;
                 });
             };
@@ -258,7 +204,7 @@
                 http.get(input[1], callback);
             }
         },
-        windows = function biddle_windows() {
+        windows   = function biddle_windows() {
             child("path", function biddle_windows_path(errpath, stdpath, stderrpath) {
                 if (errpath !== null) {
                     return errout(errpath);
@@ -267,7 +213,8 @@
                     return errout(stderrpath);
                 }
                 if (stdpath.toLowerCase().indexOf("7-zip") > 0) {
-                    console.log("It appears the path is already modified to include 7-Zip.  I will not modify it again.");
+                    console.log("It appears the path is already modified to include 7-Zip.  I will not modify it " +
+                            "again.");
                 } else {
                     child("set PATH=%PATH%;c:\\Program Files\\7-Zip", function biddle_windows_path_setpath(errsetpath, stdsetpath, stderrsetpath) {
                         if (errsetpath !== null) {
@@ -294,24 +241,78 @@
         }
     }());
     apps.writeFile = function biddle_writeFile(fileData, fileName, callback) {
-        fs
-            .writeFile(fileName, fileData, function biddle_writeFile_callback(err) {
-                if (err !== null) {
-                    return errout(err);
-                }
-                if (data.command === "get" || data.command === "publish") {
-                    if (data.command === "publish") {
-                        fileName = fileName.replace(".hash", ".tar.bz2");
+        var writing = function biddle_writeFile_writing() {
+            fs
+                .writeFile(fileName, fileData, function biddle_writeFile_writing_callback(err) {
+                    if (err !== null) {
+                        return errout(err);
                     }
-                    fs
-                        .stat(fileName, function biddle_writeFile_callback_getstat(errstat, stat) {
-                            if (errstat !== null) {
-                                return errout(errstat);
-                            }
-                            console.log("File " + fileName + " written at " + apps.commas(stat.size) + " bytes.");
-                        });
-                }
-            });
+                    if (data.command === "get" || data.command === "publish") {
+                        if (data.command === "publish") {
+                            fileName = fileName.replace(".hash", ".tar.bz2");
+                        }
+                        fs
+                            .stat(fileName, function biddle_writeFile_writing_callback_getstat(errstat, stat) {
+                                if (errstat !== null) {
+                                    return errout(errstat);
+                                }
+                                console.log("File " + fileName + " written at " + apps.commas(stat.size) + " bytes.");
+                            });
+                    }
+                });
+        };
+        if (typeof input[2] === "string" && input[2] !== "") {
+            fs
+                .stat(input[2], function biddle_writeFile_stat(err, stats) {
+                    var dirs   = [],
+                        ind    = 0,
+                        len    = 0,
+                        restat = function biggle_writeFile_stat_restat() {
+                            fs
+                                .stat(dirs.slice(0, ind + 1).join(path.sep), function biddle_writeFile_stat_restat_callback(erra, stata) {
+                                    ind += 1;
+                                    if ((erra !== null && erra.toString().indexOf("no such file or directory") > 0) || (typeof erra === "object" && erra !== null && erra.code === "ENOENT")) {
+                                        return fs.mkdir(dirs.slice(0, ind).join(path.sep), function biddle_writeFile_stat_restat_callback_mkdir(errb) {
+                                            if (errb !== null && errb.toString().indexOf("file already exists") < 0) {
+                                                return errout(errb);
+                                            }
+                                            if (ind < len) {
+                                                biggle_writeFile_stat_restat();
+                                            } else {
+                                                writing();
+                                            }
+                                        });
+                                    }
+                                    if (erra !== null && erra.toString().indexOf("file already exists") < 0) {
+                                        return errout(erra);
+                                    }
+                                    if (stata.isFile() === true) {
+                                        return errout("Destination directory, '" + input[2] + "', is a file.");
+                                    }
+                                    if (ind < len) {
+                                        biggle_writeFile_stat_restat();
+                                    } else {
+                                        writing();
+                                    }
+                                });
+                        };
+                    if ((err !== null && err.toString().indexOf("no such file or directory") > 0) || (typeof err === "object" && err !== null && err.code === "ENOENT")) {
+                        dirs = input[2]
+                            .replace(/\\/g, "/")
+                            .split("/");
+                        len  = dirs.length;
+                        return restat();
+                    }
+                    if (err !== null && err.toString().indexOf("file already exists") < 0) {
+                        return errout(err);
+                    }
+                    if (stats.isFile() === true) {
+                        return errout("Destination directory, '" + input[2] + "', is a file.");
+                    }
+                });
+        } else {
+            writing();
+        }
     };
     apps.help      = function biddle_help() {
         var file = "readme.md",
@@ -526,22 +527,54 @@
                 process.exit(0);
             });
     };
-    if (data.command === "get") {
-        get(false);
-    } else if (data.command === "install") {
-        get(true);
-    } else if (data.command === "publish") {
-        tar();
-    } else if (data.command === "hash") {
-        apps
-            .hashCmd(input[1], function () {
-                console.log(data.hash);
-            });
-    } else if (data.command === "help" || data.command === "" || data.command === undefined || data.command === "?" || data.command === "markdown") {
-        apps.help();
-    } else if (data.command === "windows") {
-        windows();
-    } else {
-        console.log("Error: unrecognized command '" + data.command + "'");
-    }
+    (function biddle_init() {
+        var status = {
+                installed: false,
+                published: false
+            },
+            start = function biddle_init_start() {
+                if (data.command === "get") {
+                    get(false);
+                } else if (data.command === "install") {
+                    get(true);
+                } else if (data.command === "publish") {
+                    tar();
+                } else if (data.command === "hash") {
+                    apps
+                        .hashCmd(input[1], function () {
+                            console.log(data.hash);
+                        });
+                } else if (data.command === "help" || data.command === "" || data.command === undefined || data.command === "?" || data.command === "markdown") {
+                    apps.help();
+                } else if (data.command === "windows") {
+                    windows();
+                } else {
+                    console.log("Error: unrecognized command '" + data.command + "'");
+                }
+            };
+        fs.readFile("installed.json", function biddle_init_installed(err, fileData) {
+            var parsed = {};
+            if (err !== null && err !== undefined) {
+                return errout(err);
+            }
+            status.installed = true;
+            parsed = JSON.parse(fileData);
+            data.installed = parsed.installed;
+            if (status.published === true) {
+                start();
+            }
+        });
+        fs.readFile("published.json", function biddle_init_published(err, fileData) {
+            var parsed = {};
+            if (err !== null && err !== undefined) {
+                return errout(err);
+            }
+            status.published = true;
+            parsed = JSON.parse(fileData);
+            data.published = parsed.published;
+            if (status.installed === true) {
+                start();
+            }
+        });
+    }());
 }());
