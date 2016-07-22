@@ -43,6 +43,9 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
   - Must delete the application
   - Must remove the application from the **list**
 
+## Windows
+Windows users must install *tar* by executing the attached installer, bsdtar_2.4.12.exe, and run the **windows** command to make tar universally available from the command line.  Without this initial setup the **install** and **publish** commands will fail.
+
 ## Supported commands
 Commands are the third command line argument, or second if the optional *node* argument is absent.  Commands are case insensitive, but values and local paths are case sensitive.  All local address are either absolute from the root or relative from the current working directory.
 
@@ -103,6 +106,10 @@ Will delete an installed application by name and remove the application from the
 ### unpublish
 (not written yet)
 Will delete a published application by name and remove the application from the published list.
+
+### windows
+Modifies the Windows path variable so that `tar` becomes globally available from the command line.  This command only needs to be run once.
+    node biddle.js windows
 
 ## Dependencies
 

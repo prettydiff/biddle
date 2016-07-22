@@ -170,10 +170,7 @@
                 //
                 // windows - "tartool2_beta/tartool.exe cjf tar_name " + filepath linux   - "tar
                 // cjf tar_name " + filepath
-                var app = (data.platform === "win32" || data.platform === "win64")
-                        ? "tartool2_beta/tartool.exe "
-                        : "tar ",
-                    pak = "x",
+                var pak = "x",
                     opt = "j",
                     bz2 = "",
                     spc = "",
@@ -185,7 +182,7 @@
                 } else if (data.fileName.indexOf("tar.gz") > 0) {
                     opt = "z";
                 }
-                cmd = app + pak + opt + "f " + bz2 + spc + input[1];
+                cmd = "tar " + pak + opt + "f " + bz2 + spc + input[1];
                 child(cmd, function biddle_tar_tarball_child(err, stdout, stderr) {
                     if (err !== null) {
                         return errout(err);
@@ -232,6 +229,30 @@
             } else {
                 http.get(input[1], callback);
             }
+        },
+        windows = function biddle_windows() {
+            child("path", function biddle_windows_path(errpath, stdpath, stderrpath) {
+                if (errpath !== null) {
+                    return errout(errpath);
+                }
+                if (stderrpath !== null) {
+                    return errout(stderrpath);
+                }
+                if (stdpath.indexOf("GnuWin32") > 0) {
+                    console.log("It appears the path is already modified to include GnuWin32.  I will not modify it again.  If you have not already done so please install tar by executing the attached installer, bsdtar_2.4.12.exe.");
+                } else {
+                    child("set PATH=%PATH%;c:\\Program Files (x86)\\GnuWin32\\bin", function biddle_windows_path_setpath(errsetpath, stdsetpath, stderrsetpath) {
+                        if (errsetpath !== null) {
+                            return errout(errsetpath);
+                        }
+                        if (stderrsetpath !== null) {
+                            return errout(stderrsetpath);
+                        }
+                        console.log("You must now execute the attached installer for tar, bsdtar_2.4.12.exe.  Accept the default installation point or manually edit the windows path setting for GnuWin32.");
+                        return stdsetpath;
+                    });
+                }
+            });
         };
     data.address   = (function biddle_address() {
         if (typeof input[2] === "string") {
@@ -490,6 +511,8 @@
             });
     } else if (data.command === "help" || data.command === "" || data.command === undefined || data.command === "?" || data.command === "markdown") {
         apps.help();
+    } else if (data.command === "windows") {
+        windows();
     } else {
         console.log("Error: unrecognized command '" + data.command + "'");
     }
