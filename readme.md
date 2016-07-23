@@ -48,7 +48,7 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
 * (not started) Allow quoted values from command line arguments in the case where an address contains spaces
 
 ## Windows
-The application [7-Zip](http://7-zip.org/) is required.  Once this is installed run the **windows** command to add 7-Zip to the Windows path.
+The application [7-Zip](http://7-zip.org/) is required.  Once this is installed run biddle's **windows** command to add 7-Zip to the Windows path.
 
 ## Supported commands
 Commands are the third command line argument, or second if the optional *node* argument is absent.  Commands are case insensitive, but values and local paths are case sensitive.  All local address are either absolute from the root or relative from the current working directory.
