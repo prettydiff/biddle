@@ -25,7 +25,6 @@
         }()),
         data      = {
             address  : "",
-            appName  : "",
             command  : input[0].toLowerCase(),
             fileName : (function biddle_fileName() {
                 var paths = [];
@@ -45,14 +44,13 @@
                 return paths[paths.length - 1];
             }()),
             hash     : "",
-            installed: [],
+            installed: {},
             platform : process
                 .platform
                 .replace(/\s+/g, "")
                 .toLowerCase(),
             packjson : {},
-            published: [],
-            version  : ""
+            published: {}
         },
         apps      = {
             commas   : function biddle_commas(number) {
@@ -73,13 +71,10 @@
             getpjson : function biddle_getpjson(callback) {
                 var file = input[1].replace(/(\/|\\)$/, "") + path.sep + "package.json";
                 fs.readFile(file, "utf8", function biddle_getpjson_callback(err, fileData) {
-                    var pjson = {};
                     if (err !== null && err !== undefined) {
                         return errout(err);
                     }
-                    pjson        = JSON.parse(fileData);
-                    data.version = pjson.version;
-                    data.appName = pjson.name;
+                    data.packjson = JSON.parse(fileData);
                     callback();
                 });
             },
@@ -110,6 +105,55 @@
             help     : function biddle_inithelp() {
                 return true;
             },
+            makedir  : function biddle_makedir(dirToMake, callback) {
+                fs
+                    .stat(dirToMake, function biddle_makedir_stat(err, stats) {
+                        var dirs   = [],
+                            ind    = 0,
+                            len    = 0,
+                            restat = function biggle_makedir_stat_restat() {
+                                fs
+                                    .stat(dirs.slice(0, ind + 1).join(path.sep), function biddle_makedir_stat_restat_callback(erra, stata) {
+                                        ind += 1;
+                                        if ((erra !== null && erra.toString().indexOf("no such file or directory") > 0) || (typeof erra === "object" && erra !== null && erra.code === "ENOENT")) {
+                                            return fs.mkdir(dirs.slice(0, ind).join(path.sep), function biddle_makedir_stat_restat_callback_mkdir(errb) {
+                                                if (errb !== null && errb.toString().indexOf("file already exists") < 0) {
+                                                    return errout(errb);
+                                                }
+                                                if (ind < len) {
+                                                    biggle_makedir_stat_restat();
+                                                } else {
+                                                    callback();
+                                                }
+                                            });
+                                        }
+                                        if (erra !== null && erra.toString().indexOf("file already exists") < 0) {
+                                            return errout(erra);
+                                        }
+                                        if (stata.isFile() === true) {
+                                            return errout("Destination directory, '" + input[2] + "', is a file.");
+                                        }
+                                        if (ind < len) {
+                                            biggle_makedir_stat_restat();
+                                        } else {
+                                            callback();
+                                        }
+                                    });
+                            };
+                        if ((err !== null && err.toString().indexOf("no such file or directory") > 0) || (typeof err === "object" && err !== null && err.code === "ENOENT")) {
+                            dirs = dirToMake.split(path.sep);
+                            len  = dirs.length;
+                            return restat();
+                        }
+                        if (err !== null && err.toString().indexOf("file already exists") < 0) {
+                            return errout(err);
+                        }
+                        if (stats.isFile() === true) {
+                            return errout("Destination directory, '" + dirToMake + "', is a file.");
+                        }
+                        callback();
+                    });
+            },
             readlist : function biddle_readlist() {
                 var list = "";
                 if (command === "publish" || (command === "list" && input[1] === "published")) {
@@ -117,7 +161,7 @@
                 } else if (command === "installed" || command === "status" || (command === "list" && input[1] === "installed")) {
                     list = "installed";
                 } else {
-                    return errout("Unqualified operation: readlist() but not published or installed.");
+                    return errout("Unqualified operation: readlist() but command is not published or installed.");
                 }
                 fs
                     .readFile(list + ".json", "utf8", function (err, fileData) {
@@ -133,49 +177,61 @@
                 return true;
             }
         },
-        tar       = function biddle_tar() {
+        tar       = function biddle_tar(fileData) {
             var tarball = function biddle_tar_tarball() {
-                //cjf - create bz2 czf - create gzip xjf - unpack bz2 xzf - unpack gzip
-                //
-                // windows - "tartool2_beta/tartool.exe cjf tar_name " + filepath linux   - "tar
-                // cjf tar_name " + filepath
                 var pak = "x",
                     opt = "j",
                     bz2 = "",
                     spc = "",
-                    cmd = "";
+                    cmd = "",
+                    publish = function biddle_tar_tarball_publish() {
+                        child(cmd, function biddle_tar_tarball_publish_child(err, stdout, stderr) {
+                            if (err !== null) {
+                                return errout(err);
+                            }
+                            if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
+                                return errout(stderr);
+                            }
+                            apps
+                                .hashCmd(bz2, function biddle_tar_tarball_publish_child_hash() {
+                                    apps.writeFile(data.hash, bz2.replace(".tar.bz2", ".hash"));
+                                    if (data.published[data.packjson.name] === undefined) {
+                                        data.published[data.packjson.name] = {};
+                                        data.published[data.packjson.name].versions = [];
+                                    }
+                                    if (data.published[data.packjson.name].directory === undefined) {
+                                        data.published[data.packjson.name].directory = data.address;
+                                    }
+                                    data.published[data.packjson.name].versions.push(data.packjson.version);
+                                    apps.writeFile(JSON.stringify(data.published), "published.json");
+                                });
+                            return stdout;
+                        });
+                    };
+                if (data.published[data.packjson.name] !== undefined && data.published[data.packjson.name].versions.indexOf(data.packjson.version) > -1) {
+                    return errout("Error: Attempted to publish " + data.packjson.name + " over existing version " + data.packjson.version);
+                }
                 if (data.command === "publish") {
                     pak = "c";
-                    bz2 = data.address + "_" + data.version + ".tar.bz2";
+                    bz2 = data.address + path.sep + data.packjson.name + "_" + data.packjson.version + ".tar.bz2";
                     spc = " ";
                 } else if (data.fileName.indexOf("tar.gz") > 0) {
                     opt = "z";
                 }
                 if (data.platform === "win32" || data.platform === "win64") {
-                    cmd = "7z a -ttar -so archive.tar " + input[1] + " | 7z a -si " + bz2;
+                    if (data.command === "publish") {
+                        cmd = "7z a -ttar -so archive.tar " + input[1] + " | 7z a -si " + bz2;
+                    }
                 } else {
                     cmd = "tar " + pak + opt + "f " + bz2 + spc + input[1];
                 }
-                child(cmd, function biddle_tar_tarball_child(err, stdout, stderr) {
-                    if (err !== null) {
-                        return errout(err);
-                    }
-                    if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
-                        return errout(stderr);
-                    }
-                    apps
-                        .hashCmd(bz2, function biddle_tar_tarball_child_hash() {
-                            apps.writeFile(data.hash, bz2.replace(".tar.bz2", ".hash"));
-                        });
-                    return stdout;
-                });
+                if (data.command === "publish") {
+                    apps.makedir(data.address, publish);
+                }
             };
             apps.getpjson(tarball);
         },
-        install   = function biddle_install(fileData) {
-            //child("tar ");
-        },
-        get       = function biddle_get(install) {
+        get       = function biddle_get() {
             var a        = (typeof input[1] === "string")
                     ? input[1].indexOf("s://")
                     : 0,
@@ -186,10 +242,15 @@
                         file += chunk;
                     });
                     res.on("end", function biddle_get_callback_end() {
-                        if (install === true) {
-                            install(file);
-                        } else {
+                        var writeit = function biddle_get_callback_end_writeit() {
                             apps.writeFile(file, data.address);
+                        };
+                        if (data.command === "install") {
+                            tar(file);
+                        } else if (typeof input[2] === "string" && input[2].length > 0) {
+                            apps.makedir(input[2], writeit);
+                        } else {
+                            apps.makedir(data.addres, writeit);
                         }
                     });
                     res.on("error", function biddle_get_callback_error(error) {
@@ -240,79 +301,27 @@
             return "publications" + path.sep + data.fileName;
         }
     }());
-    apps.writeFile = function biddle_writeFile(fileData, fileName, callback) {
-        var writing = function biddle_writeFile_writing() {
-            fs
-                .writeFile(fileName, fileData, function biddle_writeFile_writing_callback(err) {
-                    if (err !== null) {
-                        return errout(err);
+    apps.writeFile = function biddle_writeFile(fileData, fileName) {
+        fs
+            .writeFile(fileName, fileData, function biddle_writeFile_callback(err) {
+                if (err !== null) {
+                    return errout(err);
+                }
+                if (data.command === "get" || data.command === "publish") {
+                    if (data.command === "publish") {
+                        fileName = fileName.replace(".hash", ".tar.bz2");
                     }
-                    if (data.command === "get" || data.command === "publish") {
-                        if (data.command === "publish") {
-                            fileName = fileName.replace(".hash", ".tar.bz2");
-                        }
-                        fs
-                            .stat(fileName, function biddle_writeFile_writing_callback_getstat(errstat, stat) {
-                                if (errstat !== null) {
-                                    return errout(errstat);
-                                }
+                    fs
+                        .stat(fileName, function biddle_writeFile_callback_getstat(errstat, stat) {
+                            if (errstat !== null) {
+                                return errout(errstat);
+                            }
+                            if (fileName !== "published.json" && fileName !== "installed.json") {
                                 console.log("File " + fileName + " written at " + apps.commas(stat.size) + " bytes.");
-                            });
-                    }
-                });
-        };
-        if (typeof input[2] === "string" && input[2] !== "") {
-            fs
-                .stat(input[2], function biddle_writeFile_stat(err, stats) {
-                    var dirs   = [],
-                        ind    = 0,
-                        len    = 0,
-                        restat = function biggle_writeFile_stat_restat() {
-                            fs
-                                .stat(dirs.slice(0, ind + 1).join(path.sep), function biddle_writeFile_stat_restat_callback(erra, stata) {
-                                    ind += 1;
-                                    if ((erra !== null && erra.toString().indexOf("no such file or directory") > 0) || (typeof erra === "object" && erra !== null && erra.code === "ENOENT")) {
-                                        return fs.mkdir(dirs.slice(0, ind).join(path.sep), function biddle_writeFile_stat_restat_callback_mkdir(errb) {
-                                            if (errb !== null && errb.toString().indexOf("file already exists") < 0) {
-                                                return errout(errb);
-                                            }
-                                            if (ind < len) {
-                                                biggle_writeFile_stat_restat();
-                                            } else {
-                                                writing();
-                                            }
-                                        });
-                                    }
-                                    if (erra !== null && erra.toString().indexOf("file already exists") < 0) {
-                                        return errout(erra);
-                                    }
-                                    if (stata.isFile() === true) {
-                                        return errout("Destination directory, '" + input[2] + "', is a file.");
-                                    }
-                                    if (ind < len) {
-                                        biggle_writeFile_stat_restat();
-                                    } else {
-                                        writing();
-                                    }
-                                });
-                        };
-                    if ((err !== null && err.toString().indexOf("no such file or directory") > 0) || (typeof err === "object" && err !== null && err.code === "ENOENT")) {
-                        dirs = input[2]
-                            .replace(/\\/g, "/")
-                            .split("/");
-                        len  = dirs.length;
-                        return restat();
-                    }
-                    if (err !== null && err.toString().indexOf("file already exists") < 0) {
-                        return errout(err);
-                    }
-                    if (stats.isFile() === true) {
-                        return errout("Destination directory, '" + input[2] + "', is a file.");
-                    }
-                });
-        } else {
-            writing();
-        }
+                            }
+                        });
+                }
+            });
     };
     apps.help      = function biddle_help() {
         var file = "readme.md",
@@ -533,10 +542,8 @@
                 published: false
             },
             start = function biddle_init_start() {
-                if (data.command === "get") {
-                    get(false);
-                } else if (data.command === "install") {
-                    get(true);
+                if (data.command === "get" || data.command === "install") {
+                    get();
                 } else if (data.command === "publish") {
                     tar();
                 } else if (data.command === "hash") {
@@ -559,7 +566,7 @@
             }
             status.installed = true;
             parsed = JSON.parse(fileData);
-            data.installed = parsed.installed;
+            data.installed = parsed;
             if (status.published === true) {
                 start();
             }
@@ -571,7 +578,7 @@
             }
             status.published = true;
             parsed = JSON.parse(fileData);
-            data.published = parsed.published;
+            data.published = parsed;
             if (status.installed === true) {
                 start();
             }

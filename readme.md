@@ -26,10 +26,12 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
 * command **markdown** is complete
 * Work on **install** is blocked pending completion of **publish**
 * Work on **publish** is underway.
-  - First level of support will be just producing a tarball on various OSs and opening across OSs
+  - Tarball can be produced and written cross-OS.
+  - hash file is being written
+  - published.json is being updated
+  - Command appears minimally complete, but demands more testing
+  - A version *latest* must still be written
 * No work on advanced configurations has started.  This will likely wait until after an initial launch of very basic features
-  - Publish packages by version number
-  - Create a symlink for version *latest* that points to the latest versioned tarball
   - Allow restriction of named directories when creating a tarball so that production only packages don't have dev dependencies, build systems, unit tests, and so forth
   - Allow packages to specify where they will install to
 * Work on **status** is not started.  This command will compare an installed application's version against a published version to determine if out of date.
