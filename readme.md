@@ -34,6 +34,7 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
 * No work on advanced configurations has started.  This will likely wait until after an initial launch of very basic features
   - Allow restriction of named directories when creating a tarball so that production only packages don't have dev dependencies, build systems, unit tests, and so forth
   - Allow packages to specify where they will install to
+  - Allow a .biddlerc file for setting custom defaults
 * Work on **status** is not started.  This command will compare an installed application's version against a published version to determine if out of date.
   - Must allow an app name as an argument to manually check that application or *all* to check all installed applications
   - Status automation or intervals would be nice... such as checking app versions once a week and providing a message when out of date
@@ -44,6 +45,7 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
 * Work on **unpublish** command is blocked pending completion of **publish**.
   - Must delete the application
   - Must remove the application from the **list**
+* (not started) Allow quoted values from command line arguments in the case where an address contains spaces
 
 ## Windows
 The application [7-Zip](http://7-zip.org/) is required.  Once this is installed run the **windows** command to add 7-Zip to the Windows path.
@@ -99,8 +101,15 @@ You can also specify a custom word wrap limit.  The default is still 100.
     node biddle.js markdown applications/example/readme.md 80
 
 ### publish
-(not written yet)
-Writes a tar.bz2 file with version number to the publications directory.
+Writes a hash file and a tar.bz2 file with a version number to the publications directory or some other specified location.  Applications are required to have a file in their root directory named *package.json* with properties: *name* and *version*.
+
+Create a tarball in the default location: ./publications/myapplication
+
+    node biddle.js publish ../myapplication
+
+Publish to a custom location: ./myAlternateDirectory/myapplication
+
+    node biddle.js publish ../myapplication myAlternateDirectory
 
 ### status
 (not written yet)
