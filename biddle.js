@@ -12,11 +12,16 @@
             process.exit(1);
         },
         input     = (function biddle_input() {
-            var a = process.argv;
-            a.splice(0, 1);
-            if (a[0].indexOf("biddle") > 0) {
-                a.splice(0, 1);
+            var a = [],
+                b = 0,
+                c = process.argv.length;
+            if (process.argv[0].indexOf(path.sep + "node") === process.argv[0].length - 5) {
+                b = 1;
             }
+            do {
+                a.push(process.argv[b]);
+                b += 1;
+            } while (b < c);
             if (a.length < 1) {
                 a = ["", "", ""];
             }
@@ -24,14 +29,19 @@
             return a;
         }()),
         data      = {
+            abspath  : (function biddle_abspath() {
+                var absarr  = input[0].split(path.sep);
+                absarr.pop();
+                return absarr.join(path.sep) + path.sep;
+            }()),
             address  : "",
-            command  : input[0].toLowerCase(),
+            command  : input[1].toLowerCase(),
             fileName : (function biddle_fileName() {
                 var paths = [];
-                if (input[1] === undefined) {
+                if (input[2] === undefined) {
                     return errout("Error: unrecognized command '" + command + "'");
                 }
-                paths = input[1].split(path.sep);
+                paths = input[2].split(path.sep);
                 if (paths[paths.length - 1].length > 0) {
                     return paths[paths.length - 1];
                 }
@@ -69,7 +79,7 @@
                 return arr.join("");
             },
             getpjson : function biddle_getpjson(callback) {
-                var file = input[1].replace(/(\/|\\)$/, "") + path.sep + "package.json";
+                var file = input[2].replace(/(\/|\\)$/, "") + path.sep + "package.json";
                 fs.readFile(file, "utf8", function biddle_getpjson_callback(err, fileData) {
                     if (err !== null && err !== undefined) {
                         return errout(err);
@@ -82,7 +92,7 @@
                 var cmd = "";
                 if (data.platform === "darwin") {
                     cmd = "shasum -a 512 " + filepath;
-                } else if (data.platform === "win32" || data.platform === "win64") {
+                } else if (data.platform === "win32") {
                     cmd = "certUtil -hashfile " + filepath + " SHA512";
                 } else {
                     cmd = "sha512sum " + filepath;
@@ -131,7 +141,7 @@
                                             return errout(erra);
                                         }
                                         if (stata.isFile() === true) {
-                                            return errout("Destination directory, '" + input[2] + "', is a file.");
+                                            return errout("Destination directory, '" + input[3] + "', is a file.");
                                         }
                                         if (ind < len) {
                                             biggle_makedir_stat_restat();
@@ -156,9 +166,9 @@
             },
             readlist : function biddle_readlist() {
                 var list = "";
-                if (command === "publish" || (command === "list" && input[1] === "published")) {
+                if (command === "publish" || (command === "list" && input[2] === "published")) {
                     list = "published";
-                } else if (command === "installed" || command === "status" || (command === "list" && input[1] === "installed")) {
+                } else if (command === "installed" || command === "status" || (command === "list" && input[2] === "installed")) {
                     list = "installed";
                 } else {
                     return errout("Unqualified operation: readlist() but command is not published or installed.");
@@ -213,17 +223,17 @@
                 }
                 if (data.command === "publish") {
                     pak = "c";
-                    bz2 = data.address + path.sep + data.packjson.name + "_" + data.packjson.version + ".tar.bz2";
+                    bz2 = data.address + data.packjson.name + "_" + data.packjson.version + ".tar.bz2";
                     spc = " ";
                 } else if (data.fileName.indexOf("tar.gz") > 0) {
                     opt = "z";
                 }
-                if (data.platform === "win32" || data.platform === "win64") {
+                if (data.platform === "win32") {
                     if (data.command === "publish") {
-                        cmd = "7z a -ttar -so archive.tar " + input[1] + " | 7z a -si " + bz2;
+                        cmd = "7z a -ttar -so archive.tar " + input[2] + " | 7z a -si " + bz2;
                     }
                 } else {
-                    cmd = "tar " + pak + opt + "f " + bz2 + spc + input[1];
+                    cmd = "tar " + pak + opt + "f " + bz2 + spc + input[2];
                 }
                 if (data.command === "publish") {
                     apps.makedir(data.address, publish);
@@ -232,8 +242,8 @@
             apps.getpjson(tarball);
         },
         get       = function biddle_get() {
-            var a        = (typeof input[1] === "string")
-                    ? input[1].indexOf("s://")
+            var a        = (typeof input[2] === "string")
+                    ? input[2].indexOf("s://")
                     : 0,
                 file     = "",
                 callback = function biddle_get_callback(res) {
@@ -243,14 +253,14 @@
                     });
                     res.on("end", function biddle_get_callback_end() {
                         var writeit = function biddle_get_callback_end_writeit() {
-                            apps.writeFile(file, data.address);
+                            apps.writeFile(file, data.address + data.fileName);
                         };
                         if (data.command === "install") {
                             tar(file);
-                        } else if (typeof input[2] === "string" && input[2].length > 0) {
-                            apps.makedir(input[2], writeit);
+                        } else if (typeof input[3] === "string" && input[3].length > 0) {
+                            apps.makedir(input[3], writeit);
                         } else {
-                            apps.makedir(data.addres, writeit);
+                            apps.makedir(data.address, writeit);
                         }
                     });
                     res.on("error", function biddle_get_callback_error(error) {
@@ -260,9 +270,9 @@
                     });
                 };
             if (a > 0 && a < 10) {
-                https.get(input[1], callback);
+                https.get(input[2], callback);
             } else {
-                http.get(input[1], callback);
+                http.get(input[2], callback);
             }
         },
         windows   = function biddle_windows() {
@@ -291,14 +301,14 @@
             });
         };
     data.address   = (function biddle_address() {
-        if (typeof input[2] === "string") {
-            return input[2] + path.sep + data.fileName;
+        if (typeof input[3] === "string") {
+            return input[3];
         }
         if (data.command === "get") {
-            return "downloads" + path.sep + data.fileName;
+            return data.abspath + "downloads" + path.sep;
         }
         if (data.command === "publish") {
-            return "publications" + path.sep + data.fileName;
+            return data.abspath + "publications" + path.sep;
         }
     }());
     apps.writeFile = function biddle_writeFile(fileData, fileName) {
@@ -325,10 +335,10 @@
     };
     apps.help      = function biddle_help() {
         var file = "readme.md",
-            size = input[1];
-        if (data.command === "markdown") {
-            file = input[1];
             size = input[2];
+        if (data.command === "markdown") {
+            file = input[2];
+            size = input[3];
         }
         fs
             .readFile(file, "utf8", function biddle_input_readme(err, readme) {
@@ -548,7 +558,7 @@
                     tar();
                 } else if (data.command === "hash") {
                     apps
-                        .hashCmd(input[1], function () {
+                        .hashCmd(input[2], function () {
                             console.log(data.hash);
                         });
                 } else if (data.command === "help" || data.command === "" || data.command === undefined || data.command === "?" || data.command === "markdown") {
@@ -559,7 +569,7 @@
                     console.log("Error: unrecognized command '" + data.command + "'");
                 }
             };
-        fs.readFile("installed.json", function biddle_init_installed(err, fileData) {
+        fs.readFile(data.abspath + "installed.json", function biddle_init_installed(err, fileData) {
             var parsed = {};
             if (err !== null && err !== undefined) {
                 return errout(err);
@@ -571,7 +581,7 @@
                 start();
             }
         });
-        fs.readFile("published.json", function biddle_init_published(err, fileData) {
+        fs.readFile(data.abspath + "published.json", function biddle_init_published(err, fileData) {
             var parsed = {};
             if (err !== null && err !== undefined) {
                 return errout(err);
