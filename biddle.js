@@ -8,15 +8,19 @@
         http      = require("http"),
         https     = require("https"),
         errout    = function biddle_errout(errData) {
+            var error = (typeof errData.error !== "string" || errData.error.toString().indexOf("Error: ") === 0)
+                ? errData.error
+                : "Error: " + errData.error;
             console.log("Function: " + errData.name);
-            console.log("Error: " + errData.error);
+            console.log(error);
             process.exit(1);
         },
         input     = (function biddle_input() {
             var a = [],
                 b = 0,
-                c = process.argv.length;
-            if (process.argv[0].indexOf(path.sep + "node") === process.argv[0].length - 5) {
+                c = process.argv.length,
+                paths = process.argv[0].split(path.sep);
+            if (paths[paths.length - 1] === "node") {
                 b = 1;
             }
             do {
@@ -231,30 +235,27 @@
                 return true;
             }
         },
-        tar       = function biddle_tar(fileData) {
-            var tarball = function biddle_tar_tarball() {
-                var pak = "x",
-                    opt = "j",
-                    bz2 = "",
-                    spc = "",
-                    cmd = "",
-                    publish = function biddle_tar_tarball_publish() {
-                        child(cmd, function biddle_tar_tarball_publish_child(err, stdout, stderr) {
+        zip       = function biddle_zip(fileData) {
+            var zipfunction = function biddle_zip_zipfunction() {
+                var zipfile = "",
+                    cmd     = "",
+                    publish = function biddle_zip_zipfunction_publish() {
+                        child(cmd, function biddle_zip_zipfunction_publish_child(err, stdout, stderr) {
                             if (err !== null) {
                                 return errout({
-                                    name: "biddle_tar_tarball_publish_child",
+                                    name: "biddle_zip_zipfunction_publish_child",
                                     error: err
                                 });
                             }
                             if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
                                 return errout({
-                                    name: "biddle_tar_tarball_publish_child",
+                                    name: "biddle_zip_zipfunction_publish_child",
                                     error: stderr
                                 });
                             }
                             apps
-                                .hashCmd(bz2, function biddle_tar_tarball_publish_child_hash() {
-                                    apps.writeFile(data.hash, bz2.replace(".tar.bz2", ".hash"));
+                                .hashCmd(zipfile, function biddle_zip_zipfunction_publish_child_hash() {
+                                    apps.writeFile(data.hash, zipfile.replace(".zip", ".hash"));
                                     if (data.published[data.packjson.name] === undefined) {
                                         data.published[data.packjson.name] = {};
                                         data.published[data.packjson.name].versions = [];
@@ -270,29 +271,31 @@
                     };
                 if (data.published[data.packjson.name] !== undefined && data.published[data.packjson.name].versions.indexOf(data.packjson.version) > -1) {
                     return errout({
-                        name: "biddle_tar_tarball",
+                        name: "biddle_zip_zipfunction",
                         error: "Attempted to publish " + data.packjson.name + " over existing version " + data.packjson.version
                     });
                 }
                 if (data.command === "publish") {
-                    pak = "c";
-                    bz2 = data.address + data.packjson.name + "_" + data.packjson.version + ".tar.bz2";
-                    spc = " ";
-                } else if (data.fileName.indexOf("tar.gz") > 0) {
-                    opt = "z";
+                    zipfile = data.address + data.packjson.name + "_" + data.packjson.version + ".zip";
                 }
                 if (data.platform === "win32") {
                     if (data.command === "publish") {
-                        cmd = "7z a -ttar -so archive.tar " + input[2] + " | 7z a -si " + bz2;
+                        cmd = "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('" + input[2] + "', '" + zipfile + "'); }\"";
+                    } else {
+                        cmd = "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('" + zipfile + "', '" + input[2] + "'); }\"";
                     }
                 } else {
-                    cmd = "tar " + pak + opt + "f " + bz2 + spc + input[2];
+                    if (data.command === "publish") {
+                        cmd = "zip -r9yq " + zipfile + " " + input[2];
+                    } else {
+                        cmd = "";
+                    }
                 }
                 if (data.command === "publish") {
                     apps.makedir(data.address, publish);
                 }
             };
-            apps.getpjson(tarball);
+            apps.getpjson(zipfunction);
         },
         get       = function biddle_get() {
             var a        = (typeof input[2] === "string")
@@ -316,7 +319,7 @@
                                 biddle_get();
                             }
                         } else if (data.command === "install") {
-                            tar(file);
+                            zip(file);
                         } else if (typeof input[3] === "string" && input[3].length > 0) {
                             apps.makedir(input[3], writeit);
                         } else {
@@ -337,49 +340,6 @@
         },
         uninstall = function biddle_uninstall() {
 
-        },
-        windows   = function biddle_windows() {
-            if (process.platform !== "win32") {
-                return errout({
-                    name: "biddle_windows",
-                    error: "This is not Windows.  The command is ignored."
-                });
-            }
-            child("path", function biddle_windows_path(errpath, stdpath, stderrpath) {
-                if (errpath !== null) {
-                    return errout({
-                        name: "biddle_windows_path",
-                        error: errpath
-                    });
-                }
-                if (stderrpath !== null) {
-                    return errout({
-                        name: "biddle_windows_path",
-                        error: stderrpath
-                    });
-                }
-                if (stdpath.toLowerCase().indexOf("7-zip") > 0) {
-                    console.log("It appears the path is already modified to include 7-Zip.  I will not modify it " +
-                            "again.");
-                } else {
-                    child("set PATH=%PATH%;c:\\Program Files\\7-Zip", function biddle_windows_path_setpath(errsetpath, stdsetpath, stderrsetpath) {
-                        if (errsetpath !== null) {
-                            return errout({
-                                name: "biddle_windows_path_setpath",
-                                error: errsetpath
-                            });
-                        }
-                        if (stderrsetpath !== null) {
-                            return errout({
-                                name: "biddle_windows_path_setpath",
-                                error: stderrsetpath
-                            });
-                        }
-                        console.log("Windows PATH modified!");
-                        return stdsetpath;
-                    });
-                }
-            });
         };
     data.address   = (function biddle_address() {
         if (typeof input[3] === "string") {
@@ -403,7 +363,7 @@
                 }
                 if (data.command === "get" || data.command === "publish") {
                     if (data.command === "publish") {
-                        fileName = fileName.replace(".hash", ".tar.bz2");
+                        fileName = fileName.replace(".hash", ".zip");
                     }
                     fs
                         .stat(fileName, function biddle_writeFile_callback_getstat(errstat, stat) {
@@ -645,7 +605,7 @@
                 if (data.command === "get" || data.command === "install") {
                     get();
                 } else if (data.command === "publish") {
-                    tar();
+                    zip();
                 } else if (data.command === "unpublish") {
                     uninstall();
                 } else if (data.command === "hash") {
@@ -655,8 +615,6 @@
                         });
                 } else if (data.command === "help" || data.command === "" || data.command === undefined || data.command === "?" || data.command === "markdown") {
                     apps.help();
-                } else if (data.command === "windows") {
-                    windows();
                 } else {
                     errout({
                         name: "biddle_init_start",

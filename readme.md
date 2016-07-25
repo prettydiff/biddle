@@ -47,9 +47,6 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
   - Must remove the application from the **list**
 * (not started) Allow quoted values from command line arguments in the case where an address contains spaces
 
-## Windows
-The application [7-Zip](http://7-zip.org/) is required.  Once this is installed run biddle's **windows** command to add 7-Zip to the Windows path.
-
 ## Supported commands
 Commands are the third command line argument, or second if the optional *node* argument is absent.  Commands are case insensitive, but values and local paths are case sensitive.  All local address are either absolute from the root or relative from the current working directory.
 
@@ -123,12 +120,6 @@ Will delete an installed application by name and remove the application from the
 (not written yet)
 Will delete a published application by name and remove the application from the published list.
 
-### windows
-Modifies the Windows path variable so that `tar` becomes globally available from the command line.  This command only needs to be run once.
-
-    node biddle.js windows
-
 ## Dependencies
 
 * This application is written in JavaScript and requires [Node.js](https://nodejs.org/en/).
-* [7-Zip](http://www.7-zip.org/) is required for Windows users to create and read tar formats used by commands **install** and **publish**.
