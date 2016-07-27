@@ -8,11 +8,11 @@
 0.0.3
 
 ## About
-This application is a cross-OS solution to creating tarballs for distribution and fetching files via HTTP(S).  The project's goal is to provide a universal application distribution utility that is language agnostic, operating system independent, and platform independent.  The only additional requirement for distributing application packages is online storage on a web server.  This application provides all the utilities to retrieve, bundle, and unpackage applications.
+This application is a cross-OS solution to creating zip files for distribution and fetching files via HTTP(S).  The project's goal is to provide a universal application distribution utility that is language agnostic, operating system independent, and platform independent.  The only additional requirement for distributing application packages is online storage on a web server.  This application provides all the utilities to retrieve, bundle, and unpackage applications.
 
 biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but seeks to accomplish a few additional goals:
 
-* *integrity* - Downloaded packages will perform a hash comparison before they are unpackaged.  If the hashes don't match the tarball will be saved in the downloads directory awaiting a human touch.
+* *integrity* - Downloaded packages will perform a hash comparison before they are unpackaged.  If the hashes don't match the zip file will be saved in the downloads directory awaiting a human touch.
 * *autonomy* - There is no central authority here.  Host your own publications and manage them as you please with any name you choose.
 * *management* - There is no dependency hell here.  Dependency management will not be automated, but a means to manage and review the status of all installed/published packages is provided.
 * *freedom* - biddle will work everywhere Node.js runs.  It can be used with any application written in any language whether binary or text.
@@ -24,15 +24,11 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
 * command **hash** is complete
 * command **help** is complete
 * command **markdown** is complete
-* Work on **install** is blocked pending completion of **publish**
-* Work on **publish** is underway.
-  - Tarball can be produced and written cross-OS.
-  - hash file is being written
-  - published.json is being updated
-  - Command appears minimally complete, but demands more testing
-  - A version *latest* must still be written
+* Work on **publish** is complete
+* Work on **unpublish** is complete
+* Work on **install** is not started and up next
 * No work on advanced configurations has started.  This will likely wait until after an initial launch of very basic features
-  - Allow restriction of named directories when creating a tarball so that production only packages don't have dev dependencies, build systems, unit tests, and so forth
+  - Allow restriction of named directories when creating a custom named zip so that production only packages don't have dev dependencies, build systems, unit tests, and so forth
   - Allow packages to specify where they will install to
   - Allow a .biddlerc file for setting custom defaults
 * Work on **status** is not started.  This command will compare an installed application's version against a published version to determine if out of date.
@@ -40,9 +36,6 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
   - Status automation or intervals would be nice... such as checking app versions once a week and providing a message when out of date
 * Work on **list** command is blocked pending completion of **publish**.  This command will list installed/published applications by name and version and will know of their publication location and installation directory.
 * Work on **uninstall** command is blocked pending completion of **install**.
-  - Must delete the application
-  - Must remove the application from the **list**
-* Work on **unpublish** command is blocked pending completion of **publish**.
   - Must delete the application
   - Must remove the application from the **list**
 * (not started) Allow quoted values from command line arguments in the case where an address contains spaces
@@ -61,7 +54,7 @@ Download a file to an alternate location.
 
 ### hash
 Prints to console a SHA512 hash against a local resource.
-    node biddle.js hash downloads/myfile.tar.bz2
+    node biddle.js hash downloads/myfile.zip
 
 ### help
 Prints the readme.md file contents to console in a human friendly way.
@@ -80,7 +73,7 @@ Set a custom word wrap limit.
 
 ### install
 (not written yet)
-Downloads the requested resource, but decompresses and unpackages the tarball before writing files to disk.
+Downloads the requested resource, but decompresses and unpackages the zip before writing files to disk.
 
 ### list
 (not writte yet)
@@ -98,9 +91,9 @@ You can also specify a custom word wrap limit.  The default is still 100.
     node biddle.js markdown applications/example/readme.md 80
 
 ### publish
-Writes a hash file and a tar.bz2 file with a version number to the publications directory or some other specified location.  Applications are required to have a file in their root directory named *package.json* with properties: *name* and *version*.
+Writes a hash file and a zip file with a version number to the publications directory or some other specified location.  Applications are required to have a file in their root directory named *package.json* with properties: *name* and *version*.
 
-Create a tarball in the default location: ./publications/myapplication
+Create a zip in the default location: ./publications/myapplication
 
     node biddle.js publish ../myapplication
 

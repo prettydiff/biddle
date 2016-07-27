@@ -40,7 +40,9 @@
                 return absarr.join(path.sep) + path.sep;
             }()),
             address  : "",
-            command  : input[1].toLowerCase(),
+            command  : (input.length > 1)
+                ? input[1].toLowerCase()
+                : "",
             fileName : "",
             hash     : "",
             installed: {},
@@ -86,7 +88,7 @@
             },
             getpjson : function biddle_getpjson(callback) {
                 var file = input[2].replace(/(\/|\\)$/, "") + path.sep + "package.json";
-                fs.readFile(file, "utf8", function biddle_getpjson_callback(err, fileData) {
+                fs.readFile(file, "utf8", function biddle_getpjson_readfile(err, fileData) {
                     if (err !== null && err !== undefined) {
                         return errout({
                             name: "biddle_getpjson_callback",
@@ -94,6 +96,32 @@
                         });
                     }
                     data.packjson = JSON.parse(fileData);
+                    if (data.packjson.name === undefined) {
+                        return errout({
+                            name: "biddle_getpjson_readfile",
+                            error: "The package.json file is missing the required \x1B[31mname\x1B[39m property."
+                        });
+                    }
+                    if (data.packjson.version === undefined) {
+                        return errout({
+                            name: "biddle_getpjson_readfile",
+                            error: "The package.json file is missing the required \x1B[31mversion\x1B[39m property."
+                        });
+                    }
+                    if (typeof data.packjson.name !== "string") {
+                        if (typeof data.packjson.name === "object" && data.packjson.name !== null) {
+                            data.packjson.name = JSON.stringify(data.packjson.name);
+                        } else {
+                            data.packjson.name = String(data.packjson.name);
+                        }
+                    }
+                    if (typeof data.packjson.version !== "string") {
+                        if (typeof data.packjson.version === "object" && data.packjson.version !== null) {
+                            data.packjson.version = JSON.stringify(data.packjson.version);
+                        } else {
+                            data.packjson.version = String(data.packjson.version);
+                        }
+                    }
                     callback();
                 });
             },
@@ -176,6 +204,9 @@
                             };
                         if ((err !== null && err.toString().indexOf("no such file or directory") > 0) || (typeof err === "object" && err !== null && err.code === "ENOENT")) {
                             dirs = dirToMake.split(path.sep);
+                            if (dirs[0] === "") {
+                                ind += 1;
+                            }
                             len  = dirs.length;
                             return restat();
                         }
@@ -219,17 +250,25 @@
                         data.status[list] = true;
                     });
             },
-            rmrecurse: function biddle_rmrecurse(dirToKill) {
-                var readdir = function biddle_rmrecurse_read(dirToRead) {
-                    fs.readdir(dirToRead, function biddle_rmrecurse_read_readdir(err, files) {
-                        if (err !== null) {
-                            return errout({
-                                name: "biddle_rmrecurse_read_readdir",
-                                error: err
-                            });
-                        }
-                    });
-                };
+            rmrecurse: function biddle_rmrecurse(dirToKill, callback) {
+                var cmd = (process.platform === "win32")
+                    ? "powershell.exe -nologo -noprofile -command \"rm " + dirToKill + " -r -force\""
+                    : "rm -rf " + dirToKill;
+                child(cmd, function biddle_rmrecurse_child(err, stdout, stderrout) {
+                    if (err !== null) {
+                        return errout({
+                            name: "biddle_rmrecurse_child",
+                            error: err
+                        });
+                    }
+                    if (stderrout !== null && stderrout !== "") {
+                        return errout({
+                            name: "biddle_rmrecurse_child",
+                            error: stderrout
+                        });
+                    }
+                    callback();
+                });
             },
             writeFile: function biddle_initWriteFile() {
                 return true;
@@ -238,36 +277,53 @@
         zip       = function biddle_zip(fileData) {
             var zipfunction = function biddle_zip_zipfunction() {
                 var zipfile = "",
+                    latestfile  = "",
                     cmd     = "",
+                    latestcmd = "",
                     publish = function biddle_zip_zipfunction_publish() {
-                        child(cmd, function biddle_zip_zipfunction_publish_child(err, stdout, stderr) {
-                            if (err !== null) {
-                                return errout({
-                                    name: "biddle_zip_zipfunction_publish_child",
-                                    error: err
-                                });
-                            }
-                            if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
-                                return errout({
-                                    name: "biddle_zip_zipfunction_publish_child",
-                                    error: stderr
-                                });
-                            }
-                            apps
-                                .hashCmd(zipfile, function biddle_zip_zipfunction_publish_child_hash() {
-                                    apps.writeFile(data.hash, zipfile.replace(".zip", ".hash"));
-                                    if (data.published[data.packjson.name] === undefined) {
-                                        data.published[data.packjson.name] = {};
-                                        data.published[data.packjson.name].versions = [];
-                                    }
-                                    if (data.published[data.packjson.name].directory === undefined) {
-                                        data.published[data.packjson.name].directory = data.address;
-                                    }
-                                    data.published[data.packjson.name].versions.push(data.packjson.version);
-                                    apps.writeFile(JSON.stringify(data.published), "published.json");
-                                });
-                            return stdout;
-                        });
+                        var childfunc = function biddle_zip_zipfunctions_publish_childfunc(zipfilename, zipcmd, writejson) {
+                            child(zipcmd, function biddle_zip_zipfunction_publish_childfunc_child(err, stdout, stderr) {
+                                if (err !== null) {
+                                    return errout({
+                                        name: "biddle_zip_zipfunction_publish_child",
+                                        error: err
+                                    });
+                                }
+                                if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
+                                    return errout({
+                                        name: "biddle_zip_zipfunction_publish_child",
+                                        error: stderr
+                                    });
+                                }
+                                apps
+                                    .hashCmd(zipfilename, function biddle_zip_zipfunction_publish_child_hash() {
+                                        apps.writeFile(data.hash, zipfilename.replace(".zip", ".hash"), function biddle_zip_zipfunction_publish_child_hash_writehash() {
+                                            console.log("Hash file " + zipfilename.replace(".zip", ".hash") + " written.");
+                                        });
+                                        if (writejson === true) {
+                                            data.published[data.packjson.name].versions.push(data.packjson.version);
+                                            apps.writeFile(JSON.stringify(data.published), "published.json", function biddle_zip_zipfunction_publish_child_hash_writepub() {
+                                                return true;
+                                            });
+                                        }
+                                    });
+                                return stdout;
+                            });
+                        };
+                        if (data.published[data.packjson.name] === undefined) {
+                            data.published[data.packjson.name] = {};
+                            data.published[data.packjson.name].versions = [];
+                        }
+                        if (data.published[data.packjson.name].directory === undefined) {
+                            data.published[data.packjson.name].directory = data.address;
+                        }
+                        if (data.packjson.version.indexOf("beta") < 0 && data.packjson.version.indexOf("alpha") < 0) {
+                            latestfile = zipfile.replace(data.packjson.version + ".zip", "latest.zip");
+                            latestcmd = cmd.replace(data.packjson.version + ".zip", "latest.zip");
+                            data.published[data.packjson.name].latest = data.packjson.version;
+                            childfunc(latestfile, latestcmd, false);
+                        }
+                        childfunc(zipfile, cmd, true);
                     };
                 if (data.published[data.packjson.name] !== undefined && data.published[data.packjson.name].versions.indexOf(data.packjson.version) > -1) {
                     return errout({
@@ -276,6 +332,9 @@
                     });
                 }
                 if (data.command === "publish") {
+                    if (data.address.indexOf(path.sep + "publications") + 1 === data.address.length - (path.sep + "publications").length) {
+                        data.address = data.address + data.packjson.name + path.sep;
+                    }
                     zipfile = data.address + data.packjson.name + "_" + data.packjson.version + ".zip";
                 }
                 if (data.platform === "win32") {
@@ -288,7 +347,7 @@
                     if (data.command === "publish") {
                         cmd = "zip -r9yq " + zipfile + " " + input[2];
                     } else {
-                        cmd = "";
+                        cmd = "unzip -oq " + zipfile + " -d " + input[2];
                     }
                 }
                 if (data.command === "publish") {
@@ -309,7 +368,9 @@
                     });
                     res.on("end", function biddle_get_callback_end() {
                         var writeit = function biddle_get_callback_end_writeit() {
-                            apps.writeFile(file, data.address + data.fileName);
+                            apps.writeFile(file, data.address + data.fileName, function biddle_get_callback_end_writeit_callback() {
+                                return true;
+                            });
                         };
                         if (res.statusCode !== 200) {
                             console.log(res.statusCode + " " + http.STATUS_CODES[res.statusCode] + ", for request " + input[2]);
@@ -338,8 +399,30 @@
                 http.get(input[2], callback);
             }
         },
-        uninstall = function biddle_uninstall() {
-
+        unpublish = function biddle_unpublish() {
+            var app = data.published[input[2]],
+                flag = {
+                    dir: false,
+                    pub: false
+                };
+            if (app === undefined) {
+                return console.log("Attempted to unpublish \x1B[36m" + input[2] + "\x1B[39m which is \x1B[1m\x1B[31mabsent\x1B[39m\x1B[0m from the list of published applications. Try using the command \x1B[32mbiddle list published\x1B[39m.");
+            }
+            apps.rmrecurse(app.directory, function biddle_unpublish_callback() {
+                apps.rmrecurse(app.directory, function biddle_unpublish_callback_rmrecurse() {
+                    flag.dir = true;
+                    if (flag.pub === true) {
+                        console.log("App \x1B[36m" + input[2] + "\x1B[39m is unpublished.");
+                    }
+                });
+                delete data.published[input[2]];
+                apps.writeFile(JSON.stringify(data.published), "published.json", function biddle_unpublish_callback_writeFile() {
+                    flag.pub = true;
+                    if (flag.dir === true) {
+                        console.log("App \x1B[36m" + input[2] + "\x1B[39m is unpublished.");
+                    }
+                });
+            });
         };
     data.address   = (function biddle_address() {
         if (typeof input[3] === "string") {
@@ -352,7 +435,13 @@
             return data.abspath + "publications" + path.sep;
         }
     }());
-    apps.writeFile = function biddle_writeFile(fileData, fileName) {
+    apps.writeFile = function biddle_writeFile(fileData, fileName, callback) {
+        var callbacker = function biddle_writeFile_callbacker(size) {
+            if (size > 0 && fileName !== "published.json" && fileName !== "installed.json") {
+                console.log("File " + fileName + " written at " + apps.commas(size) + " bytes.");
+            }
+            callback();
+        };
         fs
             .writeFile(fileName, fileData, function biddle_writeFile_callback(err) {
                 if (err !== null) {
@@ -373,10 +462,10 @@
                                     error: errstat
                                 });
                             }
-                            if (fileName !== "published.json" && fileName !== "installed.json") {
-                                console.log("File " + fileName + " written at " + apps.commas(stat.size) + " bytes.");
-                            }
+                            callbacker(stat.size);
                         });
+                } else {
+                    callbacker(0);
                 }
             });
     };
@@ -607,7 +696,7 @@
                 } else if (data.command === "publish") {
                     zip();
                 } else if (data.command === "unpublish") {
-                    uninstall();
+                    unpublish();
                 } else if (data.command === "hash") {
                     apps
                         .hashCmd(input[2], function () {
@@ -615,10 +704,15 @@
                         });
                 } else if (data.command === "help" || data.command === "" || data.command === undefined || data.command === "?" || data.command === "markdown") {
                     apps.help();
+                } else if (isNaN(data.command) === false) {
+                    input[1] = "help";
+                    input[2] = data.command;
+                    data.command = "help";
+                    apps.help();
                 } else {
                     errout({
                         name: "biddle_init_start",
-                        error: "unrecognized command '" + data.command + "'"
+                        error: "unrecognized command, \x1B[31m" + data.command + "\x1B[39m"
                     });
                 }
             };
