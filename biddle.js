@@ -92,7 +92,7 @@
                 fs.readFile(file, "utf8", function biddle_getpjson_readfile(err, fileData) {
                     if (err !== null && err !== undefined) {
                         return errout({
-                            name: "biddle_getpjson_callback",
+                            name: "biddle_getpjson_readFile",
                             error: err
                         });
                     }
