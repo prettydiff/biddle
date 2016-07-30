@@ -231,9 +231,9 @@
             },
             readlist : function biddle_readlist() {
                 var list = "";
-                if (command === "publish" || (command === "list" && input[2] === "published")) {
+                if (data.command === "publish" || (data.command === "list" && input[2] === "published")) {
                     list = "published";
-                } else if (command === "installed" || command === "status" || (command === "list" && input[2] === "installed")) {
+                } else if (data.command === "installed" || data.command === "status" || (data.command === "list" && input[2] === "installed")) {
                     list = "installed";
                 } else {
                     return errout({
@@ -272,116 +272,83 @@
                         });
                     }
                     callback();
+                    return stdout;
                 });
             },
             writeFile: function biddle_initWriteFile() {
                 return true;
             }
         },
-        zip       = function biddle_zip(fileData) {
-            var zipfunction = function biddle_zip_zipfunction() {
-                var zipfile = "",
-                    latestfile  = "",
-                    cmd     = "",
-                    latestcmd = "",
-                    installit = function biddle_zip_zipfunction_installit() {
-                        var unzip = function biddle_zip_zipfunction_installit_unzip() {
-                            child(zipcmd, function biddle_zip_zipfunction_installit_unzip_childfunc(err, stdout, stderr) {
-                                if (err !== null) {
-                                    return errout({
-                                        name: "biddle_zip_zipfunction_installit_childfunc",
-                                        error: err
-                                    });
-                                }
-                                if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
-                                    return errout({
-                                        name: "biddle_zip_zipfunction_installit_childfunc",
-                                        error: stderr
-                                    });
-                                }
+        zip       = function biddle_zip(callback) {
+            var zipfile = "",
+                latestfile  = "",
+                cmd     = "",
+                latestcmd = "",
+                publength = "publications".length,
+                childfunc = function biddle_zip_childfunc(zipfilename, zipcmd, writejson) {
+                    child(zipcmd, function biddle_zip_childfunc_child(err, stdout, stderr) {
+                        if (err !== null) {
+                            return errout({
+                                name: "biddle_publish_zip_childfunc_child",
+                                error: err
                             });
-                        };
-                        //need to hash zip file, compare hashes, and then if hashes match unzip
-                        //if hashes don't match move to downloads
-                    },
-                    publishit = function biddle_zip_zipfunction_publishit() {
-                        var childfunc = function biddle_zip_zipfunctions_publishit_childfunc(zipfilename, zipcmd, writejson) {
-                            child(zipcmd, function biddle_zip_zipfunction_publishit_childfunc_child(err, stdout, stderr) {
-                                if (err !== null) {
-                                    return errout({
-                                        name: "biddle_zip_zipfunction_publishit_childfunc_child",
-                                        error: err
-                                    });
-                                }
-                                if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
-                                    return errout({
-                                        name: "biddle_zip_zipfunction_publishit_childfunc_child",
-                                        error: stderr
-                                    });
-                                }
-                                apps
-                                    .hashCmd(zipfilename, "hashFile", function biddle_zip_zipfunction_publishit_childfunc_child_hash() {
-                                        apps.writeFile(data.hashFile, zipfilename.replace(".zip", ".hash"), function biddle_zip_zipfunction_publishit_childfunc_child_hash_writehash() {
-                                            console.log("Hash file " + zipfilename.replace(".zip", ".hash") + " written.");
-                                        });
-                                        if (writejson === true) {
-                                            data.published[data.packjson.name].versions.push(data.packjson.version);
-                                            apps.writeFile(JSON.stringify(data.published), "published.json", function biddle_zip_zipfunction_publishit_childfunc_child_hash_writepub() {
-                                                return true;
-                                            });
-                                        }
-                                    });
-                                return stdout;
+                        }
+                        if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
+                            return errout({
+                                name: "biddle_publish_zip_childfunc_child",
+                                error: stderr
                             });
-                        };
-                        if (data.published[data.packjson.name] === undefined) {
-                            data.published[data.packjson.name] = {};
-                            data.published[data.packjson.name].versions = [];
                         }
-                        if (data.published[data.packjson.name].directory === undefined) {
-                            data.published[data.packjson.name].directory = data.address.target;
-                        }
-                        if (data.packjson.version.indexOf("beta") < 0 && data.packjson.version.indexOf("alpha") < 0) {
-                            latestfile = zipfile.replace(data.packjson.version + ".zip", "latest.zip");
-                            latestcmd = cmd.replace(data.packjson.version + ".zip", "latest.zip");
-                            data.published[data.packjson.name].latest = data.packjson.version;
-                            childfunc(latestfile, latestcmd, false);
-                        }
-                        childfunc(zipfile, cmd, true);
-                    };
-                if (data.published[data.packjson.name] !== undefined && data.published[data.packjson.name].versions.indexOf(data.packjson.version) > -1) {
-                    return errout({
-                        name: "biddle_zip_zipfunction",
-                        error: "Attempted to publish " + data.packjson.name + " over existing version " + data.packjson.version
+                        callback(zipfilename, writejson);
+                        return stdout;
                     });
+                };
+            if (data.published[data.packjson.name] !== undefined && data.published[data.packjson.name].versions.indexOf(data.packjson.version) > -1) {
+                return errout({
+                    name: "biddle_zip_zipfunction",
+                    error: "Attempted to publish " + data.packjson.name + " over existing version " + data.packjson.version
+                });
+            }
+            if (data.command === "publish" || data.command === "zip") {
+                if (data.address.target.indexOf(path.sep + "publications") + 1 === data.address.target.length - (publength + 1)) {
+                    data.address.target = data.address.target + data.packjson.name + path.sep;
                 }
-                if (data.command === "publish") {
-                    if (data.address.target.indexOf(path.sep + "publications") + 1 === data.address.target.length - (path.sep + "publications").length) {
-                        data.address.target = data.address.target + data.packjson.name + path.sep;
-                    }
-                    zipfile = data.address.target + data.packjson.name + "_" + data.packjson.version + ".zip";
-                }
+                zipfile = data.address.target + data.packjson.name + "_" + data.packjson.version + ".zip";
                 if (data.platform === "win32") {
-                    if (data.command === "publish") {
-                        cmd = "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('" + input[2] + "', '" + zipfile + "'); }\"";
-                    } else {
-                        cmd = "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('" + zipfile + "', '" + input[2] + "'); }\"";
-                    }
+                    cmd = "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('" + input[2] + "', '" + zipfile + "'); }\"";
                 } else {
-                    if (data.command === "publish") {
-                        cmd = "zip -r9yq " + zipfile + " " + input[2];
-                    } else {
-                        cmd = "unzip -oq " + zipfile + " -d " + input[2];
+                    cmd = "zip -r9yq " + zipfile + " " + input[2];
+                }
+            }
+            if (data.command === "publish") {
+                if (data.published[data.packjson.name] === undefined) {
+                    data.published[data.packjson.name] = {};
+                    data.published[data.packjson.name].versions = [];
+                }
+                if (data.published[data.packjson.name].directory === undefined) {
+                    data.published[data.packjson.name].directory = data.address.target;
+                }
+                apps.makedir(data.address.target, function biddle_zip_publish() {
+                    if (data.packjson.version.indexOf("beta") < 0 && data.packjson.version.indexOf("alpha") < 0) {
+                        latestfile = zipfile.replace(data.packjson.version + ".zip", "latest.zip");
+                        latestcmd = cmd.replace(data.packjson.version + ".zip", "latest.zip");
+                        data.published[data.packjson.name].latest = data.packjson.version;
+                        childfunc(latestfile, latestcmd, false);
                     }
+                    childfunc(zipfile, cmd, true);
+                });
+            }
+            if (data.command === "install") {
+                if (data.platform === "win32") {
+                    cmd = "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('" + zipfile + "', '" + input[2] + "'); }\"";
+                } else {
+                    cmd = "unzip -oq " + zipfile + " -d " + input[2];
                 }
-                if (data.command === "publish") {
-                    apps.makedir(data.address.target, publishit);
-                }
-                if (data.command === "install") {
-                    apps.makedir(data.address.target, installit);
-                }
-            };
-            apps.getpjson(zipfunction);
+                apps.makedir(data.address.target, installit);
+            }
+            if (data.command === "zip" || data.command === "unzip") {
+                childfunc(zipfile, cmd, true);
+            }
         },
         get       = function biddle_get(url, callback) {
             var a        = (typeof url === "string")
@@ -437,7 +404,7 @@
                 compareHash = function biddle_install_compareHash() {
                     apps.hashCmd(data.address.downloads + data.fileName, "hashZip", function biddle_install_compareHash_hashCmd() {
                         if (data.hashFile === data.hashZip) {
-                            console.log("Hashes are the same. Delete the file in downloads.");
+                            zip();
                         } else {
                             console.log("\x1B[31mHashes don't match\x1B[39m for " + input[2] + ". File is saved in the downloads directory and will not be installed.");
                         }
@@ -446,14 +413,32 @@
             get(input[2], function biddle_install_getzip(fileData) {
                 flag.zip = true;
                 if (flag.hash === true) {
-                    compareHash();
+                    compareHash(fileData);
                 }
             });
             get(input[2].replace(".zip", ".hash"), function biddle_install_gethash(fileData) {
                 flag.hash = true;
                 if (flag.zip === true) {
-                    compareHash();
+                    compareHash(fileData);
                 }
+            });
+        },
+        publish   = function biddle_publish() {
+            apps.getpjson(function biddle_publish_callback() {
+                zip(function biddle_publish_callback_zip(zipfilename, writejson) {
+                    apps
+                        .hashCmd(zipfilename, "hashFile", function biddle_publish_zip_childfunc_child_hash() {
+                            apps.writeFile(data.hashFile, zipfilename.replace(".zip", ".hash"), function biddle_publish_zip_childfunc_child_hash_writehash() {
+                                console.log("Hash file " + zipfilename.replace(".zip", ".hash") + " written.");
+                            });
+                            if (writejson === true) {
+                                data.published[data.packjson.name].versions.push(data.packjson.version);
+                                apps.writeFile(JSON.stringify(data.published), "published.json", function biddle_publish_zip_childfunc_child_hash_writepub() {
+                                    return true;
+                                });
+                            }
+                        });
+                });
             });
         },
         unpublish = function biddle_unpublish() {
@@ -616,6 +601,7 @@
                             }
                         });
                     }
+                    return read;
                 });
             });
         });
@@ -851,7 +837,7 @@
                 } else if (data.command === "install") {
                     install();
                 } else if (data.command === "publish") {
-                    zip();
+                    publish();
                 } else if (data.command === "unpublish") {
                     unpublish();
                 } else if (data.command === "hash") {
