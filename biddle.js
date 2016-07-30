@@ -153,7 +153,7 @@
                     stdout    = stdout.replace("SHA512hashoffile:", "");
                     stdout    = stdout.replace("CertUtil:-hashfilecommandcompletedsuccessfully.", "");
                     data[store] = stdout;
-                    callback();
+                    callback(stdout);
                 });
             },
             help     : function biddle_inithelp() {
@@ -437,9 +437,9 @@
                 compareHash = function biddle_install_compareHash() {
                     apps.hashCmd(data.address.downloads + data.fileName, "hashZip", function biddle_install_compareHash_hashCmd() {
                         if (data.hashFile === data.hashZip) {
-                            console.log("Hashes are the same.");
+                            console.log("Hashes are the same. Delete the file in downloads.");
                         } else {
-                            console.log("\x1B[31mHashes don't match\x1B[31m for " + input[2] + ". File is saved in the downloads directory and will not be installed.");
+                            console.log("\x1B[31mHashes don't match\x1B[39m for " + input[2] + ". File is saved in the downloads directory and will not be installed.");
                         }
                     });
                 };
@@ -531,29 +531,40 @@
     };
     apps.readBinary = function biddle_readBinary(filePath, callback) {
         var size = 0,
+            fdescript = 0,
             writeBinary = function biddle_readBinary_writeBinary() {
                 fs.open(data.address.downloads + path.sep + data.fileName, "w", function biddle_readBinary_writeBinary_writeopen(errx, fd) {
                     var buffer = new Buffer(size);
                     if (errx !== null) {
                         return errout({
-                            name: "biddle_readBinary_writeopen",
+                            name: "biddle_readBinary_writeBinary_writeopen",
                             error: errx
                         });
                     }
-                    fs.write(fd, buffer, 0, size, function biddle_readBinary_writeBinary_writeopen_write(errz, written, buffz) {
-                        if (errz !== null) {
+                    fs.read(fdescript, buffer, 0, size, 0, function biddle_readBinary_writeBinary_writeopen_read(erry, ready, buffy) {
+                        if (erry !== null) {
                             return errout({
-                                name: "biddle_readBinary_writeopen",
-                                error: errz
+                                name: "biddle_readBinary_writeBinary_writeopen_read",
+                                error: erry
                             });
                         }
-                        if (written < 1) {
-                            return errout({
-                                name: "biddle_readBinary_writeopen_write",
-                                error: "Reading binary file " + filePath + " but 0 bytes were read."
+                        if (ready > 0) {
+                            fs.write(fd, buffy, 0, size, function biddle_readBinary_writeBinary_writeopen_read_write(errz, written, buffz) {
+                                if (errz !== null) {
+                                    return errout({
+                                        name: "biddle_readBinary_writeBinary_writeopen_read_write",
+                                        error: errz
+                                    });
+                                }
+                                if (written < 1) {
+                                    return errout({
+                                        name: "biddle_readBinary_writeBinary_writeopen_read_write",
+                                        error: "Reading binary file " + filePath + " but 0 bytes were read."
+                                    });
+                                }
+                                callback(buffz.toString("utf8", 0, written));
                             });
                         }
-                        callback(buffz.toString("utf8", 0, buffz.length));
                     });
                 });
             };
@@ -570,6 +581,7 @@
                         ? stats.size
                         : 100,
                     buffer = new Buffer(length);
+                fdescript = fd;
                 if (erro !== null) {
                     return errout({
                         name: "biddle_readBinary_stat_open",
