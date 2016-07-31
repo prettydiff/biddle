@@ -23,9 +23,10 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
 * command **get** is complete
 * command **hash** is complete
 * command **help** is complete
+* command **list** is complete
 * command **markdown** is complete
-* Work on **publish** is complete
-* Work on **unpublish** is complete
+* command **publish** is complete
+* command **unpublish** is complete
 * Work on **install** is not started and up next
 * No work on advanced configurations has started.  This will likely wait until after an initial launch of very basic features
   - Allow restriction of named directories when creating a custom named zip so that production only packages don't have dev dependencies, build systems, unit tests, and so forth
@@ -34,7 +35,6 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
 * Work on **status** is not started.  This command will compare an installed application's version against a published version to determine if out of date.
   - Must allow an app name as an argument to manually check that application or *all* to check all installed applications
   - Status automation or intervals would be nice... such as checking app versions once a week and providing a message when out of date
-* Work on **list** command is blocked pending completion of **publish**.  This command will list installed/published applications by name and version and will know of their publication location and installation directory.
 * Work on **uninstall** command is blocked pending completion of **install**.
   - Must delete the application
   - Must remove the application from the **list**
@@ -79,8 +79,15 @@ Set a custom word wrap limit.
 Downloads the requested resource, but decompresses and unpackages the zip before writing files to disk.
 
 ### list
-(not writte yet)
-Will list all installed or all published applications and their locations.
+Will list all installed or all published applications and their locations.  It can take the optional argument *installed* or *published* to output a specific list or both lists are produced.
+
+Only output the installed list.
+
+    node biddle list installed
+
+Output both lists
+
+    node biddle list
 
 ### markdown
 Allows the internal markdown parser used by the **help** command to be supplied to a directed file to ease reading of documentation directly from the command line.

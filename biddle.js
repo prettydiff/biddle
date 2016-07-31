@@ -465,6 +465,39 @@
                     }
                 });
             });
+        },
+        list = function biddle_list() {
+            var listtype = {
+                    installed: Object.keys(data.installed),
+                    published: Object.keys(data.published),
+                },
+                dolist = function biddle_list_dolist(type) {
+                    if (listtype[type].length === 0) {
+                        console.log("\x1B[4mInstalled applications:\x1B[0m");
+                        console.log("");
+                        console.log("No applications are installed by biddle.");
+                        console.log("");
+                    } else {
+                        console.log("\x1B[4mInstalled applications:\x1B[0m");
+                        console.log("");
+                        len = listtype[type].length;
+                        do {
+                            console.log(listtype[type][a] + " - " + data[type][listtype[type][a]].directory);
+                            a += 1;
+                        } while (a < len);
+                    }
+                },
+                a = 0,
+                len = 0;
+            if (input[2] !== "installed" && input[2] !== "published" && input[2] !== undefined) {
+                input[2] = "both";
+            }
+            if (input[2] === "installed" || input[2] === "both" || input[2] === undefined) {
+                dolist("installed");
+            }
+            if (input[2] === "published" || input[2] === "both" || input[2] === undefined) {
+                dolist("published");
+            }
         };
     data.address   = (function biddle_address() {
         var addy = {
@@ -827,36 +860,67 @@
                 installed: false,
                 published: false
             },
+            comlist = {
+                get: true,
+                hash: true,
+                install: true,
+                list: true,
+                markdown: true,
+                publish: true,
+                status: true,
+                uninstall: true,
+                unpublish: true,
+                unzip: true,
+                zip: true,
+            },
+            valuetype = "",
             start = function biddle_init_start() {
-                if (data.command === "get") {
-                    get(input[2], function biddle_init_start_getback(filedata) {
-                        apps.writeFile(filedata, data.address.target + data.fileName, function biddle_init_start_getback_callback() {
-                            return filedata;
-                        });
-                    });
-                } else if (data.command === "install") {
-                    install();
-                } else if (data.command === "publish") {
-                    publish();
-                } else if (data.command === "unpublish") {
-                    unpublish();
-                } else if (data.command === "hash") {
-                    apps
-                        .hashCmd(input[2], "hashFile", function () {
-                            console.log(data.hashFile);
-                        });
-                } else if (data.command === "help" || data.command === "" || data.command === undefined || data.command === "?" || data.command === "markdown") {
+                if (data.command === "help" || data.command === "" || data.command === undefined || data.command === "?" || data.command === "markdown") {
                     apps.help();
-                } else if (isNaN(data.command) === false) {
-                    input[1] = "help";
-                    input[2] = data.command;
-                    data.command = "help";
-                    apps.help();
-                } else {
+                } else if (comlist[data.command] === undefined) {
                     errout({
                         name: "biddle_init_start",
-                        error: "unrecognized command, \x1B[31m" + data.command + "\x1B[39m"
+                        error: "Unrecognized command: \x1B[31m" + data.command + "\x1B[39m.  Currently these commands are recognized:\r\n\r\n" + Object.keys(comlist).join("\r\n") + "\r\n"
                     });
+                } else {
+                    if (input[2] === undefined && data.command !== "status" && data.command !== "list") {
+                        if (data.command === "hash" || data.command === "markdown" || data.command === "unzip" || data.command === "zip") {
+                            valuetype = "path to a local file";
+                        } else if (data.command === "get" || data.command === "install" || data.command === "publish") {
+                            valuetype = "URL address for a remote resource or path to a local file";
+                        } else if (data.command === "uninstall" || data.command === "unpublish") {
+                            valuetype = "known application name";
+                        }
+                        return errout({
+                            name: "biddle_init_start",
+                            error: "Command \x1B[32m" + data.command + "\x1B[39m requires a " + valuetype + "."
+                        });
+                    }
+                    if (data.command === "get") {
+                        get(input[2], function biddle_init_start_getback(filedata) {
+                            apps.writeFile(filedata, data.address.target + data.fileName, function biddle_init_start_getback_callback() {
+                                return filedata;
+                            });
+                        });
+                    } else if (data.command === "install") {
+                        install();
+                    } else if (data.command === "list") {
+                        list();
+                    } else if (data.command === "publish") {
+                        publish();
+                    } else if (data.command === "unpublish") {
+                        unpublish();
+                    } else if (data.command === "hash") {
+                        apps
+                            .hashCmd(input[2], "hashFile", function () {
+                                console.log(data.hashFile);
+                            });
+                    } else if (isNaN(data.command) === false) {
+                        input[1] = "help";
+                        input[2] = data.command;
+                        data.command = "help";
+                        apps.help();
+                    }
                 }
             };
         data.fileName = apps.getFileName();
