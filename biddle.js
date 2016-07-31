@@ -321,13 +321,6 @@
                 }
             }
             if (data.command === "publish") {
-                if (data.published[data.packjson.name] === undefined) {
-                    data.published[data.packjson.name] = {};
-                    data.published[data.packjson.name].versions = [];
-                }
-                if (data.published[data.packjson.name].directory === undefined) {
-                    data.published[data.packjson.name].directory = data.address.target;
-                }
                 apps.makedir(data.address.target, function biddle_zip_publish() {
                     if (data.packjson.version.indexOf("beta") < 0 && data.packjson.version.indexOf("alpha") < 0) {
                         latestfile = zipfile.replace(data.packjson.version + ".zip", "latest.zip");
@@ -424,6 +417,13 @@
             });
         },
         publish   = function biddle_publish() {
+            if (data.published[data.packjson.name] === undefined) {
+                data.published[data.packjson.name] = {};
+                data.published[data.packjson.name].versions = [];
+            }
+            if (data.published[data.packjson.name].directory === undefined) {
+                data.published[data.packjson.name].directory = data.address.target;
+            }
             apps.getpjson(function biddle_publish_callback() {
                 zip(function biddle_publish_callback_zip(zipfilename, writejson) {
                     apps

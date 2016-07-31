@@ -47,29 +47,32 @@ Commands are the third command line argument, or second if the optional *node* a
 Merely downloads the requested resource and saves it as a file with the same filename. If the filename is not provided in the URI the final directory up to the domain name will become the filename, and if for some reason that doesn't work the default filename is *download.xxx*.
 
 Download a file to the default location, which is the provided *downloads* directory.
-    node biddle.js get http://google.com
+
+    node biddle get http://google.com
 
 Download a file to an alternate location.
-    node biddle.js get http://google.com ../mydirectory
+
+    node biddle get http://google.com ../mydirectory
 
 ### hash
 Prints to console a SHA512 hash against a local resource.
-    node biddle.js hash downloads/myfile.zip
+
+    node biddle hash downloads/myfile.zip
 
 ### help
 Prints the readme.md file contents to console in a human friendly way.
 
 No command will still generate the readme data.
 
-    node biddle.js
+    node biddle
 
 The default word wrapping is set to 100 characters.
 
-    node biddle.js help
+    node biddle help
 
 Set a custom word wrap limit.
 
-    node biddle.js help 80
+    node biddle help 80
 
 ### install
 (not written yet)
@@ -84,22 +87,26 @@ Allows the internal markdown parser used by the **help** command to be supplied 
 
 The first argument after the command is the address of the file to read.
 
-    node biddle.js markdown applications/example/readme.md
+    node biddle markdown applications/example/readme.md
 
 You can also specify a custom word wrap limit.  The default is still 100.
 
-    node biddle.js markdown applications/example/readme.md 80
+    node biddle markdown applications/example/readme.md 80
 
 ### publish
 Writes a hash file and a zip file with a version number to the publications directory or some other specified location.  Applications are required to have a file in their root directory named *package.json* with properties: *name* and *version*.
 
 Create a zip in the default location: ./publications/myapplication
 
-    node biddle.js publish ../myapplication
+    node biddle publish ../myapplication
 
 Publish to a custom location: ./myAlternateDirectory/myapplication
 
-    node biddle.js publish ../myapplication myAlternateDirectory
+    node biddle publish ../myapplication myAlternateDirectory
+
+Use quotes if any argument contains spaces:
+
+    node biddle publish "c:\\program files\\myApplication"
 
 ### status
 (not written yet)
