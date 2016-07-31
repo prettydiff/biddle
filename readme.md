@@ -27,7 +27,9 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
 * command **markdown** is complete
 * command **publish** is complete
 * command **unpublish** is complete
-* Work on **install** is not started and up next
+* command **zip** is complete
+* command **unzip** os complete
+* Work on **install** is underway
 * No work on advanced configurations has started.  This will likely wait until after an initial launch of very basic features
   - Allow restriction of named directories when creating a custom named zip so that production only packages don't have dev dependencies, build systems, unit tests, and so forth
   - Allow packages to specify where they will install to
@@ -38,7 +40,6 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
 * Work on **uninstall** command is blocked pending completion of **install**.
   - Must delete the application
   - Must remove the application from the **list**
-* (not started) Allow quoted values from command line arguments in the case where an address contains spaces
 
 ## Supported commands
 Commands are the third command line argument, or second if the optional *node* argument is absent.  Commands are case insensitive, but values and local paths are case sensitive.  All local address are either absolute from the root or relative from the current working directory.
@@ -79,7 +80,7 @@ Set a custom word wrap limit.
 Downloads the requested resource, but decompresses and unpackages the zip before writing files to disk.
 
 ### list
-Will list all installed or all published applications and their locations.  It can take the optional argument *installed* or *published* to output a specific list or both lists are produced.
+Will list all installed and/or published applications with their locations and latest versions.  It can take the optional argument *installed* or *published* to output a specific list or both lists are produced.
 
 Only output the installed list.
 
@@ -124,9 +125,33 @@ Will check whether an installed application is behind the latest published versi
 Will delete an installed application by name and remove the application from the installed list.
 
 ### unpublish
-(not written yet)
-Will delete a published application by name and remove the application from the published list.
+Will delete a published application by name and remove the application from the published list.  An application name is required and not the address to the application.
+
+    node biddle unpublish myApplication
+
+### unzip
+Unzips a local zipped file.
+
+Unzip to the default location, the supplied *downloads* directory.
+
+    node biddle unzip myZipFile.zip
+
+Unzip to a specified location.
+
+    node biddle unzip myZipFile.zip myDirectory
+
+### zip
+Zips local files or local directories into a zip file.
+
+Zip to the default location, the supplied *downloads* directory.
+
+    node biddle zip ../myApplication
+
+Zip to a specified location.
+
+    node biddle zip ../myApplication myCustom/Location/Directory
 
 ## Dependencies
 
-* This application is written in JavaScript and requires [Node.js](https://nodejs.org/en/).
+* This application is written in JavaScript and requires [Node.js](https://nodejs.org/en/) to run.
+* This application makes use of zip and hash utilities provided by the operating system.
