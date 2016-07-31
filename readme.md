@@ -106,7 +106,7 @@ Publish to a custom location: ./myAlternateDirectory/myapplication
 
 Use quotes if any argument contains spaces:
 
-    node biddle publish "c:\\program files\\myApplication"
+    node biddle publish "c:\program files\myApplication"
 
 ### status
 (not written yet)
