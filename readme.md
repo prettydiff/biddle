@@ -29,15 +29,17 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
 * command **unpublish** is complete
 * command **zip** is complete
 * command **unzip** os complete
-* Work on **install** is underway
-* No work on advanced configurations has started.  This will likely wait until after an initial launch of very basic features
-  - Allow restriction of named directories when creating a custom named zip so that production only packages don't have dev dependencies, build systems, unit tests, and so forth
-  - Allow packages to specify where they will install to
-  - Allow a .biddlerc file for setting custom defaults
+* Work on **install** is *blocked* pending configuration work
+  - Hash files must now become JSON storing hash, name, and version
+  - ZIP approach needs to be reevaluated... details in next point
+* Advanced configuration work is *underway now*.  Configuration details will go into the package.json file.
+  - I need to revise the approach to creating ZIP files.  I cannot simply point to a directory and zip it for security reasons.  Instead I will need to index the child items of the target directory for addition to a ZIP file.  The reason has to do with potential (malicious) naming collisions uniformity violations.
+  - Allow restriction of named directories when creating a zip so that production only packages don't have dev dependencies, build systems, unit tests, systems files, and so forth
+  - Allow definition of custom default locations.
 * Work on **status** is not started.  This command will compare an installed application's version against a published version to determine if out of date.
   - Must allow an app name as an argument to manually check that application or *all* to check all installed applications
   - Status automation or intervals would be nice... such as checking app versions once a week and providing a message when out of date
-* Work on **uninstall** command is blocked pending completion of **install**.
+* Work on **uninstall** command is *blocked* pending completion of **install**.
   - Must delete the application
   - Must remove the application from the **list**
 
