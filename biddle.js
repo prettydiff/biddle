@@ -48,6 +48,7 @@
             fileName : "",
             hashFile : "",
             hashZip  : "",
+            ignore   : [],
             installed: {},
             packjson : {},
             platform : process
@@ -446,6 +447,30 @@
             });
         },
         publish   = function biddle_publish() {
+            var flag = {
+                    getpjson: false,
+                    ignore  : false
+                },
+                zippy = function biddle_publish_zippy() {
+                    zip(function biddle_publish_zippy_zip(zipfilename, writejson) {
+                        apps
+                            .hashCmd(zipfilename, "hashFile", function biddle_publish_zippy_zip_hash() {
+                                apps
+                                    .writeFile(data.hashFile, zipfilename.replace(".zip", ".hash"), function biddle_publish_zippy_zip_hash_writehash() {
+                                        return true;
+                                    });
+                                if (writejson === true) {
+                                    data
+                                        .published[data.packjson.name]
+                                        .versions
+                                        .push(data.packjson.version);
+                                    apps.writeFile(JSON.stringify(data.published), "published.json", function biddle_publish_zippy_zip_hash_writepub() {
+                                        return true;
+                                    });
+                                }
+                            });
+                    });
+                };
             apps
                 .getpjson(function biddle_publish_callback() {
                     if (input[3] !== undefined && data.published[data.packjson.name] !== undefined) {
@@ -456,25 +481,33 @@
                         data.published[data.packjson.name].latest    = "";
                         data.published[data.packjson.name].directory = data.address.target + data.packjson.name;
                     }
-                    zip(function biddle_publish_callback_zip(zipfilename, writejson) {
-                        apps
-                            .hashCmd(zipfilename, "hashFile", function biddle_publish_zip_childfunc_child_hash() {
-                                apps
-                                    .writeFile(data.hashFile, zipfilename.replace(".zip", ".hash"), function biddle_publish_zip_childfunc_child_hash_writehash() {
-                                        return true;
-                                    });
-                                if (writejson === true) {
-                                    data
-                                        .published[data.packjson.name]
-                                        .versions
-                                        .push(data.packjson.version);
-                                    apps.writeFile(JSON.stringify(data.published), "published.json", function biddle_publish_zip_childfunc_child_hash_writepub() {
-                                        return true;
-                                    });
-                                }
-                            });
-                    });
+                    flag.getpjson = true;
+                    if (flag.ignore === true) {
+                        zippy();
+                    }
                 });
+            fs.readFile(input[2].replace(/(\/|\\)$/, "") + path.sep + ".biddleignore", "utf8", function biddle_publish_ignore(err, data) {
+                var errString = "";
+                if (err !== null && err !== undefined) {
+                    errString = err.toString();
+                    if (errString.indexOf("Error: ENOENT: no such file or directory") === 0) {
+                        flag.ignore = true;
+                        if (flag.getpjson === true) {
+                            zippy();
+                        }
+                        return;
+                    }
+                    return errout({
+                        name: "biddle_publish_ignore",
+                        error: err
+                    });
+                }
+                data.ignore = data.replace(/\r\n/g, "\n").replace(/\n+/g, "\n").split("\n").sort();
+                flag.ignore = true;
+                if (flag.getpjson === true) {
+                    zippy();
+                }
+            });
         },
         unpublish = function biddle_unpublish() {
             var app  = data.published[input[2]],

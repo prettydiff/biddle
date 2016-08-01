@@ -29,6 +29,11 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
 * command **unpublish** is complete
 * command **zip** is complete
 * command **unzip** os complete
+* add support for a *.biddleignore* file, this file contain a list of items to not include in the published zip
+  - File is read
+  - Support and processing is not added yet
+  - Will not include support for comments or wildcards in initial launch
+* add support for *variants* in package.json, which allows named variants where each has a custom ignore list
 * Work on **install** is *blocked* pending configuration work
   - Hash files must now become JSON storing hash, name, and version
   - ZIP approach needs to be reevaluated... details in next point
