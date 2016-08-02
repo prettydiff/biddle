@@ -22,7 +22,7 @@
                 paths = process
                     .argv[0]
                     .split(path.sep);
-            if (paths[paths.length - 1] === "node") {
+            if (paths[paths.length - 1] === "node" || paths[paths.length - 1] === "node.exe") {
                 b = 1;
             }
             do {
@@ -921,7 +921,14 @@
             },
             valuetype = "",
             start     = function biddle_init_start() {
-                if (comlist[data.command] === undefined) {
+                if (data.command === "help" || data.command === "" || data.command === undefined || data.command === "?" || data.command === "markdown") {
+                    apps.help();
+                } else if (isNaN(data.command) === false) {
+                   input[1]     = "help";
+                   input[2]     = data.command;
+                   data.command = "help";
+                   apps.help();
+               } else if (comlist[data.command] === undefined) {
                     errout({
                         error: "Unrecognized command: \x1B[31m" + data.command + "\x1B[39m.  Currently these commands are recognized:\r\n\r\n" + Object
                             .keys(comlist)
@@ -973,15 +980,6 @@
                     }
                 }
             };
-        if (data.command === "help" || data.command === "" || data.command === undefined || data.command === "?" || data.command === "markdown") {
-            return apps.help();
-        }
-        if (isNaN(data.command) === false) {
-           input[1]     = "help";
-           input[2]     = data.command;
-           data.command = "help";
-           return apps.help();
-       }
         data.fileName = apps.getFileName();
         fs.readFile(data.abspath + "installed.json", "utf8", function biddle_init_installed(err, fileData) {
             var parsed = {};
