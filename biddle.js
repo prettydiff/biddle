@@ -921,9 +921,7 @@
             },
             valuetype = "",
             start     = function biddle_init_start() {
-                if (data.command === "help" || data.command === "" || data.command === undefined || data.command === "?" || data.command === "markdown") {
-                    apps.help();
-                } else if (comlist[data.command] === undefined) {
+                if (comlist[data.command] === undefined) {
                     errout({
                         error: "Unrecognized command: \x1B[31m" + data.command + "\x1B[39m.  Currently these commands are recognized:\r\n\r\n" + Object
                             .keys(comlist)
@@ -972,14 +970,18 @@
                         zip(function biddle_init_start_unzip(zipfile) {
                             return console.log("File " + zipfile + " unzipped to: " + data.address.target);
                         });
-                    } else if (isNaN(data.command) === false) {
-                        input[1]     = "help";
-                        input[2]     = data.command;
-                        data.command = "help";
-                        apps.help();
                     }
                 }
             };
+        if (data.command === "help" || data.command === "" || data.command === undefined || data.command === "?" || data.command === "markdown") {
+            return apps.help();
+        }
+        if (isNaN(data.command) === false) {
+           input[1]     = "help";
+           input[2]     = data.command;
+           data.command = "help";
+           return apps.help();
+       }
         data.fileName = apps.getFileName();
         fs.readFile(data.abspath + "installed.json", "utf8", function biddle_init_installed(err, fileData) {
             var parsed = {};
