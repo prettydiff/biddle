@@ -127,6 +127,10 @@ Use quotes if any argument contains spaces:
 (not written yet)
 Will check whether an installed application is behind the latest published version.  Automation is planned but still under consideration.
 
+### test
+(not written yet)
+Run the unit tests.
+
 ### uninstall
 (not written yet)
 Will delete an installed application by name and remove the application from the installed list.

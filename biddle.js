@@ -73,27 +73,13 @@
                 } while (a > 3);
                 return arr.join("");
             },
-            getFileName: function biddle_getFileName() {
-                var paths = [];
-                if (input[2] === undefined) {
-                    return "download.xxx";
-                }
-                paths = input[2].split(path.sep);
-                if (paths[paths.length - 1].length > 0) {
-                    return paths[paths.length - 1];
-                }
-                do {
-                    paths.pop();
-                } while (paths.length > 0 && paths[paths.length - 1] === "");
-                if (paths.length < 1) {
-                    return "download.xxx";
-                }
-                return paths[paths.length - 1];
-            },
             getpjson   : function biddle_getpjson(callback) {
                 var file = input[2].replace(/(\/|\\)$/, "") + path.sep + "package.json";
                 fs.readFile(file, "utf8", function biddle_getpjson_readfile(err, fileData) {
                     if (err !== null && err !== undefined) {
+                        if (err.toString().indexOf("no such file or directory") > 0) {
+                            return errout({error: "The package.json file is missing from " + input[2] + ". biddle cannot publish without a package.json file.", name: "biddle_getpjson_readFile"});
+                        }
                         return errout({error: err, name: "biddle_getpjson_readFile"});
                     }
                     data.packjson = JSON.parse(fileData);
@@ -242,6 +228,12 @@
                     return stdout;
                 });
             },
+            sanitizef  : function biddle_sanitizef(filePath) {
+                var paths = filePath.split(path.sep),
+                    fileName = paths.pop();
+                paths.push(fileName.replace(/\+|<|>|:|"|\/|\\|\||\?|\*|%/g, ""));
+                return paths.join("");
+            },
             writeFile  : function biddle_initWriteFile() {
                 return true;
             }
@@ -279,13 +271,14 @@
                 if (data.command === "zip") {
                     zipfile = data.address.target + data.fileName + ".zip";
                 } else {
-                    zipfile = data.address.target + data.packjson.name + "_" + data.packjson.version + ".zip";
+                    zipfile = data.address.target + data.packjson.name.toLowerCase() + "_" + data.packjson.version + ".zip";
                 }
                 if (data.platform === "win32") {
+                    //Compress-Archive .\file1.txt, .\file2.txt -DestinationPath .\files.zip
                     cmd = "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compress" +
                             "ion.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('" + input[2] + "', '" + zipfile + "'); }\"";
                 } else {
-                    cmd = "zip -r9yq " + zipfile + " " + input[2];
+                    cmd = "zip -j9yq " + zipfile + " " + input[2] + "/*";
                 }
                 if (data.command === "publish") {
                     apps
@@ -453,6 +446,7 @@
                 },
                 zippy = function biddle_publish_zippy() {
                     zip(function biddle_publish_zippy_zip(zipfilename, writejson) {
+                        zipfilename = apps.sanitizef(zipfilename);
                         apps
                             .hashCmd(zipfilename, "hashFile", function biddle_publish_zippy_zip_hash() {
                                 apps
@@ -569,6 +563,523 @@
             if (input[2] === "published" || input[2] === "both" || input[2] === undefined) {
                 dolist("published");
             }
+        },
+        test      = function biddle_test() {
+            var order = [
+                    "lint",
+                    //"get",
+                    //"hash",
+                    //"help",
+                    //"install", //not written yet
+                    //"list",
+                    //"markdown",
+                    //"publish",
+                    //"status", //not written yet
+                    //"uninstall", //not written yet
+                    //"unpublish",
+                    //"unzip",
+                    //"zip"
+                ],
+                options = {
+                    correct     : false,
+                    crlf        : false,
+                    html        : true,
+                    inchar      : " ",
+                    insize      : 4,
+                    lang        : "javascript",
+                    methodchain : false,
+                    mode        : "beautify",
+                    nocaseindent: false,
+                    objsort     : "all",
+                    preserve    : true,
+                    styleguide  : "jslint",
+                    wrap        : 80
+                },
+                startTime = Date.now(),
+                fail = function biddle_test_fail() {
+                    console.log("");
+                    console.error(errtext);
+                    humantime(true);
+                    process.exit(1);
+                },
+                humantime  = function biddle_test_humantime(finished) {
+                    var minuteString = "",
+                        hourString   = "",
+                        secondString = "",
+                        finalTime    = "",
+                        finalMem     = "",
+                        minutes      = 0,
+                        hours        = 0,
+                        elapsed      = 0,
+                        memory       = {},
+                        prettybytes  = function biddle_test_humantime_prettybytes(an_integer) {
+                            //find the string length of input and divide into triplets
+                            var length  = an_integer
+                                    .toString()
+                                    .length,
+                                triples = (function biddle_test_humantime_prettybytes_triples() {
+                                    if (length < 22) {
+                                        return Math.floor((length - 1) / 3);
+                                    }
+                                    //it seems the maximum supported length of integer is 22
+                                    return 8;
+                                }()),
+                                //each triplet is worth an exponent of 1024 (2 ^ 10)
+                                power   = (function biddle_test_humantime_prettybytes_power() {
+                                    var a = triples - 1,
+                                        b = 1024;
+                                    if (triples === 0) {
+                                        return 0;
+                                    }
+                                    if (triples === 1) {
+                                        return 1024;
+                                    }
+                                    do {
+                                        b = b * 1024;
+                                        a -= 1;
+                                    } while (a > 0);
+                                    return b;
+                                }()),
+                                //kilobytes, megabytes, and so forth...
+                                unit    = [
+                                    "",
+                                    "KB",
+                                    "MB",
+                                    "GB",
+                                    "TB",
+                                    "PB",
+                                    "EB",
+                                    "ZB",
+                                    "YB"
+                                ],
+                                output  = "";
+
+                            if (typeof an_integer !== "number" || isNaN(an_integer) === true || an_integer < 0 || an_integer % 1 > 0) {
+                                //input not a positive integer
+                                output = "0.00B";
+                            } else if (triples === 0) {
+                                //input less than 1000
+                                output = an_integer + "B";
+                            } else {
+                                //for input greater than 999
+                                length = Math.floor((an_integer / power) * 100) / 100;
+                                output = length.toFixed(2) + unit[triples];
+                            }
+                            return output;
+                        },
+                        plural       = function core__proctime_plural(x, y) {
+                            var a = "";
+                            if (x !== 1) {
+                                a = x + y + "s ";
+                            } else {
+                                a = x + y + " ";
+                            }
+                            return a;
+                        },
+                        minute       = function core__proctime_minute() {
+                            minutes      = parseInt((elapsed / 60), 10);
+                            minuteString = (finished === true)
+                                ? plural(minutes, " minute")
+                                : (minutes < 10)
+                                    ? "0" + minutes
+                                    : "" + minutes;
+                            minutes      = elapsed - (minutes * 60);
+                            secondString = (finished === true)
+                                ? (minutes === 1)
+                                    ? " 1 second "
+                                    : minutes.toFixed(3) + " seconds "
+                                : minutes.toFixed(3);
+                        };
+                    memory       = process.memoryUsage();
+                    finalMem     = prettybytes(memory.rss);
+
+                    //last line for additional instructions without bias to the timer
+                    elapsed      = (Date.now() - startTime) / 1000;
+                    secondString = elapsed.toFixed(3);
+                    if (elapsed >= 60 && elapsed < 3600) {
+                        minute();
+                    } else if (elapsed >= 3600) {
+                        hours      = parseInt((elapsed / 3600), 10);
+                        elapsed    = elapsed - (hours * 3600);
+                        hourString = (finished === true)
+                            ? plural(hours, " hour")
+                            : (hours < 10)
+                                ? "0" + hours
+                                : "" + hours;
+                        minute();
+                    } else {
+                        secondString = (finished === true)
+                            ? plural(secondString, " second")
+                            : secondString;
+                    }
+                    if (finished === true) {
+                        finalTime = hourString + minuteString + secondString;
+                        console.log(finalMem + " of memory consumed");
+                        console.log(finalTime + "total time");
+                        console.log("");
+                    } else {
+                        if (hourString === "") {
+                            hourString = "00";
+                        }
+                        if (minuteString === "") {
+                            minuteString = "00";
+                        }
+                        if ((/^([0-9]\.)/).test(secondString) === true) {
+                            secondString = "0" + secondString;
+                        }
+                        return "\u001B[36m[" + hourString + ":" + minuteString + ":" + secondString + "]\u001B[39m ";
+                    }
+                },
+                next       = function biddle_test_nextInit() {
+                    return;
+                },
+                phases = {
+                    lint: function biddle_test_lint() {
+                        var ignoreDirectory = [],
+                            flag            = {
+                                files: false,
+                                fs   : false,
+                                items: false,
+                                lint : false,
+                                today: false
+                            },
+                            files           = [],
+                            jslint          = function biddle_test_declareJSLINT() {
+                                return;
+                            },
+                            lintrun         = function biddle_test_lint_lintrun() {
+                                var lintit = function biddle_test_lint_lintrun_lintit(val, ind, arr) {
+                                    var result = {},
+                                        failed = false,
+                                        ecount = 0,
+                                        report = function biddle_test_lint_lintrun_lintit_lintOn_report(warning) {
+                                            //start with an exclusion list.  There are some warnings that I don't care about
+                                            if (warning === null) {
+                                                return;
+                                            }
+                                            if (warning.message.indexOf("Unexpected dangling '_'") === 0) {
+                                                return;
+                                            }
+                                            if ((/Bad\u0020property\u0020name\u0020'\w+_'\./).test(warning.message) === true) {
+                                                return;
+                                            }
+                                            if (warning.message.indexOf("/*global*/ requires") === 0) {
+                                                return;
+                                            }
+                                            failed = true;
+                                            if (ecount === 0) {
+                                                console.log("\u001B[31mJSLint errors on\u001B[39m " + val[0]);
+                                                console.log("");
+                                            }
+                                            ecount += 1;
+                                            console.log("On line " + warning.line + " at column: " + warning.column);
+                                            console.log(warning.message);
+                                            console.log("");
+                                        };
+                                    options.source = val[1];
+                                    result         = jslint(prettydiff(options), {"for": true});
+                                    if (result.ok === true) {
+                                        console.log(humantime(false) + "\u001B[32mLint is good for file " + (ind + 1) + ":\u001B[39m " + val[0]);
+                                        if (ind === arr.length - 1) {
+                                            console.log("");
+                                            console.log("\u001B[32mLint operation complete!\u001B[39m");
+                                            console.log("");
+                                            return next();
+                                        }
+                                    } else {
+                                        result
+                                            .warnings
+                                            .forEach(report);
+                                        if (failed === true) {
+                                            errout("\u001B[31mLint fail\u001B[39m :(");
+                                        } else {
+                                            console.log(humantime(false) + "\u001B[32mLint is good for file " + (ind + 1) + ":\u001B[39m " + val[0]);
+                                            if (ind === arr.length - 1) {
+                                                console.log("");
+                                                console.log("\u001B[32mLint operation complete!\u001B[39m");
+                                                console.log("");
+                                                return next();
+                                            }
+                                        }
+                                    }
+                                };
+                                options = {
+                                    correct     : false,
+                                    crlf        : false,
+                                    html        : true,
+                                    inchar      : " ",
+                                    insize      : 4,
+                                    lang        : "javascript",
+                                    methodchain : false,
+                                    mode        : "beautify",
+                                    nocaseindent: false,
+                                    objsort     : "all",
+                                    preserve    : true,
+                                    styleguide  : "jslint",
+                                    wrap        : 80
+                                };
+                                files.forEach(lintit);
+                            };
+                        console.log("");
+                        console.log("");
+                        console.log("\u001B[36mBeautifying and Linting\u001B[39m");
+                        console.log("** Note that line numbers of error messaging reflects beautified code line.");
+                        console.log("");
+                        (function biddle_test_lint_install() {
+                            var dateobj = new Date(),
+                                day     = (dateobj.getDate() > 9)
+                                    ? "" + dateobj.getDate()
+                                    : "0" + dateobj.getDate(),
+                                month   = (dateobj.getMonth() > 9)
+                                    ? "" + (dateobj.getMonth() + 1)
+                                    : "0" + (dateobj.getMonth() + 1),
+                                date    = Number("" + dateobj.getFullYear() + month + day),
+                                today   = require("./today.js");
+                            fs.stat("JSLint", function biddle_test_lint_install_stat(erstat, stats) {
+                                var child     = require("child_process").exec,
+                                    command   = "git submodule foreach git reset --hard origin/master",
+                                    childtask = function biddle_test_lint_install_stat_childtask() {
+                                        child(command, {
+                                            timeout: 30000
+                                        }, function biddle_test_lint_install_stat_childtask_child(childerror, childstdout, childstderr) {
+                                            var cdupcallback = function biddle_test_lint_install_stat_childtask_child_cdupcallback() {
+                                                    fs
+                                                        .readFile("JSLint/jslint.js", "utf8", function biddle_test_lint_install_stat_childtask_child_cdupcallback_readFile(erread, data) {
+                                                            var moduleready = function biddle_test_lint_install_stat_childtask_child_cdupcallback_readFile_moduleready() {
+                                                                var todaystring = "/*global module*/(function () {\"use strict\";var today=" + date + ";module.exports=today;}());";
+                                                                jslint = require(process.cwd() + "/JSLint/jslint.js");
+                                                                fs.writeFile("today.js", todaystring, function biddle_test_lint_install_stat_childtask_child_cdupcallback_readFile_moduleready_writeFile(werr) {
+                                                                    if (werr !== null && werr !== undefined) {
+                                                                        errout({error: werr, name: "biddle_test_lint_install_stat_childtask_child_cdupcallback_readFile_moduleready_writeFile"});
+                                                                    }
+                                                                    flag.today = true;
+                                                                    if (flag.fs === true && flag.lint === true) {
+                                                                        lintrun();
+                                                                    }
+                                                                });
+                                                                console.log("\u001B[36mInstalled JSLint edition:\u001B[39m " + jslint().edition);
+                                                                flag.lint = true;
+                                                                if (flag.fs === true && flag.today === true) {
+                                                                    lintrun();
+                                                                }
+                                                            };
+                                                            if (erread !== null && erread !== undefined) {
+                                                                return errout({error: errorad, name: "biddle_test_lint_install_stat_childtask_child_cdupcallback_readFile"});
+                                                            }
+                                                            // Only modify the jslint.js file once, so we have to check to see if it is
+                                                            // already modified
+                                                            if (data.slice(data.length - 30).indexOf("\nmodule.exports = jslint;") < 0) {
+                                                                data = data + "\nmodule.exports = jslint;";
+                                                                return fs.writeFile("JSLint/jslint.js", data, "utf8", function biddle_test_lint_install_stat_childtask_child_chupcallback_readFile_writeFile(erwrite) {
+                                                                    if (erwrite !== null && erwrite !== undefined) {
+                                                                        return errout({error: erwrite, name: "biddle_test_lint_install_stat_childtask_child_cdupcallback_readFile_writeFile"});
+                                                                    }
+                                                                    moduleready();
+                                                                });
+                                                            }
+                                                            moduleready();
+                                                        });
+                                                },
+                                                errorhandle  = function biddle_test_lint_install_stat_childtask_child_errorhandle(errormsg, stderror, execution) {
+                                                    if (errormsg !== null) {
+                                                        if (stderror.indexOf("Could not resolve host: github.com") > 0) {
+                                                            return fs.stat("JSLint/jslint.js", function biddle_test_lint_install_stat_childtask_child_errorhandle_filestat(jerstat, jstats) {
+                                                                if (typeof jerstat === "string") {
+                                                                    return errout({error: jerstat, name: "biddle_test_lint_install_stat_childtask_child_errorhandle_filestat"});
+                                                                }
+                                                                if (jstats.isFile() === true) {
+                                                                    console.log("Could not connect to Github, but it looks like JSLint is installed.  Running pri" +
+                                                                            "or installed JSLint.");
+                                                                    return cdupcallback();
+                                                                }
+                                                                console.log("Could not connect to Github, and JSLint does not appear to be installed.  Skippi" +
+                                                                        "ng to next phase.");
+                                                                return next();
+                                                            });
+                                                        }
+                                                        return errout({error: errormsg, name: "biddle_test_lint_install_stat_childtask_child_errorhandle"});
+                                                    }
+                                                    if (typeof stderror === "string" && stderror.length > 0 && stderror.indexOf("Cloning into") < 0 && stderror.indexOf("From http") < 0) {
+                                                        return errout({error: stderror, name: "biddle_test_lint_install_stat_childtask_child_errorhandle"});
+                                                    }
+                                                    execution();
+                                                },
+                                                childproc    = function biddle_test_lint_install_stat_childtask_child_childproc() {
+                                                    child("git submodule foreach git pull origin master", {
+                                                        timeout: 30000
+                                                    }, function biddle_test_lint_install_stat_childtask_child_moduleinstall(erchild, stdout, stderr) {
+                                                        errorhandle(erchild, stderr, cdupcallback);
+                                                        return stdout;
+                                                    });
+                                                };
+                                            errorhandle(childerror, childstderr, childproc);
+                                            return childstdout;
+                                        });
+                                    },
+                                    absentfun = function biddle_test_lint_install_stat_absentfun() {
+                                        // we only need to install once per day, so determine if JSLint has already
+                                        // installed today
+                                        if (today < date) {
+                                            console.log("Pulling latest JSLint...");
+                                            return childtask();
+                                        }
+                                        jslint = require(process.cwd() + "/JSLint/jslint.js");
+                                        console.log("Running prior installed JSLint version " + jslint().edition + ".");
+                                        flag.lint  = true;
+                                        flag.today = true;
+                                        if (flag.fs === true) {
+                                            lintrun();
+                                        }
+                                    },
+                                    initfun   = function biddle_test_lint_install_stat_initfun() {
+                                        child("git submodule init", function biddle_test_lint_install_stat_initfun_child(initerr, initout, initstd) {
+                                            if (typeof initerr === "string") {
+                                                return errout({error: initerr, name: "biddle_test_lint_install_stat_initfun_child"});
+                                            }
+                                            if (typeof initstd === "string" && initstd.length > 0) {
+                                                return errout({error: initstd, name: "biddle_test_lint_install_stat_initfun_child"});
+                                            }
+                                            console.log("git submodule init");
+                                            child("git submodule update", function biddle_test_lint_install_stat_initfun_child_cubchild(suberr, subout, substd) {
+                                                if (typeof suberr === "string") {
+                                                    return errout({error: suberr, name: "biddle_test_lint_install_stat_initfun_child_subchild"});
+                                                }
+                                                if (typeof substd === "string" && substd.length > 0 && substd.indexOf("Cloning into") < 0) {
+                                                    return errout({error: substd, name: "biddle_test_lint_install_stat_initfun_child_subchild"});
+                                                }
+                                                console.log("git submodule update");
+                                                absentfun();
+                                                return subout;
+                                            });
+                                            return initout;
+                                        });
+                                    };
+                                if (erstat !== null && erstat.toString() === "Error: ENOENT: no such file or directory, stat 'JSLint'") {
+                                    console.log("Cloning JSLint...");
+                                    command = "git submodule add https://github.com/douglascrockford/JSLint.git";
+                                    return childtask();
+                                }
+                                if (erstat !== null && erstat !== undefined) {
+                                    return errout({error: erstat, name: "biddle_test_lint_install_stat"});
+                                }
+                                if (stats.isDirectory() === true) {
+                                    return fs.readdir("JSLint", function biddle_test_lint_install_stat_readdir(direrr, files) {
+                                        if (typeof direrr === "string") {
+                                            return errout({error: direrr, name: "biddle_test_lint_install_stat_readdir"});
+                                        }
+                                        if (files.length < 1) {
+                                            return initfun();
+                                        }
+                                        return absentfun();
+                                    });
+                                }
+                                console.log("Cloning JSLint...");
+                                command = "git submodule add https://github.com/douglascrockford/JSLint.git";
+                                childtask();
+                            });
+                        }());
+                        (function biddle_test_lint_getFiles() {
+                            var fc       = 0,
+                                ft       = 0,
+                                total    = 0,
+                                count    = 0,
+                                idLen    = ignoreDirectory.length,
+                                readFile = function biddle_test_lint_getFiles_readFile(filePath) {
+                                    fs
+                                        .readFile(filePath, "utf8", function biddle_test_lint_getFiles_readFile_callback(err, data) {
+                                            if (err !== null && err !== undefined) {
+                                                errout({error: err, name: "biddle_test_lint_getFiles_readFile_callback"});
+                                            }
+                                            fc += 1;
+                                            if (ft === fc) {
+                                                flag.files = true;
+                                            }
+                                            if (path.sep === "\\") {
+                                                files.push([
+                                                    filePath.slice(filePath.indexOf("\\prettydiff\\") + 14),
+                                                    data
+                                                ]);
+                                            } else {
+                                                files.push([
+                                                    filePath.slice(filePath.indexOf("/prettydiff/") + 12),
+                                                    data
+                                                ]);
+                                            }
+                                            if (flag.files === true && flag.items === true) {
+                                                flag.fs = true;
+                                                if (flag.lint === true && flag.today === true) {
+                                                    flag.files = false;
+                                                    lintrun();
+                                                }
+                                            }
+                                        });
+                                },
+                                readDir  = function biddle_test_lint_getFiles_readDir(path) {
+                                    fs
+                                        .readdir(path, function biddle_test_lint_getFiles_readDir_callback(erra, list) {
+                                            var fileEval = function biddle_test_lint_getFiles_readDir_callback_fileEval(val) {
+                                                var filename = path + "/" + val;
+                                                fs.stat(filename, function biddle_test_lint_getFiles_readDir_callback_fileEval_stat(errb, stat) {
+                                                    var a         = 0,
+                                                        ignoreDir = false;
+                                                    if (errb !== null) {
+                                                        return errout({error: errb, name: "biddle_test_lint_getFiles_readDir_callback_fileEval_stat"});
+                                                    }
+                                                    count += 1;
+                                                    if (count === total) {
+                                                        flag.items = true;
+                                                    }
+                                                    if (stat.isFile() === true && (/(\.js)$/).test(val) === true) {
+                                                        ft += 1;
+                                                        readFile(filename);
+                                                    }
+                                                    if (stat.isDirectory() === true) {
+                                                        do {
+                                                            if (val === ignoreDirectory[a]) {
+                                                                ignoreDir = true;
+                                                                break;
+                                                            }
+                                                            a += 1;
+                                                        } while (a < idLen);
+                                                        if (ignoreDir === true) {
+                                                            if (flag.files === true && flag.items === true) {
+                                                                flag.fs = true;
+                                                                if (flag.lint === true) {
+                                                                    flag.items = false;
+                                                                    lintrun();
+                                                                }
+                                                            }
+                                                        } else {
+                                                            biddle_test_lint_getFiles_readDir(filename);
+                                                        }
+                                                    }
+                                                });
+                                            };
+                                            if (erra !== null) {
+                                                return errout({error: "Error reading path: " + path + "\n" + erra, name: "biddle_test_lint_getFiles_readDir_callback"});
+                                            }
+                                            total += list.length;
+                                            list.forEach(fileEval);
+                                        });
+                                };
+                            readDir(__dirname.replace(/((\/|\\)test)$/, ""));
+                        }());
+                    }
+                };
+            next = function biddle_test_next() {
+                var complete = function biddle_test_next_complete() {
+                    console.log("");
+                    console.log("All tasks complete... Exiting clean!");
+                    humantime(true);
+                    process.exit(0);
+                };
+                if (order.length < 1) {
+                    return complete();
+                }
+                phases[order[0]]();
+                order.splice(0, 1);
+            };
+            next();
         };
     data.address    = (function biddle_address() {
         var addy = {
@@ -584,6 +1095,26 @@
         }
         return addy;
     }());
+    apps.getFileName = function biddle_getFileName() {
+        var paths  = [],
+            output = "";
+        if (input[2] === undefined) {
+            return "download.xxx";
+        }
+        paths = input[2].split(path.sep);
+        if (paths[paths.length - 1].length > 0) {
+            output = paths[paths.length - 1].toLowerCase();
+        } else {
+            do {
+                paths.pop();
+            } while (paths.length > 0 && paths[paths.length - 1] === "");
+            if (paths.length < 1) {
+                return "download.xxx";
+            }
+            output = paths[paths.length - 1].toLowerCase();
+        }
+        return apps.sanitizef(output.replace(/\+|<|>|:|"|\/|\\|\||\?|\*|%/g, ""));
+    };
     apps.writeFile  = function biddle_writeFile(fileData, fileName, callback) {
         var callbacker = function biddle_writeFile_callbacker(size) {
             if (size > 0 && fileName !== "published.json" && fileName !== "installed.json") {
@@ -678,7 +1209,7 @@
                                         data.hashFile = fileData;
                                         callback(fileData);
                                     } else {
-                                        apps.writeFile(fileData, filePath, callback);
+                                        apps.writeFile(fileData, apps.sanitizef(filePath), callback);
                                     }
                                 });
                         }
@@ -783,7 +1314,7 @@
                                     chars.splice(x, 4);
                                     chars[x] = grn + chars[x];
                                     final    -= 4;
-                                } else if (chars[x - 1] === "]" && chars[x] === "(") {
+                                } else if (chars[x - 2] === "," && chars[x - 1] === " " && chars[x] === "(") {
                                     quote    = ")";
                                     chars[x] = chars[x] + cyn;
                                 }
@@ -842,9 +1373,45 @@
                 if (err !== null && err !== undefined) {
                     return errout({error: err, name: "biddle_help_readme"});
                 }
-                readme = readme
-                    .replace(/\r\n/g, "\n")
-                    .replace(/\r/g, "\n");
+                readme = (function biddle_help_readme_removeImages() {
+                    var readout = [],
+                        j       = readme.split(""),
+                        i       = 0,
+                        ilen    = j.length,
+                        brace   = "";
+                    for (i = 0; i < ilen; i += 1) {
+                        if (brace === "") {
+                            if (j[i] === "\r") {
+                                if (j[i + 1] === "\n") {
+                                    j[i] = "";
+                                } else {
+                                    j[i] = "\n";
+                                }
+                            } else if (j[i] === "!" && j[i + 1] === "[") {
+                                brace = "]";
+                                j[i]  = "";
+                                j[i + 1] = "";
+                            } else if (j[i] === "]" && j[i + 1] === "(") {
+                                j[i] = ", ";
+                            } else if (j[i] === "[") {
+                                j[i] = "";
+                            } else if (j[i] === ")" && j[i + 1] === " " && (/\s/).test(j[i + 2]) === false) {
+                                j[i] = "),";
+                            }
+                        } else if (brace === j[i]) {
+                            j[i] = "";
+                            if (brace === "]" && j[i + 1] === "(") {
+                                brace = ")";
+                            } else {
+                                brace = "";
+                            }
+                        }
+                        if (brace !== ")") {
+                            readout.push(j[i]);
+                        }
+                    }
+                    return readout.join("");
+                }());
                 lines  = readme.split("\n");
                 len    = lines.length;
                 console.log("");
@@ -914,6 +1481,7 @@
                 markdown : true,
                 publish  : true,
                 status   : true,
+                test     : true,
                 uninstall: true,
                 unpublish: true,
                 unzip    : true,
@@ -936,7 +1504,7 @@
                         name : "biddle_init_start"
                     });
                 } else {
-                    if (input[2] === undefined && data.command !== "status" && data.command !== "list") {
+                    if (input[2] === undefined && data.command !== "status" && data.command !== "list" && data.command !== "test") {
                         if (data.command === "hash" || data.command === "markdown" || data.command === "unzip" || data.command === "zip") {
                             valuetype = "path to a local file";
                         } else if (data.command === "get" || data.command === "install" || data.command === "publish") {
@@ -977,6 +1545,8 @@
                         zip(function biddle_init_start_unzip(zipfile) {
                             return console.log("File " + zipfile + " unzipped to: " + data.address.target);
                         });
+                    } else if (data.command === "test") {
+                        test();
                     }
                 }
             };
