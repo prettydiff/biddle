@@ -166,3 +166,4 @@ Zip to a specified location.
 
 * This application is written in JavaScript and requires [Node.js](https://nodejs.org/en/) to run.
 * This application makes use of zip and hash utilities provided by the operating system.
+* The *test* command requires [Pretty Diff](https://github.com/prettydiff/prettydiff.git) and [JSLint](https://github.com/douglascrockford/JSLint.git) as git submodules from Github.
