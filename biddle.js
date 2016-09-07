@@ -751,12 +751,19 @@
                             modules         = {
                                 jslint    : {
                                     dir : "JSLint",
+                                    edition: function biddle_test_lint_modules_jslint(obj) {
+                                        console.log(obj.name + " version " + obj.app().edition + " is available.");
+                                    },
                                     file: "jslint.js",
                                     name: "JSLint",
                                     repo: "https://github.com/douglascrockford/JSLint.git"
                                 },
                                 prettydiff: {
                                     dir : "prettydiff",
+                                    edition: function biddle_test_lint_modules_prettydiff(obj) {
+                                        var str = String(global.prettydiff.edition.latest);
+                                        console.log(obj.name + " version " + global.prettydiff.edition.version + ", dated 20" + str.slice(0, 2) + "-" + str.slice(2, 4) + "-" + str.slice(4) + ", is available.");
+                                    },
                                     file: "prettydiff.js",
                                     name: "Pretty Diff",
                                     repo: "https://github.com/prettydiff/prettydiff.git"
@@ -837,7 +844,7 @@
                                 };
                                 files.forEach(lintit);
                             };
-                        keys.forEach(function biddle_test_lint_getFiles_updateIgnores(mod) {
+                        keys.forEach(function biddle_test_lint_updateIgnores(mod) {
                             ignoreDirectory.push(modules[mod].dir);
                         });
                         console.log("");
@@ -919,12 +926,11 @@
                                 var appFile = __dirname + path.sep + modules[appName].dir + path.sep + modules[appName].file,
                                     jslintcomplete = function biddle_test_lint_install_editions_jslintcomplete() {
                                         modules.jslint.app = require(appFile);
-                                        console.log(modules.jslint.name + " version " + modules.jslint.app().edition + " is available.");
+                                        modules.jslint.edition(modules.jslint);
                                         if (ind === keys.length) {
                                             flag.apps = true;
                                         }
-                                    },
-                                    str = "";
+                                    };
                                 modules[appName].app = require(appFile);
                                 if (appName === "jslint") {
                                     if (today !== date) {
@@ -947,12 +953,11 @@
                                     } else {
                                         jslintcomplete();
                                     }
-                                } else if (ind === keys.length) {
-                                    flag.apps = true;
-                                }
-                                if (appName === "prettydiff") {
-                                    str = String(global.prettydiff.edition.latest);
-                                    console.log(modules[appName].name + " version " + global.prettydiff.edition.version + ", dated 20" + str.slice(0, 2) + "-" + str.slice(2, 4) + "-" + str.slice(4) + ", is available.");
+                                } else {
+                                    if (ind === keys.length) {
+                                        flag.apps = true;
+                                    }
+                                    modules[appName].edition(modules[appName]);
                                 }
                                 if (ind === keys.length) {
                                     if (today !== date) {
