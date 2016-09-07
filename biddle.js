@@ -965,9 +965,15 @@
                                             if (werr !== null && werr !== undefined) {
                                                 errout({error: werr, name: "biddle_test_lint_install_editions_writeToday"});
                                             }
-                                            flag.today = true;
+                                            if (cloned === true) {
+                                                console.log("Submodules downloaded.");
+                                            } else {
+                                                console.log("Submodules updated!");
+                                            }
                                             if (flag.fs === true && flag.apps === true) {
                                                 lintrun();
+                                            } else {
+                                                flag.today = true;
                                             }
                                         });
                                         if (cloned === true) {
@@ -985,6 +991,12 @@
                                                     if (stdouterd !== null) {
                                                         errout({error: stdouterd, name: "biddle_test_lint_install_editions_init_update"});
                                                     }
+                                                    console.log("Submodules downloaded.");
+                                                    if (flag.fs === true && flag.today === true) {
+                                                        lintrun();
+                                                    } else {
+                                                        flag.apps = true;
+                                                    }
                                                     return stdoutd;
                                                 });
                                                 return stdoutc;
@@ -998,14 +1010,21 @@
                                                     errout({error: stdouterpull, name: "biddle_test_lint_install_editions_pull"});
                                                 }
                                                 console.log("Submodules updated!");
+                                                if (flag.fs === true && flag.today === true) {
+                                                    lintrun();
+                                                } else {
+                                                    flag.apps = true;
+                                                }
                                                 return stdoutpull;
                                             });
                                         }
                                     } else {
-                                        flag.today = true;
-                                    }
-                                    if (flag.fs === true && flag.apps === true && flag.today === true) {
-                                        lintrun();
+                                        console.log("Running prior installed modules.");
+                                        if (flag.fs === true && flag.apps === true) {
+                                            lintrun();
+                                        } else {
+                                            flag.today = true;
+                                        }
                                     }
                                 } else {
                                     handler(ind);
@@ -1038,10 +1057,11 @@
                                                 data
                                             ]);
                                             if (flag.files === true && flag.items === true) {
-                                                flag.fs = true;
                                                 if (flag.apps === true && flag.today === true) {
                                                     flag.files = false;
                                                     lintrun();
+                                                } else {
+                                                    flag.fs = true;
                                                 }
                                             }
                                         });
@@ -1075,10 +1095,11 @@
                                                         } while (a < idLen);
                                                         if (ignoreDir === true) {
                                                             if (flag.files === true && flag.items === true) {
-                                                                flag.fs = true;
                                                                 if (flag.apps === true && flag.today === true) {
                                                                     flag.items = false;
                                                                     lintrun();
+                                                                } else {
+                                                                    flag.fs = true;
                                                                 }
                                                             }
                                                         } else {
