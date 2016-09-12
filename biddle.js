@@ -58,7 +58,7 @@
             published: {}
         },
         apps      = {
-            commas     : function biddle_commas(number) {
+            commas    : function biddle_commas(number) {
                 var str = String(number),
                     arr = [],
                     a   = str.length;
@@ -73,12 +73,15 @@
                 } while (a > 3);
                 return arr.join("");
             },
-            getpjson   : function biddle_getpjson(callback) {
+            getpjson  : function biddle_getpjson(callback) {
                 var file = input[2].replace(/(\/|\\)$/, "") + path.sep + "package.json";
                 fs.readFile(file, "utf8", function biddle_getpjson_readfile(err, fileData) {
                     if (err !== null && err !== undefined) {
                         if (err.toString().indexOf("no such file or directory") > 0) {
-                            return errout({error: "The package.json file is missing from " + input[2] + ". biddle cannot publish without a package.json file.", name: "biddle_getpjson_readFile"});
+                            return errout({
+                                error: "The package.json file is missing from " + input[2] + ". biddle cannot publish without a package.json file.",
+                                name : "biddle_getpjson_readFile"
+                            });
                         }
                         return errout({error: err, name: "biddle_getpjson_readFile"});
                     }
@@ -87,7 +90,11 @@
                         return errout({error: "The package.json file is missing the required \u001b[31mname\u001b[39m property.", name: "biddle_getpjson_readfile"});
                     }
                     if (data.packjson.version === undefined) {
-                        return errout({error: "The package.json file is missing the required \u001b[31mversion\u001b[39m property.", name: "biddle_getpjson_readfile"});
+                        return errout({
+                            error: "The package.json file is missing the required \u001b[31mversion\u001b[39m proper" +
+                                      "ty.",
+                            name : "biddle_getpjson_readfile"
+                        });
                     }
                     if (typeof data.packjson.name !== "string") {
                         if (typeof data.packjson.name === "object" && data.packjson.name !== null) {
@@ -106,7 +113,7 @@
                     callback();
                 });
             },
-            hashCmd    : function biddle_hashCmd(filepath, store, callback) {
+            hashCmd   : function biddle_hashCmd(filepath, store, callback) {
                 var cmd = "";
                 if (data.platform === "darwin") {
                     cmd = "shasum -a 512 " + filepath;
@@ -130,10 +137,10 @@
                     callback(stdout);
                 });
             },
-            help       : function biddle_inithelp() {
+            help      : function biddle_inithelp() {
                 return true;
             },
-            makedir    : function biddle_makedir(dirToMake, callback) {
+            makedir   : function biddle_makedir(dirToMake, callback) {
                 fs
                     .stat(dirToMake, function biddle_makedir_stat(err, stats) {
                         var dirs   = [],
@@ -191,10 +198,10 @@
                         callback();
                     });
             },
-            readBinary : function biddle_initreadBinary() {
+            readBinary: function biddle_initreadBinary() {
                 return true;
             },
-            readlist   : function biddle_readlist() {
+            readlist  : function biddle_readlist() {
                 var list = "";
                 if (data.command === "publish" || (data.command === "list" && input[2] === "published")) {
                     list = "published";
@@ -213,7 +220,7 @@
                         data.status[list] = true;
                     });
             },
-            rmrecurse  : function biddle_rmrecurse(dirToKill, callback) {
+            rmrecurse : function biddle_rmrecurse(dirToKill, callback) {
                 var cmd = (process.platform === "win32")
                     ? "powershell.exe -nologo -noprofile -command \"rm " + dirToKill + " -r -force\""
                     : "rm -rf " + dirToKill;
@@ -228,13 +235,13 @@
                     return stdout;
                 });
             },
-            sanitizef  : function biddle_sanitizef(filePath) {
-                var paths = filePath.split(path.sep),
+            sanitizef : function biddle_sanitizef(filePath) {
+                var paths    = filePath.split(path.sep),
                     fileName = paths.pop();
                 paths.push(fileName.replace(/\+|<|>|:|"|\/|\\|\||\?|\*|%/g, ""));
                 return paths.join("");
             },
-            writeFile  : function biddle_initWriteFile() {
+            writeFile : function biddle_initWriteFile() {
                 return true;
             }
         },
@@ -271,7 +278,10 @@
                 if (data.command === "zip") {
                     zipfile = data.address.target + data.fileName + ".zip";
                 } else {
-                    zipfile = data.address.target + data.packjson.name.toLowerCase() + "_" + data.packjson.version + ".zip";
+                    zipfile = data.address.target + data
+                        .packjson
+                        .name
+                        .toLowerCase() + "_" + data.packjson.version + ".zip";
                 }
                 if (data.platform === "win32") {
                     //Compress-Archive .\file1.txt, .\file2.txt -DestinationPath .\files.zip
@@ -416,10 +426,10 @@
                                             complete();
                                         }
                                     });
-                                    //Need to revise zip approach so that child items are manually added to an archive
-                                    //This is when an ignore list would be evaluated
-                                    //Need to capture application name and version number in addition to hash
-                                    //status.packjson = true;
+                                    // Need to revise zip approach so that child items are manually added to an
+                                    // archive This is when an ignore list would be evaluated Need to capture
+                                    // application name and version number in addition to hash status.packjson =
+                                    // true;
                                 });
                             } else {
                                 console.log("\u001b[31mHashes don't match\u001b[39m for " + input[2] + ". File is saved in the downloads directory and will not be installed.");
@@ -440,46 +450,44 @@
             });
         },
         publish   = function biddle_publish() {
-            var flag = {
+            var flag  = {
                     getpjson: false,
                     ignore  : false
                 },
                 zippy = function biddle_publish_zippy() {
                     zip(function biddle_publish_zippy_zip(zipfilename, writejson) {
                         zipfilename = apps.sanitizef(zipfilename);
-                        apps
-                            .hashCmd(zipfilename, "hashFile", function biddle_publish_zippy_zip_hash() {
-                                apps
-                                    .writeFile(data.hashFile, zipfilename.replace(".zip", ".hash"), function biddle_publish_zippy_zip_hash_writehash() {
-                                        return true;
-                                    });
-                                if (writejson === true) {
-                                    data
-                                        .published[data.packjson.name]
-                                        .versions
-                                        .push(data.packjson.version);
-                                    apps.writeFile(JSON.stringify(data.published), "published.json", function biddle_publish_zippy_zip_hash_writepub() {
-                                        return true;
-                                    });
-                                }
-                            });
+                        apps.hashCmd(zipfilename, "hashFile", function biddle_publish_zippy_zip_hash() {
+                            apps
+                                .writeFile(data.hashFile, zipfilename.replace(".zip", ".hash"), function biddle_publish_zippy_zip_hash_writehash() {
+                                    return true;
+                                });
+                            if (writejson === true) {
+                                data
+                                    .published[data.packjson.name]
+                                    .versions
+                                    .push(data.packjson.version);
+                                apps.writeFile(JSON.stringify(data.published), "published.json", function biddle_publish_zippy_zip_hash_writepub() {
+                                    return true;
+                                });
+                            }
+                        });
                     });
                 };
-            apps
-                .getpjson(function biddle_publish_callback() {
-                    if (input[3] !== undefined && data.published[data.packjson.name] !== undefined) {
-                        data.published[data.packjson.name].directory = data.address.target + data.packjson.name;
-                    } else if (data.published[data.packjson.name] === undefined) {
-                        data.published[data.packjson.name]           = {};
-                        data.published[data.packjson.name].versions  = [];
-                        data.published[data.packjson.name].latest    = "";
-                        data.published[data.packjson.name].directory = data.address.target + data.packjson.name;
-                    }
-                    flag.getpjson = true;
-                    if (flag.ignore === true) {
-                        zippy();
-                    }
-                });
+            apps.getpjson(function biddle_publish_callback() {
+                if (input[3] !== undefined && data.published[data.packjson.name] !== undefined) {
+                    data.published[data.packjson.name].directory = data.address.target + data.packjson.name;
+                } else if (data.published[data.packjson.name] === undefined) {
+                    data.published[data.packjson.name]           = {};
+                    data.published[data.packjson.name].versions  = [];
+                    data.published[data.packjson.name].latest    = "";
+                    data.published[data.packjson.name].directory = data.address.target + data.packjson.name;
+                }
+                flag.getpjson = true;
+                if (flag.ignore === true) {
+                    zippy();
+                }
+            });
             fs.readFile(input[2].replace(/(\/|\\)$/, "") + path.sep + ".biddleignore", "utf8", function biddle_publish_ignore(err, data) {
                 var errString = "";
                 if (err !== null && err !== undefined) {
@@ -491,12 +499,13 @@
                         }
                         return;
                     }
-                    return errout({
-                        name: "biddle_publish_ignore",
-                        error: err
-                    });
+                    return errout({error: err, name: "biddle_publish_ignore"});
                 }
-                data.ignore = data.replace(/\r\n/g, "\n").replace(/\n+/g, "\n").split("\n").sort();
+                data.ignore = data
+                    .replace(/\r\n/g, "\n")
+                    .replace(/\n+/g, "\n")
+                    .split("\n")
+                    .sort();
                 flag.ignore = true;
                 if (flag.getpjson === true) {
                     zippy();
@@ -510,8 +519,9 @@
                     pub: false
                 };
             if (app === undefined) {
-                return console.log("Attempted to unpublish \u001b[36m" + input[2] + "\u001b[39m which is \u001b[1m\u001b[31mabsent\u001b[39m\u001b[0m from the list of publishe" +
-                        "d applications. Try using the command \u001b[32mbiddle list published\u001b[39m.");
+                return console.log("Attempted to unpublish \u001b[36m" + input[2] + "\u001b[39m which is \u001b[1m\u001b[31mabsent\u001b[39m\u001b[0m from the list o" +
+                        "f published applications. Try using the command \u001b[32mbiddle list published" +
+                        "\u001b[39m.");
             }
             apps
                 .rmrecurse(app.directory, function biddle_unpublish_callback() {
@@ -566,22 +576,14 @@
         },
         test      = function biddle_test() {
             var startTime = Date.now(),
-                order = [
-                    "lint"
+                order     = [
+                    "install", "lint",
                     //"get",
-                    //"hash",
-                    //"help",
-                    //"install", //not written yet
-                    //"list",
-                    //"markdown",
-                    //"publish",
-                    //"status", //not written yet
-                    //"uninstall", //not written yet
-                    //"unpublish",
-                    //"unzip",
-                    //"zip"
+                    "hash"
+                    // "help", "install", not written yet "list", "markdown", "publish", "status",
+                    // not written yet "uninstall", not written yet "unpublish", "unzip", "zip"
                 ],
-                options = {
+                options   = {
                     correct     : false,
                     crlf        : false,
                     html        : true,
@@ -596,7 +598,41 @@
                     styleguide  : "jslint",
                     wrap        : 80
                 },
-                humantime  = function biddle_test_humantime(finished) {
+                longname  = 0,
+                namepad   = function biddle_test_namepad(name) {
+                    var a = name.length;
+                    if (name.length === longname) {
+                        return name;
+                    }
+                    do {
+                        a += 1;
+                        name = name + " ";
+                    } while (a < longname);
+                    return name;
+                },
+                modules   = {
+                    jslint    : {
+                        dir    : "JSLint",
+                        edition: function biddle_test_lint_modules_jslint(obj) {
+                            console.log("* " + namepad(obj.name) + " - " + obj.app().edition);
+                        },
+                        file   : "jslint.js",
+                        name   : "JSLint",
+                        repo   : "https://github.com/douglascrockford/JSLint.git"
+                    },
+                    prettydiff: {
+                        dir    : "prettydiff",
+                        edition: function biddle_test_lint_modules_prettydiff(obj) {
+                            var str = String(global.prettydiff.edition.latest);
+                            console.log("* " + namepad(obj.name) + " - 20" + str.slice(0, 2) + "-" + str.slice(2, 4) + "-" + str.slice(4) + ", version " + global.prettydiff.edition.version);
+                        },
+                        file   : "prettydiff.js",
+                        name   : "Pretty Diff",
+                        repo   : "https://github.com/prettydiff/prettydiff.git"
+                    }
+                },
+                keys      = Object.keys(modules),
+                humantime = function biddle_test_humantime(finished) {
                     var minuteString = "",
                         hourString   = "",
                         secondString = "",
@@ -724,52 +760,345 @@
                         return "\u001b[36m[" + hourString + ":" + minuteString + ":" + secondString + "]\u001b[39m ";
                     }
                 },
-                fail = function biddle_test_fail(errtext) {
+                diffFiles = function biddle_test_diffFiles(sampleName, sampleSource, sampleDiff) {
+                    var aa     = 0,
+                        line   = 0,
+                        pdlen  = 0,
+                        count  = 0,
+                        diffs  = 0,
+                        lcount = 0,
+                        report = [],
+                        colors = {
+                            del     : {
+                                charEnd  : "\u001b[22m",
+                                charStart: "\u001b[1m",
+                                lineEnd  : "\u001b[39m",
+                                lineStart: "\u001b[31m"
+                            },
+                            filepath: {
+                                end  : "\u001b[39m",
+                                start: "\u001b[36m"
+                            },
+                            ins     : {
+                                charEnd  : "\u001b[22m",
+                                charStart: "\u001b[1m",
+                                lineEnd  : "\u001b[39m",
+                                lineStart: "\u001b[32m"
+                            }
+                        };
+                    options.mode    = "diff";
+                    options.source  = sampleSource;
+                    options.diff    = sampleDiff;
+                    options.diffcli = true;
+                    options.context = 2;
+                    options.lang    = "text";
+                    report          = modules
+                        .prettydiff
+                        .app(options)[0];
+                    pdlen           = report[0].length;
+                    if (report.length < 3) {
+                        console.log("");
+                        console.log(colors.del.lineStart + "Test diff operation provided a bad code sample:" + colors.del.lineEnd);
+                        console.log(report[0]);
+                        return errout({
+                            error: colors.del.lineStart + "bad test" + colors.del.lineEnd,
+                            name : sampleName
+                        });
+                    }
+                    // report indexes from diffcli feature of diffview.js 0 - source line number 1 -
+                    // source code line 2 - diff line number 3 - diff code line 4 - change 5 - index
+                    // of options.context (not parallel) 6 - total count of differences
+                    if (sampleName !== "phases.simulations" && report[0][0] < 2) {
+                        diffs += 1;
+                        console.log("");
+                        console.log(colors.filepath.start + sampleName);
+                        console.log("Line: 1" + colors.filepath.end);
+                    }
+                    for (aa = 0; aa < pdlen; aa += 1) {
+                        if (report[4][aa] === "equal" && report[4][aa + 1] === "equal" && report[4][aa + 2] !== undefined && report[4][aa + 2] !== "equal") {
+                            count += 1;
+                            if (count === 51) {
+                                break;
+                            }
+                            line   = report[0][aa] + 2;
+                            lcount = 0;
+                            diffs  += 1;
+                            console.log("");
+                            console.log(colors.filepath.start + sampleName);
+                            console.log("Line: " + line + colors.filepath.end);
+                            if (aa === 0) {
+                                console.log(report[3][aa]);
+                                console.log(report[3][aa + 1]);
+                            }
+                        }
+                        if (lcount < 7) {
+                            lcount += 1;
+                            if (report[4][aa] === "delete" && report[0][aa] !== report[0][aa + 1]) {
+                                if (report[1][aa] === "") {
+                                    report[1][aa] = "(empty line)";
+                                } else if (report[1][aa].replace(/\u0020+/g, "") === "") {
+                                    report[1][aa] = "(indentation)";
+                                }
+                                console.log(colors.del.lineStart + report[1][aa].replace(/<p(d)>/g, colors.del.charStart).replace(/<\/pd>/g, colors.del.charEnd) + colors.del.lineEnd);
+                            } else if (report[4][aa] === "insert" && report[2][aa] !== report[2][aa + 1]) {
+                                if (report[3][aa] === "") {
+                                    report[3][aa] = "(empty line)";
+                                } else if (report[3][aa].replace(/\u0020+/g, "") === "") {
+                                    report[3][aa] = "(indentation)";
+                                }
+                                console.log(colors.ins.lineStart + report[3][aa].replace(/<p(d)>/g, colors.ins.charStart).replace(/<\/pd>/g, colors.ins.charEnd) + colors.ins.lineEnd);
+                            } else if (report[4][aa] === "equal" && aa > 1) {
+                                console.log(report[3][aa]);
+                            } else if (report[4][aa] === "replace") {
+                                console.log(colors.del.lineStart + report[1][aa].replace(/<p(d)>/g, colors.del.charStart).replace(/<\/pd>/g, colors.del.charEnd) + colors.del.lineEnd);
+                                console.log(colors.ins.lineStart + report[3][aa].replace(/<p(d)>/g, colors.ins.charStart).replace(/<\/pd>/g, colors.ins.charEnd) + colors.ins.lineEnd);
+                            }
+                        }
+                    }
+                    if (sampleName !== "phases.simulations") {
+                        console.log("");
+                        console.log(diffs + colors.filepath.start + " differences counted." + colors.filepath.end);
+                        errout({
+                            error: "Pretty Diff " + colors.del.lineStart + "failed" + colors.del.lineEnd + " in function: " + colors.filepath.start + sampleName + colors.filepath.end,
+                            name : sampleName
+                        });
+                    }
+                },
+                fail      = function biddle_test_fail(errtext) {
                     console.log("");
                     console.error(errtext);
                     humantime(true);
                     process.exit(1);
                 },
-                next       = function biddle_test_nextInit() {
+                next      = function biddle_test_nextInit() {
                     return;
                 },
-                phases = {
-                    lint: function biddle_test_lint() {
-                        var ignoreDirectory = [
-                                ".git",
-                                "applications",
-                                "downloads",
-                                "publications"
-                            ],
-                            flag            = {
-                                files: false,
-                                fs   : false,
-                                items: false,
-                                apps : false,
-                                today: false
+                phases    = {
+                    //get: function biddle_test_get() {},
+                    hash   : function biddle_test_hash() {
+                        child("node biddle hash LICENSE", function biddle_test_hash_child(er, stdout, stder) {
+                            var hash = "be09a71a2cda28b74e9dd206f46c1621aebe29182723f191d8109db4705ced014de469043c397fee" +
+                                    "4d8f3483e396007ca739717af4bf43fed4c2e3dd14f3dc0c";
+                            if (er !== null) {
+                                errout({error: er, name: "biddle_test_hash_child"});
+                            }
+                            if (stder !== null && stder !== "") {
+                                errout({error: stder, name: "biddle_test_hash_child"});
+                            }
+                            //why does stdout have an empty line at end?
+                            stdout = stdout.replace(/(\s+)$/, "");
+                            if (stdout !== hash) {
+                                diffFiles("biddle_test_hash_child", stdout, hash);
+                            }
+                            console.log(humantime(false) + " Hash test passed.");
+                            next();
+                        });
+                    },
+                    install: function biddle_test_install() {
+                        var dateobj  = new Date(),
+                            day      = (dateobj.getDate() > 9)
+                                ? "" + dateobj.getDate()
+                                : "0" + dateobj.getDate(),
+                            month    = (dateobj.getMonth() > 9)
+                                ? "" + (dateobj.getMonth() + 1)
+                                : "0" + (dateobj.getMonth() + 1),
+                            date     = Number("" + dateobj.getFullYear() + month + day),
+                            ind      = 0,
+                            flag     = {
+                                apps  : false,
+                                jslint: false,
+                                today : false
                             },
-                            modules         = {
-                                jslint    : {
-                                    dir : "JSLint",
-                                    edition: function biddle_test_lint_modules_jslint(obj) {
-                                        console.log(obj.name + " version " + obj.app().edition + " is available.");
-                                    },
-                                    file: "jslint.js",
-                                    name: "JSLint",
-                                    repo: "https://github.com/douglascrockford/JSLint.git"
-                                },
-                                prettydiff: {
-                                    dir : "prettydiff",
-                                    edition: function biddle_test_lint_modules_prettydiff(obj) {
-                                        var str = String(global.prettydiff.edition.latest);
-                                        console.log(obj.name + " version " + global.prettydiff.edition.version + ", dated 20" + str.slice(0, 2) + "-" + str.slice(2, 4) + "-" + str.slice(4) + ", is available.");
-                                    },
-                                    file: "prettydiff.js",
-                                    name: "Pretty Diff",
-                                    repo: "https://github.com/prettydiff/prettydiff.git"
+                            modout   = function biddle_test_install_modout() {
+                                var x   = 0,
+                                    len = keys.length;
+                                console.log("Installed submodule versions");
+                                console.log("----------------------------");
+                                for (x = 0; x < len; x += 1) {
+                                    modules[keys[x]].edition(modules[keys[x]]);
                                 }
+                                next();
                             },
-                            keys            = Object.keys(modules),
+                            today    = require("./today.js"),
+                            editions = function biddle_test_install_editionsInit() {
+                                return;
+                            },
+                            handler  = function biddle_test_install_handler() {
+                                var mod = keys[ind];
+                                modules[keys[ind]].name = "\u001b[32m" + modules[keys[ind]].name + "\u001b[39m";
+                                if (modules[keys[ind]].name.length > longname) {
+                                    longname = modules[keys[ind]].name.length;
+                                }
+                                fs.stat(modules[mod].dir, function biddle_test_install_handler_stat(erstat, stats) {
+                                    var clone = function biddle_test_install_handler_stat_clone() {
+                                        console.log("Cloning " + modules[mod].name);
+                                        child("git submodule add " + modules[mod].repo, function biddle_test_install_handler_stat_clone_submodule(era, stdouta, stdoutera) {
+                                            if (era !== null && era.toString().indexOf("already exists in the index") < 0) {
+                                                errout({error: era, name: "biddle_test_install_handler_stat_clone_submodule"});
+                                            }
+                                            if (stdoutera !== null && stdoutera !== "" && stdoutera.indexOf("Cloning into '") < 0 && stdoutera.indexOf("already exists in the index") < 0) {
+                                                errout({error: stdoutera, name: "biddle_test_install_handler_stat_clone_submodule"});
+                                            }
+                                            ind += 1;
+                                            editions(mod, true, ind);
+                                            return stdouta;
+                                        });
+                                    };
+                                    if (erstat !== null && erstat !== undefined) {
+                                        if (erstat.toString() === "Error: ENOENT: no such file or directory, stat '" + modules[mod].dir + "'") {
+                                            return clone();
+                                        }
+                                        return errout({error: erstat, name: "biddle_test_install_handler_stat"});
+                                    }
+                                    if (stats.isDirectory() === true) {
+                                        return fs.readdir(modules[mod].dir, function biddle_test_install_handler_stat_readdir(direrr, files) {
+                                            if (typeof direrr === "string") {
+                                                return errout({error: direrr, name: "biddle_test_install_handler_stat_readdir"});
+                                            }
+                                            ind += 1;
+                                            if (files.length < 1) {
+                                                child("rm -rf " + modules[mod].dir, function biddle_test_install_handler_stat_readdir_clone(errp, stdoutp, stdouterp) {
+                                                    if (errp !== null) {
+                                                        errout({error: errp, name: "biddle_test_install_handler_stat_readdir_clone"});
+                                                    }
+                                                    if (stdouterp !== null && stdouterp !== "") {
+                                                        errout({error: stdouterp, name: "biddle_test_install_handler_stat_readdir_clone"});
+                                                    }
+                                                    clone();
+                                                    return stdoutp;
+                                                });
+                                            } else {
+                                                editions(mod, false, ind);
+                                            }
+                                        });
+                                    }
+                                    clone();
+                                });
+                            };
+                        editions = function biddle_test_install_editions(appName, cloned, index) {
+                            var submod = function biddle_test_install_editions_submod(output) {
+                                var appFile        = __dirname + path.sep + modules[appName].dir + path.sep + modules[appName].file,
+                                    jslintcomplete = function biddle_test_install_editions_submod_jslintcomplete() {
+                                        modules.jslint.app = require(appFile);
+                                        flag.jslint        = true;
+                                        if (ind === keys.length) {
+                                            if (flag.today === true) {
+                                                modout();
+                                            } else {
+                                                if (output === true) {
+                                                    console.log("All submodules configured.");
+                                                }
+                                                flag.apps = true;
+                                            }
+                                        }
+                                    };
+                                if (appName === "jslint") {
+                                    fs
+                                        .readFile(appFile, "utf8", function biddle_test_install_editions_submod_lintread(erread, data) {
+                                            if (erread !== null && erread !== undefined) {
+                                                errout({error: erread, name: "biddle_test_install_editions_lintread"});
+                                            }
+                                            if (data.slice(data.length - 30).indexOf("\nmodule.exports = jslint;") < 0) {
+                                                data = data + "\nmodule.exports = jslint;";
+                                                fs.writeFile(appFile, data, "utf8", function biddle_test_install_editions_submod_lintread_lintwrite(erwrite) {
+                                                    if (erwrite !== null && erwrite !== undefined) {
+                                                        errout({error: erwrite, name: "biddle_test_install_editions_lintread_lintwrite"});
+                                                    }
+                                                    jslintcomplete();
+                                                });
+                                            } else {
+                                                jslintcomplete();
+                                            }
+                                        });
+                                } else {
+                                    modules[appName].app = require(appFile);
+                                    if (ind === keys.length && flag.jslint === true) {
+                                        if (flag.today === true) {
+                                            modout();
+                                        } else {
+                                            if (output === true) {
+                                                console.log("All submodules configured.");
+                                            }
+                                            flag.apps = true;
+                                        }
+                                    }
+                                }
+                            };
+                            if (index === keys.length) {
+                                if (today !== date) {
+                                    fs
+                                        .writeFile("today.js", "/*global module*/(function () {\"use strict\";var today=" + date + ";module.exports=today;}());", function biddle_test_install_editions_writeToday(werr) {
+                                            if (werr !== null && werr !== undefined) {
+                                                errout({error: werr, name: "biddle_test_install_editions_writeToday"});
+                                            }
+                                            if (cloned === true) {
+                                                console.log("Submodules downloaded.");
+                                            } else {
+                                                console.log("Submodules updated!");
+                                            }
+                                            if (flag.apps === true) {
+                                                modout();
+                                            } else {
+                                                console.log("Checked for new versions of submodules.");
+                                                flag.today = true;
+                                            }
+                                        });
+                                    if (cloned === true) {
+                                        child("git submodule init", function biddle_test_install_editions_init(erc, stdoutc, stdouterc) {
+                                            if (erc !== null) {
+                                                errout({error: erc, name: "biddle_test_install_editions_init"});
+                                            }
+                                            if (stdouterc !== null && stdouterc !== "" && stdouterc.indexOf("Cloning into '") < 0 && stdouterc.indexOf("From ") < 0) {
+                                                errout({error: stdouterc, name: "biddle_test_install_editions_init"});
+                                            }
+                                            child("git submodule update", function biddle_test_install_editions_init_update(erd, stdoutd, stdouterd) {
+                                                if (erd !== null) {
+                                                    errout({error: erd, name: "biddle_test_install_editions_init_update"});
+                                                }
+                                                if (stdouterd !== null && stdouterd !== "" && stdouterd.indexOf("Cloning into '") < 0 && stdouterd.indexOf("From ") !== 0) {
+                                                    errout({error: stdouterd, name: "biddle_test_install_editions_init_update"});
+                                                }
+                                                if (flag.today === false) {
+                                                    console.log("Submodules downloaded.");
+                                                }
+                                                return stdoutd;
+                                            });
+                                            return stdoutc;
+                                        });
+                                    } else {
+                                        child("git submodule foreach git pull origin master", function biddle_test_install_editions_pull(errpull, stdoutpull, stdouterpull) {
+                                            if (errpull !== null) {
+                                                if (errpull.toString().indexOf("fatal: no submodule mapping found in .gitmodules for path ") > 0) {
+                                                    console.log("No access to GitHub. Proceeding assuming submodules were previously installed.");
+                                                    flag.apps = true;
+                                                    return submod(false);
+                                                }
+                                                errout({error: errpull, name: "biddle_test_install_editions_pull"});
+                                            }
+                                            if (stdouterpull !== null && stdouterpull !== "" && stdouterpull.indexOf("Cloning into '") < 0 && stdouterpull.indexOf("From ") < 0 && stdouterpull.indexOf("fatal: no submodule mapping found in .gitmodules for path ") < 0) {
+                                                errout({error: stdouterpull, name: "biddle_test_install_editions_pull"});
+                                            }
+                                            if (flag.today === false) {
+                                                console.log("Submodules updated!");
+                                            }
+                                            return stdoutpull;
+                                        });
+                                    }
+                                } else {
+                                    flag.today = true;
+                                    console.log("Running prior installed modules.");
+                                }
+                            } else {
+                                handler(ind);
+                            }
+                            submod(true);
+                        };
+                        handler(0);
+                    },
+                    lint   : function biddle_test_lint() {
+                        var ignoreDirectory = [
+                                ".git", "applications", "downloads", "publications"
+                            ],
                             files           = [],
                             lintrun         = function biddle_test_lint_lintrun() {
                                 var lintit = function biddle_test_lint_lintrun_lintit(val, ind, arr) {
@@ -801,13 +1130,13 @@
                                             console.log("");
                                         };
                                     options.source = val[1];
-                                    result         = modules.jslint.app(modules.prettydiff.app(options), {"for": true});
+                                    result         = modules
+                                        .jslint
+                                        .app(modules.prettydiff.app(options), {"for": true});
                                     if (result.ok === true) {
                                         console.log(humantime(false) + "\u001b[32mLint is good for file " + (ind + 1) + ":\u001b[39m " + val[0]);
                                         if (ind === arr.length - 1) {
-                                            console.log("");
                                             console.log("\u001b[32mLint operation complete!\u001b[39m");
-                                            console.log("");
                                             return next();
                                         }
                                     } else {
@@ -844,199 +1173,20 @@
                                 };
                                 files.forEach(lintit);
                             };
+                        console.log("\u001b[36mBeautifying and Linting\u001b[39m");
+                        console.log("** Note that line numbers of error messaging reflects beautified code line.");
                         keys.forEach(function biddle_test_lint_updateIgnores(mod) {
                             ignoreDirectory.push(modules[mod].dir);
                         });
-                        console.log("");
-                        console.log("");
-                        console.log("\u001b[36mBeautifying and Linting\u001b[39m");
-                        console.log("** Note that line numbers of error messaging reflects beautified code line.");
-                        console.log("");
-                        (function biddle_test_lint_install() {
-                            var dateobj = new Date(),
-                                day     = (dateobj.getDate() > 9)
-                                    ? "" + dateobj.getDate()
-                                    : "0" + dateobj.getDate(),
-                                month   = (dateobj.getMonth() > 9)
-                                    ? "" + (dateobj.getMonth() + 1)
-                                    : "0" + (dateobj.getMonth() + 1),
-                                date    = Number("" + dateobj.getFullYear() + month + day),
-                                ind     = 0,
-                                today   = require("./today.js"),
-                                editions = function biddle_test_lint_install_editionsInit() {
-                                    return;
-                                },
-                                handler = function biddle_test_lint_install_handler() {
-                                    var mod = keys[ind];
-                                    fs.stat(modules[mod].dir, function biddle_test_lint_install_handler_stat(erstat, stats) {
-                                        var clone = function biddle_test_lint_install_handler_stat_clone() {
-                                            console.log("Cloning " + modules[mod].name);
-                                            child("git submodule add " + modules[mod].repo, function biddle_test_lint_install_handler_stat_clone_submodule(era, stdouta, stdoutera) {
-                                                if (era !== null) {
-                                                    errout({error: era, name: "biddle_test_lint_install_handler_stat_clone_submodule"});
-                                                }
-                                                if (stdoutera !== null) {
-                                                    errout({error: stdoutera, name: "biddle_test_lint_install_handler_stat_clone_submodule"});
-                                                }
-                                                child("git clone " + modules[mod].repo, function biddle_test_lint_install_handler_stat_clone_submodule_gitclone(erb, stdoutb, stdouterb) {
-                                                    if (erb !== null) {
-                                                        errout({error: erb, name: "biddle_test_lint_install_handler_stat_clone_submodule_gitclone"});
-                                                    }
-                                                    if (stdouterb !== null) {
-                                                        errout({error: stdouterb, name: "biddle_test_lint_install_handler_stat_clone_submodule_gitclone"});
-                                                    }
-                                                    ind += 1;
-                                                    editions(mod, true);
-                                                    return stdoutb;
-                                                });
-                                                return stdouta;
-                                            });
-                                        };
-                                        if (erstat !== null && erstat.toString() === "Error: ENOENT: no such file or directory, stat '" + modules[mod].dir + "'") {
-                                            return clone();
-                                        }
-                                        if (erstat !== null && erstat !== undefined) {
-                                            return errout({error: erstat, name: "biddle_test_lint_install_handler_stat"});
-                                        }
-                                        if (stats.isDirectory() === true) {
-                                            return fs.readdir(modules[mod].dir, function biddle_test_lint_install_handler_stat_readdir(direrr, files) {
-                                                if (typeof direrr === "string") {
-                                                    return errout({error: direrr, name: "biddle_test_lint_install_handler_stat_readdir"});
-                                                }
-                                                ind += 1;
-                                                if (files.length < 1) {
-                                                    child("rm -rf " + modules[mod].dir, function biddle_test_lint_install_handler_stat_readdir_clone(errp, stdoutp, stdouterp) {
-                                                        if (errp !== null) {
-                                                            errout({error: errp, name: "biddle_test_lint_install_handler_stat_readdir_clone"});
-                                                        }
-                                                        if (stdouterp !== null) {
-                                                            errout({error: stdouterp, name: "biddle_test_lint_install_handler_stat_readdir_clone"});
-                                                        }
-                                                        clone();
-                                                        return stdoutp;
-                                                    });
-                                                } else {
-                                                    editions(mod, false);
-                                                }
-                                            });
-                                        }
-                                    });
-                                };
-                            editions = function biddle_test_lint_install_editions(appName, cloned) {
-                                var appFile = __dirname + path.sep + modules[appName].dir + path.sep + modules[appName].file,
-                                    jslintcomplete = function biddle_test_lint_install_editions_jslintcomplete() {
-                                        modules.jslint.app = require(appFile);
-                                        modules.jslint.edition(modules.jslint);
-                                        if (ind === keys.length) {
-                                            flag.apps = true;
-                                        }
-                                    };
-                                modules[appName].app = require(appFile);
-                                if (appName === "jslint") {
-                                    if (today !== date) {
-                                        fs.readFile(appFile, "utf8", function biddle_test_lint_install_editions_lintread(erread, data) {
-                                            if (erread !== null && erread !== undefined) {
-                                                errout({error: erread, name: "biddle_test_lint_install_editions_lintread"});
-                                            }
-                                            if (data.slice(data.length - 30).indexOf("\nmodule.exports = jslint;") < 0) {
-                                                data = data + "\nmodule.exports = jslint;";
-                                                fs.writeFile(appFile, data, "utf8", function biddle_test_lint_install_editions_lintread_lintwrite(erwrite) {
-                                                    if (erwrite !== null && erwrite !== undefined) {
-                                                        errout({error: erwrite, name: "biddle_test_lint_install_editions_lintread_lintwrite"});
-                                                    }
-                                                    jslintcomplete();
-                                                });
-                                            } else {
-                                                jslintcomplete();
-                                            }
-                                        });
-                                    } else {
-                                        jslintcomplete();
-                                    }
-                                } else {
-                                    if (ind === keys.length) {
-                                        flag.apps = true;
-                                    }
-                                    modules[appName].edition(modules[appName]);
-                                }
-                                if (ind === keys.length) {
-                                    if (today !== date) {
-                                        fs.writeFile("today.js", "/*global module*/(function () {\"use strict\";var today=" + date + ";module.exports=today;}());", function biddle_test_lint_install_editions_writeToday(werr) {
-                                            if (werr !== null && werr !== undefined) {
-                                                errout({error: werr, name: "biddle_test_lint_install_editions_writeToday"});
-                                            }
-                                            if (cloned === true) {
-                                                console.log("Submodules downloaded.");
-                                            } else {
-                                                console.log("Submodules updated!");
-                                            }
-                                            if (flag.fs === true && flag.apps === true) {
-                                                lintrun();
-                                            } else {
-                                                flag.today = true;
-                                            }
-                                        });
-                                        if (cloned === true) {
-                                            child("git submodule init", function biddle_test_lint_install_editions_init(erc, stdoutc, stdouterc) {
-                                                if (erc !== null) {
-                                                    errout({error: erc, name: "biddle_test_lint_install_editions_init"});
-                                                }
-                                                if (stdouterc !== null) {
-                                                    errout({error: stdouterc, name: "biddle_test_lint_install_editions_init"});
-                                                }
-                                                child("git submodule update", function biddle_test_lint_install_editions_init_update(erd, stdoutd, stdouterd) {
-                                                    if (erd !== null) {
-                                                        errout({error: erd, name: "biddle_test_lint_install_editions_init_update"});
-                                                    }
-                                                    if (stdouterd !== null) {
-                                                        errout({error: stdouterd, name: "biddle_test_lint_install_editions_init_update"});
-                                                    }
-                                                    console.log("Submodules downloaded.");
-                                                    if (flag.fs === true && flag.today === true) {
-                                                        lintrun();
-                                                    } else {
-                                                        flag.apps = true;
-                                                    }
-                                                    return stdoutd;
-                                                });
-                                                return stdoutc;
-                                            });
-                                        } else {
-                                            child("git submodule foreach git pull origin master", function biddle_test_lint_install_editions_pull(errpull, stdoutpull, stdouterpull) {
-                                                if (errpull !== null) {
-                                                    errout({error: errpull, name: "biddle_test_lint_install_editions_pull"});
-                                                }
-                                                if (stdouterpull !== null) {
-                                                    errout({error: stdouterpull, name: "biddle_test_lint_install_editions_pull"});
-                                                }
-                                                console.log("Submodules updated!");
-                                                if (flag.fs === true && flag.today === true) {
-                                                    lintrun();
-                                                } else {
-                                                    flag.apps = true;
-                                                }
-                                                return stdoutpull;
-                                            });
-                                        }
-                                    } else {
-                                        console.log("Running prior installed modules.");
-                                        if (flag.fs === true && flag.apps === true) {
-                                            lintrun();
-                                        } else {
-                                            flag.today = true;
-                                        }
-                                    }
-                                } else {
-                                    handler(ind);
-                                }
-                            };
-                            handler(0);
-                        }());
                         (function biddle_test_lint_getFiles() {
                             var fc       = 0,
                                 ft       = 0,
                                 total    = 0,
                                 count    = 0,
+                                flag     = {
+                                    files: false,
+                                    items: false
+                                },
                                 idLen    = ignoreDirectory.length,
                                 readFile = function biddle_test_lint_getFiles_readFile(filePath) {
                                     fs
@@ -1052,17 +1202,9 @@
                                             if (filePath.charAt(0) === path.sep) {
                                                 filePath = filePath.slice(1);
                                             }
-                                            files.push([
-                                                filePath,
-                                                data
-                                            ]);
+                                            files.push([filePath, data]);
                                             if (flag.files === true && flag.items === true) {
-                                                if (flag.apps === true && flag.today === true) {
-                                                    flag.files = false;
-                                                    lintrun();
-                                                } else {
-                                                    flag.fs = true;
-                                                }
+                                                lintrun();
                                             }
                                         });
                                 },
@@ -1095,12 +1237,7 @@
                                                         } while (a < idLen);
                                                         if (ignoreDir === true) {
                                                             if (flag.files === true && flag.items === true) {
-                                                                if (flag.apps === true && flag.today === true) {
-                                                                    flag.items = false;
-                                                                    lintrun();
-                                                                } else {
-                                                                    flag.fs = true;
-                                                                }
+                                                                lintrun();
                                                             }
                                                         } else {
                                                             biddle_test_lint_getFiles_readDir(filename);
@@ -1109,7 +1246,10 @@
                                                 });
                                             };
                                             if (erra !== null) {
-                                                return errout({error: "Error reading path: " + path + "\n" + erra, name: "biddle_test_lint_getFiles_readDir_callback"});
+                                                return errout({
+                                                    error: "Error reading path: " + path + "\n" + erra,
+                                                    name : "biddle_test_lint_getFiles_readDir_callback"
+                                                });
                                             }
                                             total += list.length;
                                             list.forEach(fileEval);
@@ -1119,13 +1259,14 @@
                         }());
                     }
                 };
+
             next = function biddle_test_next() {
                 var complete = function biddle_test_next_complete() {
-                    console.log("");
                     console.log("All tasks complete... Exiting clean!");
                     humantime(true);
                     process.exit(0);
                 };
+                console.log("");
                 if (order.length < 1) {
                     return complete();
                 }
@@ -1134,7 +1275,7 @@
             };
             next();
         };
-    data.address    = (function biddle_address() {
+    data.address     = (function biddle_address() {
         var addy = {
             downloads: data.abspath + "downloads" + path.sep,
             target   : ""
@@ -1168,7 +1309,7 @@
         }
         return apps.sanitizef(output.replace(/\+|<|>|:|"|\/|\\|\||\?|\*|%/g, ""));
     };
-    apps.writeFile  = function biddle_writeFile(fileData, fileName, callback) {
+    apps.writeFile   = function biddle_writeFile(fileData, fileName, callback) {
         var callbacker = function biddle_writeFile_callbacker(size) {
             if (size > 0 && fileName !== "published.json" && fileName !== "installed.json") {
                 console.log("File " + fileName + " written at " + apps.commas(size) + " bytes.");
@@ -1195,7 +1336,7 @@
             }
         });
     };
-    apps.readBinary = function biddle_readBinary(filePath, callback) {
+    apps.readBinary  = function biddle_readBinary(filePath, callback) {
         var size        = 0,
             fdescript   = 0,
             writeBinary = function biddle_readBinary_writeBinary() {
@@ -1271,7 +1412,7 @@
             });
         });
     };
-    apps.help       = function biddle_help() {
+    apps.help        = function biddle_help() {
         var file = "readme.md",
             size = input[2];
         if (data.command === "markdown") {
@@ -1441,8 +1582,8 @@
                                     j[i] = "\n";
                                 }
                             } else if (j[i] === "!" && j[i + 1] === "[") {
-                                brace = "]";
-                                j[i]  = "";
+                                brace    = "]";
+                                j[i]     = "";
                                 j[i + 1] = "";
                             } else if (j[i] === "]" && j[i + 1] === "(") {
                                 j[i] = ", ";
@@ -1545,11 +1686,11 @@
                 if (data.command === "help" || data.command === "" || data.command === undefined || data.command === "?" || data.command === "markdown") {
                     apps.help();
                 } else if (isNaN(data.command) === false) {
-                   input[1]     = "help";
-                   input[2]     = data.command;
-                   data.command = "help";
-                   apps.help();
-               } else if (comlist[data.command] === undefined) {
+                    input[1]     = "help";
+                    input[2]     = data.command;
+                    data.command = "help";
+                    apps.help();
+                } else if (comlist[data.command] === undefined) {
                     errout({
                         error: "Unrecognized command: \u001b[31m" + data.command + "\u001b[39m.  Currently these commands are recognized:\r\n\r\n" + Object
                             .keys(comlist)
