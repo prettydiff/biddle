@@ -581,9 +581,11 @@
                     "lint",
                     //"get",
                     "hash",
-                    "help"
-                    // "install", not written yet "list", "markdown", "publish", "status",
-                    // not written yet "uninstall", not written yet "unpublish", "unzip", "zip"
+                    "help",
+                    // "install", not written yet "list",
+                    "markdown"
+                    // "publish", "status", not
+                    // written yet "uninstall", not written yet "unpublish", "unzip", "zip"
                 ],
                 options   = {
                     correct     : false,
@@ -607,7 +609,7 @@
                         return name;
                     }
                     do {
-                        a += 1;
+                        a    += 1;
                         name = name + " ";
                     } while (a < longname);
                     return name;
@@ -807,9 +809,13 @@
                             name : sampleName
                         });
                     }
-                    // report indexes from diffcli feature of diffview.js 0 - source line number 1 -
-                    // source code line 2 - diff line number 3 - diff code line 4 - change 5 - index
-                    // of options.context (not parallel) 6 - total count of differences
+                    // report indexes from diffcli feature of diffview.js
+                    // 0. source line number
+                    // 1. source code line
+                    // 2. diff line number
+                    // 3. diff code line
+                    // 4. change
+                    // 5. index of options.context (not parallel) 6 - total count of differences
                     if (sampleName !== "phases.simulations" && report[0][0] < 2) {
                         diffs += 1;
                         console.log("");
@@ -877,7 +883,7 @@
                 },
                 phases    = {
                     //get: function biddle_test_get() {},
-                    hash   : function biddle_test_hash() {
+                    hash    : function biddle_test_hash() {
                         child("node biddle hash LICENSE", function biddle_test_hash_child(er, stdout, stder) {
                             var hash = "be09a71a2cda28b74e9dd206f46c1621aebe29182723f191d8109db4705ced014de469043c397fee" +
                                     "4d8f3483e396007ca739717af4bf43fed4c2e3dd14f3dc0c";
@@ -895,22 +901,151 @@
                             next();
                         });
                     },
-                    help   : function biddle_test_help() {
+                    help    : function biddle_test_help() {
                         var flag = {
+                            "120": false,
                             "60" : false,
-                            "80" : false,
-                            "120": false
+                            "80" : false
                         };
                         child("node biddle help 60", function biddle_test_help_60(er, stdout, stder) {
-                            var help = "\n\u001b[4m\u001b[1m\u001b[31mbiddle\u001b[39m\u001b[0m\u001b[24m\n\u001b[3m\u001b[33mA package management application without a package\nmanagement service.\u001b[39m\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mLicense\u001b[39m\u001b[0m\u001b[24m\n  MIT, (\u001b[36mhttps://opensource.org/licenses/MIT\u001b[39m)\n\n\u001b[4m\u001b[1m\u001b[36mVersion\u001b[39m\u001b[0m\u001b[24m\n  0.0.3\n\n\u001b[4m\u001b[1m\u001b[36mAbout\u001b[39m\u001b[0m\u001b[24m\n  This application is a cross-OS solution to creating zip\n  files for distribution and fetching files via HTTP(S).\n  The project's goal is to provide a universal application\n  distribution utility that is language agnostic, operating\n  system independent, and platform independent.  The only\n  additional requirement for distributing application\n  packages is online storage on a web server.  This\n  application provides all the utilities to retrieve,\n  bundle, and unpackage applications.\n\n  biddle is inspired by the incredible awesomeness of\n  NPM, (\u001b[36mhttp://npmjs.com\u001b[39m), but seeks to accomplish a few\n  additional goals:\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mintegrity\u001b[39m\u001b[0m - Downloaded packages will perform a\n    hash comparison before they are unpackaged.  If the\n    hashes don't match the zip file will be saved in the\n    downloads directory awaiting a human touch.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mautonomy\u001b[39m\u001b[0m - There is no central authority here.\n    Host your own publications and manage them as you please\n    with any name you choose.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mmanagement\u001b[39m\u001b[0m - There is no dependency hell here.\n    Dependency management will not be automated, but a means\n    to manage and review the status of all\n    installed/published packages is provided.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mfreedom\u001b[39m\u001b[0m - biddle will work everywhere Node.js\n    runs.  It can be used with any application written in\n    any language whether binary or text.\n\n\u001b[4m\u001b[1m\u001b[36mProject Status\u001b[39m\u001b[0m\u001b[24m\n  \u001b[1mUnstable and in early developement.\u001b[0m\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mget\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mhash\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mhelp\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mlist\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mmarkdown\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mpublish\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1munpublish\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mzip\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1munzip\u001b[0m os complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m add support for a \u001b[3m\u001b[33m.biddleignore\u001b[39m\u001b[0m file, this file\n    contain a list of items to not include in the published\n    zip\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m File is read\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Support and processing is not added yet\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Will not include support for comments or\n      wildcards in initial launch\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m add support for \u001b[3m\u001b[33mvariants\u001b[39m\u001b[0m in package.json,\n      which allows named variants where each has a custom\n      ignore list\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1minstall\u001b[0m is \u001b[3m\u001b[33mblocked\u001b[39m\u001b[0m pending\n      configuration work\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Hash files must now become JSON storing\n      hash, name, and version\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m ZIP approach needs to be reevaluated...\n      details in next point\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Advanced configuration work is \u001b[3m\u001b[33munderway now\u001b[39m\u001b[0m.\n      Configuration details will go into the package.json\n      file.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m I need to revise the approach to creating\n      ZIP files.  I cannot simply point to a directory and\n      zip it for security reasons.  Instead I will need to\n      index the child items of the target directory for\n      addition to a ZIP file.  The reason has to do with\n      potential (malicious), naming collisions uniformity\n      violations.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Allow restriction of named directories when\n      creating a zip so that production only packages don't\n      have dev dependencies, build systems, unit tests,\n      systems files, and so forth\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Allow definition of custom default\n      locations.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1mstatus\u001b[0m is not started.  This command\n      will compare an installed application's version\n      against a published version to determine if out of\n      date.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must allow an app name as an argument to\n      manually check that application or \u001b[3m\u001b[33mall\u001b[39m\u001b[0m to check all\n      installed applications\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Status automation or intervals would be\n      nice... such as checking app versions once a week and\n      providing a message when out of date\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1muninstall\u001b[0m command is \u001b[3m\u001b[33mblocked\u001b[39m\u001b[0m pending\n      completion of \u001b[1minstall\u001b[0m.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must delete the application\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must remove the application from the \u001b[1mlist\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mSupported commands\u001b[39m\u001b[0m\u001b[24m\n  Commands are the third command line argument, or second\n  if the optional \u001b[3m\u001b[33mnode\u001b[39m\u001b[0m argument is absent.  Commands are\n  case insensitive, but values and local paths are case\n  sensitive.  All local address are either absolute from the\n  root or relative from the current working directory.\n\n  \u001b[4m\u001b[1m\u001b[32mget\u001b[39m\u001b[0m\u001b[24m\n    Merely downloads the requested resource and saves\n    it as a file with the same filename. If the filename is\n    not provided in the URI the final directory up to the\n    domain name will become the filename, and if for some\n    reason that doesn't work the default filename is\n    \u001b[3m\u001b[33mdownload.xxx\u001b[39m\u001b[0m.\n\n    Download a file to the default location, which is\n    the provided \u001b[3m\u001b[33mdownloads\u001b[39m\u001b[0m directory.\n\n\u001b[32m    node biddle get http://google.com\u001b[39m\n\n    Download a file to an alternate location.\n\n\u001b[32m    node biddle get http://google.com ../mydirectory\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mhash\u001b[39m\u001b[0m\u001b[24m\n    Prints to console a SHA512 hash against a local\n    resource.\n\n\u001b[32m    node biddle hash downloads/myfile.zip\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mhelp\u001b[39m\u001b[0m\u001b[24m\n    Prints the readme.md file contents to console in a\n    human friendly way.\n\n    No command will still generate the readme data.\n\n\u001b[32m    node biddle\u001b[39m\n\n    The default word wrapping is set to 100 characters.\n\n\u001b[32m    node biddle help\u001b[39m\n\n    Set a custom word wrap limit.\n\n\u001b[32m    node biddle help 80\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32minstall\u001b[39m\u001b[0m\u001b[24m\n    (not written yet)\n    Downloads the requested resource, but decompresses\n    and unpackages the zip before writing files to disk.\n\n  \u001b[4m\u001b[1m\u001b[32mlist\u001b[39m\u001b[0m\u001b[24m\n    Will list all installed and/or published\n    applications with their locations and latest versions.\n    It can take the optional argument \u001b[3m\u001b[33minstalled\u001b[39m\u001b[0m or \u001b[3m\u001b[33mpublished\u001b[39m\u001b[0m\n    to output a specific list or both lists are produced.\n\n    Only output the installed list.\n\n\u001b[32m    node biddle list installed\u001b[39m\n\n    Output both lists\n\n\u001b[32m    node biddle list\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mmarkdown\u001b[39m\u001b[0m\u001b[24m\n    Allows the internal markdown parser used by the\n    \u001b[1mhelp\u001b[0m command to be supplied to a directed file to ease\n    reading of documentation directly from the command line.\n\n    The first argument after the command is the address\n    of the file to read.\n\n\u001b[32m    node biddle markdown applications/example/readme.md\u001b[39m\n\n    You can also specify a custom word wrap limit.  The\n    default is still 100.\n\n\u001b[32m    node biddle markdown applications/example/readme.md 80\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mpublish\u001b[39m\u001b[0m\u001b[24m\n    Writes a hash file and a zip file with a version\n    number to the publications directory or some other\n    specified location.  Applications are required to have a\n    file in their root directory named \u001b[3m\u001b[33mpackage.json\u001b[39m\u001b[0m with\n    properties: \u001b[3m\u001b[33mname\u001b[39m\u001b[0m and \u001b[3m\u001b[33mversion\u001b[39m\u001b[0m.\n\n    Create a zip in the default location:\n    ./publications/myapplication\n\n\u001b[32m    node biddle publish ../myapplication\u001b[39m\n\n    Publish to a custom location:\n    ./myAlternateDirectory/myapplication\n\n\u001b[32m    node biddle publish ../myapplication myAlternateDirectory\u001b[39m\n\n    Use quotes if any argument contains spaces:\n\n\u001b[32m    node biddle publish \"c:\program files\myApplication\"\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mstatus\u001b[39m\u001b[0m\u001b[24m\n    (not written yet)\n    Will check whether an installed application is\n    behind the latest published version.  Automation is\n    planned but still under consideration.\n\n  \u001b[4m\u001b[1m\u001b[32mtest\u001b[39m\u001b[0m\u001b[24m\n    (not written yet)\n    Run the unit tests.\n\n  \u001b[4m\u001b[1m\u001b[32muninstall\u001b[39m\u001b[0m\u001b[24m\n    (not written yet)\n    Will delete an installed application by name and\n    remove the application from the installed list.\n\n  \u001b[4m\u001b[1m\u001b[32munpublish\u001b[39m\u001b[0m\u001b[24m\n    Will delete a published application by name and\n    remove the application from the published list.  An\n    application name is required and not the address to the\n    application.\n\n\u001b[32m    node biddle unpublish myApplication\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32munzip\u001b[39m\u001b[0m\u001b[24m\n    Unzips a local zipped file.\n\n    Unzip to the default location, the supplied\n    \u001b[3m\u001b[33mdownloads\u001b[39m\u001b[0m directory.\n\n\u001b[32m    node biddle unzip myZipFile.zip\u001b[39m\n\n    Unzip to a specified location.\n\n\u001b[32m    node biddle unzip myZipFile.zip myDirectory\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mzip\u001b[39m\u001b[0m\u001b[24m\n    Zips local files or local directories into a zip\n    file.\n\n    Zip to the default location, the supplied \u001b[3m\u001b[33mdownloads\u001b[39m\u001b[0m\n    directory.\n\n\u001b[32m    node biddle zip ../myApplication\u001b[39m\n\n    Zip to a specified location.\n\n\u001b[32m    node biddle zip ../myApplication myCustom/Location/Directory\u001b[39m\n\n\u001b[4m\u001b[1m\u001b[36mDependencies\u001b[39m\u001b[0m\u001b[24m\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m This application is written in JavaScript and\n    requires Node.js, (\u001b[36mhttps://nodejs.org/en/\u001b[39m), to run.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m This application makes use of zip and hash\n    utilities provided by the operating system.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m The \u001b[3m\u001b[33mtest\u001b[39m\u001b[0m command requires Pretty Diff,\n    (\u001b[36mhttps://github.com/prettydiff/prettydiff.git\u001b[39m), and\n    JSLint,\n    (\u001b[36mhttps://github.com/douglascrockford/JSLint.git\u001b[39m), as git\n    submodules from Github.\n";
+                            var help = "\n\u001b[4m\u001b[1m\u001b[31mbiddle\u001b[39m\u001b[0m\u001b[24m\n\u001b[3m" +
+                                        "\u001b[33mA package management application without a package\nmanagement service" +
+                                        ".\u001b[39m\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mLicense\u001b[39m\u001b[0m" +
+                                        "\u001b[24m\n  MIT, (\u001b[36mhttps://opensource.org/licenses/MIT\u001b[39m)\n\n" +
+                                        "\u001b[4m\u001b[1m\u001b[36mVersion\u001b[39m\u001b[0m\u001b[24m\n  0.0.3\n\n" +
+                                        "\u001b[4m\u001b[1m\u001b[36mAbout\u001b[39m\u001b[0m\u001b[24m\n  This applicati" +
+                                        "on is a cross-OS solution to creating zip\n  files for distribution and fetching" +
+                                        " files via HTTP(S).\n  The project's goal is to provide a universal application" +
+                                        "\n  distribution utility that is language agnostic, operating\n  system independ" +
+                                        "ent, and platform independent.  The only\n  additional requirement for distribut" +
+                                        "ing application\n  packages is online storage on a web server.  This\n  applicat" +
+                                        "ion provides all the utilities to retrieve,\n  bundle, and unpackage application" +
+                                        "s.\n\n  biddle is inspired by the incredible awesomeness of\n  NPM, (\u001b[36mh" +
+                                        "ttp://npmjs.com\u001b[39m), but seeks to accomplish a few\n  additional goals:\n" +
+                                        "\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mintegrity\u001b[3" +
+                                        "9m\u001b[0m - Downloaded packages will perform a\n    hash comparison before the" +
+                                        "y are unpackaged.  If the\n    hashes don't match the zip file will be saved in " +
+                                        "the\n    downloads directory awaiting a human touch.\n  \u001b[1m\u001b[31m*" +
+                                        "\u001b[39m\u001b[0m \u001b[3m\u001b[33mautonomy\u001b[39m\u001b[0m - There is no" +
+                                        " central authority here.\n    Host your own publications and manage them as you " +
+                                        "please\n    with any name you choose.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m" +
+                                        " \u001b[3m\u001b[33mmanagement\u001b[39m\u001b[0m - There is no dependency hell " +
+                                        "here.\n    Dependency management will not be automated, but a means\n    to mana" +
+                                        "ge and review the status of all\n    installed/published packages is provided.\n" +
+                                        "  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mfreedom\u001b[39m" +
+                                        "\u001b[0m - biddle will work everywhere Node.js\n    runs.  It can be used with " +
+                                        "any application written in\n    any language whether binary or text.\n\n\u001b[4" +
+                                        "m\u001b[1m\u001b[36mProject Status\u001b[39m\u001b[0m\u001b[24m\n  \u001b[1mUnst" +
+                                        "able and in early developement.\u001b[0m\n\n  \u001b[1m\u001b[31m*\u001b[39m" +
+                                        "\u001b[0m command \u001b[1mget\u001b[0m is complete\n  \u001b[1m\u001b[31m*" +
+                                        "\u001b[39m\u001b[0m command \u001b[1mhash\u001b[0m is complete\n  \u001b[1m" +
+                                        "\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mhelp\u001b[0m is complete\n  " +
+                                        "\u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mlist\u001b[0m is comple" +
+                                        "te\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mmarkdown\u001b[0m" +
+                                        " is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mpublish" +
+                                        "\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[" +
+                                        "1munpublish\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m comm" +
+                                        "and \u001b[1mzip\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m" +
+                                        " command \u001b[1munzip\u001b[0m os complete\n  \u001b[1m\u001b[31m*\u001b[39m" +
+                                        "\u001b[0m add support for a \u001b[3m\u001b[33m.biddleignore\u001b[39m\u001b[0m " +
+                                        "file, this file\n    contain a list of items to not include in the published\n  " +
+                                        "  zip\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m File is read\n    \u001b[1m" +
+                                        "\u001b[31m-\u001b[39m\u001b[0m Support and processing is not added yet\n    " +
+                                        "\u001b[1m\u001b[31m-\u001b[39m\u001b[0m Will not include support for comments or" +
+                                        "\n      wildcards in initial launch\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m a" +
+                                        "dd support for \u001b[3m\u001b[33mvariants\u001b[39m\u001b[0m in package.json,\n" +
+                                        "      which allows named variants where each has a custom\n      ignore list\n  " +
+                                        "\u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1minstall\u001b[0m is " +
+                                        "\u001b[3m\u001b[33mblocked\u001b[39m\u001b[0m pending\n      configuration work" +
+                                        "\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Hash files must now become JSON st" +
+                                        "oring\n      hash, name, and version\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0" +
+                                        "m ZIP approach needs to be reevaluated...\n      details in next point\n  \u001b" +
+                                        "[1m\u001b[31m*\u001b[39m\u001b[0m Advanced configuration work is \u001b[3m\u001b" +
+                                        "[33munderway now\u001b[39m\u001b[0m.\n      Configuration details will go into t" +
+                                        "he package.json\n      file.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m I need" +
+                                        " to revise the approach to creating\n      ZIP files.  I cannot simply point to " +
+                                        "a directory and\n      zip it for security reasons.  Instead I will need to\n   " +
+                                        "   index the child items of the target directory for\n      addition to a ZIP fi" +
+                                        "le.  The reason has to do with\n      potential (malicious), naming collisions u" +
+                                        "niformity\n      violations.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Allow " +
+                                        "restriction of named directories when\n      creating a zip so that production o" +
+                                        "nly packages don't\n      have dev dependencies, build systems, unit tests,\n   " +
+                                        "   systems files, and so forth\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Allo" +
+                                        "w definition of custom default\n      locations.\n  \u001b[1m\u001b[31m*\u001b[3" +
+                                        "9m\u001b[0m Work on \u001b[1mstatus\u001b[0m is not started.  This command\n    " +
+                                        "  will compare an installed application's version\n      against a published ver" +
+                                        "sion to determine if out of\n      date.\n    \u001b[1m\u001b[31m-\u001b[39m" +
+                                        "\u001b[0m Must allow an app name as an argument to\n      manually check that ap" +
+                                        "plication or \u001b[3m\u001b[33mall\u001b[39m\u001b[0m to check all\n      insta" +
+                                        "lled applications\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Status automation" +
+                                        " or intervals would be\n      nice... such as checking app versions once a week " +
+                                        "and\n      providing a message when out of date\n  \u001b[1m\u001b[31m*\u001b[39" +
+                                        "m\u001b[0m Work on \u001b[1muninstall\u001b[0m command is \u001b[3m\u001b[33mblo" +
+                                        "cked\u001b[39m\u001b[0m pending\n      completion of \u001b[1minstall\u001b[0m." +
+                                        "\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must delete the application\n    " +
+                                        "\u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must remove the application from the " +
+                                        "\u001b[1mlist\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mSupported commands\u001b[3" +
+                                        "9m\u001b[0m\u001b[24m\n  Commands are the third command line argument, or second" +
+                                        "\n  if the optional \u001b[3m\u001b[33mnode\u001b[39m\u001b[0m argument is absen" +
+                                        "t.  Commands are\n  case insensitive, but values and local paths are case\n  sen" +
+                                        "sitive.  All local address are either absolute from the\n  root or relative from" +
+                                        " the current working directory.\n\n  \u001b[4m\u001b[1m\u001b[32mget\u001b[39m" +
+                                        "\u001b[0m\u001b[24m\n    Merely downloads the requested resource and saves\n    " +
+                                        "it as a file with the same filename. If the filename is\n    not provided in the" +
+                                        " URI the final directory up to the\n    domain name will become the filename, an" +
+                                        "d if for some\n    reason that doesn't work the default filename is\n    \u001b[" +
+                                        "3m\u001b[33mdownload.xxx\u001b[39m\u001b[0m.\n\n    Download a file to the defau" +
+                                        "lt location, which is\n    the provided \u001b[3m\u001b[33mdownloads\u001b[39m" +
+                                        "\u001b[0m directory.\n\n\u001b[32m    node biddle get http://google.com\u001b[39" +
+                                        "m\n\n    Download a file to an alternate location.\n\n\u001b[32m    node biddle " +
+                                        "get http://google.com ../mydirectory\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32m" +
+                                        "hash\u001b[39m\u001b[0m\u001b[24m\n    Prints to console a SHA512 hash against a" +
+                                        " local\n    resource.\n\n\u001b[32m    node biddle hash downloads/myfile.zip" +
+                                        "\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mhelp\u001b[39m\u001b[0m\u001b[24m\n " +
+                                        "   Prints the readme.md file contents to console in a\n    human friendly way.\n" +
+                                        "\n    No command will still generate the readme data.\n\n\u001b[32m    node bidd" +
+                                        "le\u001b[39m\n\n    The default word wrapping is set to 100 characters.\n\n" +
+                                        "\u001b[32m    node biddle help\u001b[39m\n\n    Set a custom word wrap limit.\n" +
+                                        "\n\u001b[32m    node biddle help 80\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mi" +
+                                        "nstall\u001b[39m\u001b[0m\u001b[24m\n    (not written yet)\n    Downloads the re" +
+                                        "quested resource, but decompresses\n    and unpackages the zip before writing fi" +
+                                        "les to disk.\n\n  \u001b[4m\u001b[1m\u001b[32mlist\u001b[39m\u001b[0m\u001b[24m" +
+                                        "\n    Will list all installed and/or published\n    applications with their loca" +
+                                        "tions and latest versions.\n    It can take the optional argument \u001b[3m" +
+                                        "\u001b[33minstalled\u001b[39m\u001b[0m or \u001b[3m\u001b[33mpublished\u001b[39m" +
+                                        "\u001b[0m\n    to output a specific list or both lists are produced.\n\n    Only" +
+                                        " output the installed list.\n\n\u001b[32m    node biddle list installed\u001b[39" +
+                                        "m\n\n    Output both lists\n\n\u001b[32m    node biddle list\u001b[39m\n\n  " +
+                                        "\u001b[4m\u001b[1m\u001b[32mmarkdown\u001b[39m\u001b[0m\u001b[24m\n    Allows th" +
+                                        "e internal markdown parser used by the\n    \u001b[1mhelp\u001b[0m command to be" +
+                                        " supplied to a directed file to ease\n    reading of documentation directly from" +
+                                        " the command line.\n\n    The first argument after the command is the address\n " +
+                                        "   of the file to read.\n\n\u001b[32m    node biddle markdown applications/examp" +
+                                        "le/readme.md\u001b[39m\n\n    You can also specify a custom word wrap limit.  Th" +
+                                        "e\n    default is still 100.\n\n\u001b[32m    node biddle markdown applications/" +
+                                        "example/readme.md 80\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mpublish\u001b[39" +
+                                        "m\u001b[0m\u001b[24m\n    Writes a hash file and a zip file with a version\n    " +
+                                        "number to the publications directory or some other\n    specified location.  App" +
+                                        "lications are required to have a\n    file in their root directory named \u001b[" +
+                                        "3m\u001b[33mpackage.json\u001b[39m\u001b[0m with\n    properties: \u001b[3m" +
+                                        "\u001b[33mname\u001b[39m\u001b[0m and \u001b[3m\u001b[33mversion\u001b[39m\u001b" +
+                                        "[0m.\n\n    Create a zip in the default location:\n    ./publications/myapplicat" +
+                                        "ion\n\n\u001b[32m    node biddle publish ../myapplication\u001b[39m\n\n    Publi" +
+                                        "sh to a custom location:\n    ./myAlternateDirectory/myapplication\n\n\u001b[32m" +
+                                        "    node biddle publish ../myapplication myAlternateDirectory\u001b[39m\n\n    U" +
+                                        "se quotes if any argument contains spaces:\n\n\u001b[32m    node biddle publish " +
+                                        "\"c:\\program files\\myApplication\"\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32m" +
+                                        "status\u001b[39m\u001b[0m\u001b[24m\n    (not writt",
+                                name = "biddle_test_help_60";
                             if (er !== null) {
-                                errout({error: er, name: "biddle_test_hash_60"});
+                                errout({error: er, name: name});
                             }
                             if (stder !== null && stder !== "") {
-                                errout({error: stder, name: "biddle_test_help_60"});
+                                errout({error: stder, name: name});
                             }
+                            stdout = stdout.replace(/(\\(\w+)?)$/, "");
                             if (stdout !== help) {
-                                diffFiles("biddle_test_help_60", stdout, hash);
+                                diffFiles(name, stdout, help);
                             }
                             console.log(humantime(false) + " \u001b[32mhelp 60 test passed.\u001b[39m");
                             flag["60"] = true;
@@ -919,15 +1054,144 @@
                             }
                         });
                         child("node biddle help 80", function biddle_test_help_80(er, stdout, stder) {
-                            var help = "\n\u001b[4m\u001b[1m\u001b[31mbiddle\u001b[39m\u001b[0m\u001b[24m\n\u001b[3m\u001b[33mA package management application without a package management service.\u001b[39m\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mLicense\u001b[39m\u001b[0m\u001b[24m\n  MIT, (\u001b[36mhttps://opensource.org/licenses/MIT\u001b[39m)\n\n\u001b[4m\u001b[1m\u001b[36mVersion\u001b[39m\u001b[0m\u001b[24m\n  0.0.3\n\n\u001b[4m\u001b[1m\u001b[36mAbout\u001b[39m\u001b[0m\u001b[24m\n  This application is a cross-OS solution to creating zip files for\n  distribution and fetching files via HTTP(S).  The project's goal is to provide\n  a universal application distribution utility that is language agnostic,\n  operating system independent, and platform independent.  The only additional\n  requirement for distributing application packages is online storage on a web\n  server.  This application provides all the utilities to retrieve, bundle, and\n  unpackage applications.\n\n  biddle is inspired by the incredible awesomeness of NPM,\n  (\u001b[36mhttp://npmjs.com\u001b[39m), but seeks to accomplish a few additional goals:\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mintegrity\u001b[39m\u001b[0m - Downloaded packages will perform a hash comparison before\n    they are unpackaged.  If the hashes don't match the zip file will be saved\n    in the downloads directory awaiting a human touch.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mautonomy\u001b[39m\u001b[0m - There is no central authority here.  Host your own\n    publications and manage them as you please with any name you choose.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mmanagement\u001b[39m\u001b[0m - There is no dependency hell here.  Dependency management\n    will not be automated, but a means to manage and review the status of all\n    installed/published packages is provided.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mfreedom\u001b[39m\u001b[0m - biddle will work everywhere Node.js runs.  It can be used\n    with any application written in any language whether binary or text.\n\n\u001b[4m\u001b[1m\u001b[36mProject Status\u001b[39m\u001b[0m\u001b[24m\n  \u001b[1mUnstable and in early developement.\u001b[0m\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mget\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mhash\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mhelp\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mlist\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mmarkdown\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mpublish\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1munpublish\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mzip\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1munzip\u001b[0m os complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m add support for a \u001b[3m\u001b[33m.biddleignore\u001b[39m\u001b[0m file, this file contain a list of\n    items to not include in the published zip\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m File is read\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Support and processing is not added yet\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Will not include support for comments or wildcards in initial\n      launch\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m add support for \u001b[3m\u001b[33mvariants\u001b[39m\u001b[0m in package.json, which allows named\n      variants where each has a custom ignore list\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1minstall\u001b[0m is \u001b[3m\u001b[33mblocked\u001b[39m\u001b[0m pending configuration work\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Hash files must now become JSON storing hash, name, and version\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m ZIP approach needs to be reevaluated... details in next point\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Advanced configuration work is \u001b[3m\u001b[33munderway now\u001b[39m\u001b[0m.  Configuration\n      details will go into the package.json file.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m I need to revise the approach to creating ZIP files.  I cannot\n      simply point to a directory and zip it for security reasons.  Instead I\n      will need to index the child items of the target directory for addition to\n      a ZIP file.  The reason has to do with potential (malicious), naming\n      collisions uniformity violations.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Allow restriction of named directories when creating a zip so\n      that production only packages don't have dev dependencies, build systems,\n      unit tests, systems files, and so forth\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Allow definition of custom default locations.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1mstatus\u001b[0m is not started.  This command will compare an\n      installed application's version against a published version to determine\n      if out of date.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must allow an app name as an argument to manually check that\n      application or \u001b[3m\u001b[33mall\u001b[39m\u001b[0m to check all installed applications\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Status automation or intervals would be nice... such as\n      checking app versions once a week and providing a message when out of date\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1muninstall\u001b[0m command is \u001b[3m\u001b[33mblocked\u001b[39m\u001b[0m pending completion of\n      \u001b[1minstall\u001b[0m.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must delete the application\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must remove the application from the \u001b[1mlist\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mSupported commands\u001b[39m\u001b[0m\u001b[24m\n  Commands are the third command line argument, or second if the optional\n  \u001b[3m\u001b[33mnode\u001b[39m\u001b[0m argument is absent.  Commands are case insensitive, but values and local\n  paths are case sensitive.  All local address are either absolute from the root\n  or relative from the current working directory.\n\n  \u001b[4m\u001b[1m\u001b[32mget\u001b[39m\u001b[0m\u001b[24m\n    Merely downloads the requested resource and saves it as a file with the\n    same filename. If the filename is not provided in the URI the final\n    directory up to the domain name will become the filename, and if for some\n    reason that doesn't work the default filename is \u001b[3m\u001b[33mdownload.xxx\u001b[39m\u001b[0m.\n\n    Download a file to the default location, which is the provided\n    \u001b[3m\u001b[33mdownloads\u001b[39m\u001b[0m directory.\n\n\u001b[32m    node biddle get http://google.com\u001b[39m\n\n    Download a file to an alternate location.\n\n\u001b[32m    node biddle get http://google.com ../mydirectory\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mhash\u001b[39m\u001b[0m\u001b[24m\n    Prints to console a SHA512 hash against a local resource.\n\n\u001b[32m    node biddle hash downloads/myfile.zip\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mhelp\u001b[39m\u001b[0m\u001b[24m\n    Prints the readme.md file contents to console in a human friendly way.\n\n    No command will still generate the readme data.\n\n\u001b[32m    node biddle\u001b[39m\n\n    The default word wrapping is set to 100 characters.\n\n\u001b[32m    node biddle help\u001b[39m\n\n    Set a custom word wrap limit.\n\n\u001b[32m    node biddle help 80\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32minstall\u001b[39m\u001b[0m\u001b[24m\n    (not written yet)\n    Downloads the requested resource, but decompresses and unpackages the\n    zip before writing files to disk.\n\n  \u001b[4m\u001b[1m\u001b[32mlist\u001b[39m\u001b[0m\u001b[24m\n    Will list all installed and/or published applications with their\n    locations and latest versions.  It can take the optional argument \u001b[3m\u001b[33minstalled\u001b[39m\u001b[0m\n    or \u001b[3m\u001b[33mpublished\u001b[39m\u001b[0m to output a specific list or both lists are produced.\n\n    Only output the installed list.\n\n\u001b[32m    node biddle list installed\u001b[39m\n\n    Output both lists\n\n\u001b[32m    node biddle list\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mmarkdown\u001b[39m\u001b[0m\u001b[24m\n    Allows the internal markdown parser used by the \u001b[1mhelp\u001b[0m command to be\n    supplied to a directed file to ease reading of documentation directly from\n    the command line.\n\n    The first argument after the command is the address of the file to read.\n\n\u001b[32m    node biddle markdown applications/example/readme.md\u001b[39m\n\n    You can also specify a custom word wrap limit.  The default is still\n    100.\n\n\u001b[32m    node biddle markdown applications/example/readme.md 80\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mpublish\u001b[39m\u001b[0m\u001b[24m\n    Writes a hash file and a zip file with a version number to the\n    publications directory or some other specified location.  Applications are\n    required to have a file in their root directory named \u001b[3m\u001b[33mpackage.json\u001b[39m\u001b[0m with\n    properties: \u001b[3m\u001b[33mname\u001b[39m\u001b[0m and \u001b[3m\u001b[33mversion\u001b[39m\u001b[0m.\n\n    Create a zip in the default location: ./publications/myapplication\n\n\u001b[32m    node biddle publish ../myapplication\u001b[39m\n\n    Publish to a custom location: ./myAlternateDirectory/myapplication\n\n\u001b[32m    node biddle publish ../myapplication myAlternateDirectory\u001b[39m\n\n    Use quotes if any argument contains spaces:\n\n\u001b[32m    node biddle publish \"c:\program files\myApplication\"\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mstatus\u001b[39m\u001b[0m\u001b[24m\n    (not written yet)\n    Will check whether an installed application is behind the latest\n    published version.  Automation is planned but still under consideration.\n\n  \u001b[4m\u001b[1m\u001b[32mtest\u001b[39m\u001b[0m\u001b[24m\n    (not written yet)\n    Run the unit tests.\n\n  \u001b[4m\u001b[1m\u001b[32muninstall\u001b[39m\u001b[0m\u001b[24m\n    (not written yet)\n    Will delete an installed application by name and remove the application\n    from the installed list.\n\n  \u001b[4m\u001b[1m\u001b[32munpublish\u001b[39m\u001b[0m\u001b[24m\n    Will delete a published application by name and remove the application\n    from the published list.  An application name is required and not the\n    address to the application.\n\n\u001b[32m    node biddle unpublish myApplication\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32munzip\u001b[39m\u001b[0m\u001b[24m\n    Unzips a local zipped file.\n\n    Unzip to the default location, the supplied \u001b[3m\u001b[33mdownloads\u001b[39m\u001b[0m directory.\n\n\u001b[32m    node biddle unzip myZipFile.zip\u001b[39m\n\n    Unzip to a specified location.\n\n\u001b[32m    node biddle unzip myZipFile.zip myDirectory\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mzip\u001b[39m\u001b[0m\u001b[24m\n    Zips local files or local directories into a zip file.\n\n    Zip to the default location, the supplied \u001b[3m\u001b[33mdownloads\u001b[39m\u001b[0m directory.\n\n\u001b[32m    node biddle zip ../myApplication\u001b[39m\n\n    Zip to a specified location.\n\n\u001b[32m    node biddle zip ../myApplication myCustom/Location/Directory\u001b[39m\n\n\u001b[4m\u001b[1m\u001b[36mDependencies\u001b[39m\u001b[0m\u001b[24m\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m This application is written in JavaScript and requires Node.js,\n    (\u001b[36mhttps://nodejs.org/en/\u001b[39m), to run.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m This application makes use of zip and hash utilities provided by the\n    operating system.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m The \u001b[3m\u001b[33mtest\u001b[39m\u001b[0m command requires Pretty Diff,\n    (\u001b[36mhttps://github.com/prettydiff/prettydiff.git\u001b[39m), and JSLint,\n    (\u001b[36mhttps://github.com/douglascrockford/JSLint.git\u001b[39m), as git submodules from\n    Github.\n";
+                            var help = "\n\u001b[4m\u001b[1m\u001b[31mbiddle\u001b[39m\u001b[0m\u001b[24m\n\u001b[3m" +
+                                        "\u001b[33mA package management application without a package management service." +
+                                        "\u001b[39m\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mLicense\u001b[39m\u001b[0m" +
+                                        "\u001b[24m\n  MIT, (\u001b[36mhttps://opensource.org/licenses/MIT\u001b[39m)\n\n" +
+                                        "\u001b[4m\u001b[1m\u001b[36mVersion\u001b[39m\u001b[0m\u001b[24m\n  0.0.3\n\n" +
+                                        "\u001b[4m\u001b[1m\u001b[36mAbout\u001b[39m\u001b[0m\u001b[24m\n  This applicati" +
+                                        "on is a cross-OS solution to creating zip files for\n  distribution and fetching" +
+                                        " files via HTTP(S).  The project's goal is to provide\n  a universal application" +
+                                        " distribution utility that is language agnostic,\n  operating system independent" +
+                                        ", and platform independent.  The only additional\n  requirement for distributing" +
+                                        " application packages is online storage on a web\n  server.  This application pr" +
+                                        "ovides all the utilities to retrieve, bundle, and\n  unpackage applications.\n\n" +
+                                        "  biddle is inspired by the incredible awesomeness of NPM,\n  (\u001b[36mhttp://" +
+                                        "npmjs.com\u001b[39m), but seeks to accomplish a few additional goals:\n\n  " +
+                                        "\u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mintegrity\u001b[39m" +
+                                        "\u001b[0m - Downloaded packages will perform a hash comparison before\n    they " +
+                                        "are unpackaged.  If the hashes don't match the zip file will be saved\n    in th" +
+                                        "e downloads directory awaiting a human touch.\n  \u001b[1m\u001b[31m*\u001b[39m" +
+                                        "\u001b[0m \u001b[3m\u001b[33mautonomy\u001b[39m\u001b[0m - There is no central a" +
+                                        "uthority here.  Host your own\n    publications and manage them as you please wi" +
+                                        "th any name you choose.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m" +
+                                        "\u001b[33mmanagement\u001b[39m\u001b[0m - There is no dependency hell here.  Dep" +
+                                        "endency management\n    will not be automated, but a means to manage and review " +
+                                        "the status of all\n    installed/published packages is provided.\n  \u001b[1m" +
+                                        "\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mfreedom\u001b[39m\u001b[0m - b" +
+                                        "iddle will work everywhere Node.js runs.  It can be used\n    with any applicati" +
+                                        "on written in any language whether binary or text.\n\n\u001b[4m\u001b[1m\u001b[3" +
+                                        "6mProject Status\u001b[39m\u001b[0m\u001b[24m\n  \u001b[1mUnstable and in early " +
+                                        "developement.\u001b[0m\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command " +
+                                        "\u001b[1mget\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m com" +
+                                        "mand \u001b[1mhash\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[" +
+                                        "0m command \u001b[1mhelp\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m" +
+                                        "\u001b[0m command \u001b[1mlist\u001b[0m is complete\n  \u001b[1m\u001b[31m*" +
+                                        "\u001b[39m\u001b[0m command \u001b[1mmarkdown\u001b[0m is complete\n  \u001b[1m" +
+                                        "\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mpublish\u001b[0m is complete\n  " +
+                                        "\u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1munpublish\u001b[0m is c" +
+                                        "omplete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mzip\u001b[0m" +
+                                        " is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1munzip" +
+                                        "\u001b[0m os complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m add support for" +
+                                        " a \u001b[3m\u001b[33m.biddleignore\u001b[39m\u001b[0m file, this file contain a" +
+                                        " list of\n    items to not include in the published zip\n    \u001b[1m\u001b[31m" +
+                                        "-\u001b[39m\u001b[0m File is read\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m S" +
+                                        "upport and processing is not added yet\n    \u001b[1m\u001b[31m-\u001b[39m\u001b" +
+                                        "[0m Will not include support for comments or wildcards in initial\n      launch" +
+                                        "\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m add support for \u001b[3m\u001b[33mv" +
+                                        "ariants\u001b[39m\u001b[0m in package.json, which allows named\n      variants w" +
+                                        "here each has a custom ignore list\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Wo" +
+                                        "rk on \u001b[1minstall\u001b[0m is \u001b[3m\u001b[33mblocked\u001b[39m\u001b[0m" +
+                                        " pending configuration work\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Hash fi" +
+                                        "les must now become JSON storing hash, name, and version\n    \u001b[1m\u001b[31" +
+                                        "m-\u001b[39m\u001b[0m ZIP approach needs to be reevaluated... details in next po" +
+                                        "int\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Advanced configuration work is " +
+                                        "\u001b[3m\u001b[33munderway now\u001b[39m\u001b[0m.  Configuration\n      detail" +
+                                        "s will go into the package.json file.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[" +
+                                        "0m I need to revise the approach to creating ZIP files.  I cannot\n      simply " +
+                                        "point to a directory and zip it for security reasons.  Instead I\n      will nee" +
+                                        "d to index the child items of the target directory for addition to\n      a ZIP " +
+                                        "file.  The reason has to do with potential (malicious), naming\n      collisions" +
+                                        " uniformity violations.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Allow restr" +
+                                        "iction of named directories when creating a zip so\n      that production only p" +
+                                        "ackages don't have dev dependencies, build systems,\n      unit tests, systems f" +
+                                        "iles, and so forth\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Allow definition" +
+                                        " of custom default locations.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on" +
+                                        " \u001b[1mstatus\u001b[0m is not started.  This command will compare an\n      i" +
+                                        "nstalled application's version against a published version to determine\n      i" +
+                                        "f out of date.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must allow an app na" +
+                                        "me as an argument to manually check that\n      application or \u001b[3m\u001b[3" +
+                                        "3mall\u001b[39m\u001b[0m to check all installed applications\n    \u001b[1m" +
+                                        "\u001b[31m-\u001b[39m\u001b[0m Status automation or intervals would be nice... s" +
+                                        "uch as\n      checking app versions once a week and providing a message when out" +
+                                        " of date\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1muninstall" +
+                                        "\u001b[0m command is \u001b[3m\u001b[33mblocked\u001b[39m\u001b[0m pending compl" +
+                                        "etion of\n      \u001b[1minstall\u001b[0m.\n    \u001b[1m\u001b[31m-\u001b[39m" +
+                                        "\u001b[0m Must delete the application\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[" +
+                                        "0m Must remove the application from the \u001b[1mlist\u001b[0m\n\n\u001b[4m" +
+                                        "\u001b[1m\u001b[36mSupported commands\u001b[39m\u001b[0m\u001b[24m\n  Commands a" +
+                                        "re the third command line argument, or second if the optional\n  \u001b[3m\u001b" +
+                                        "[33mnode\u001b[39m\u001b[0m argument is absent.  Commands are case insensitive, " +
+                                        "but values and local\n  paths are case sensitive.  All local address are either " +
+                                        "absolute from the root\n  or relative from the current working directory.\n\n  " +
+                                        "\u001b[4m\u001b[1m\u001b[32mget\u001b[39m\u001b[0m\u001b[24m\n    Merely downloa" +
+                                        "ds the requested resource and saves it as a file with the\n    same filename. If" +
+                                        " the filename is not provided in the URI the final\n    directory up to the doma" +
+                                        "in name will become the filename, and if for some\n    reason that doesn't work " +
+                                        "the default filename is \u001b[3m\u001b[33mdownload.xxx\u001b[39m\u001b[0m.\n\n " +
+                                        "   Download a file to the default location, which is the provided\n    \u001b[3m" +
+                                        "\u001b[33mdownloads\u001b[39m\u001b[0m directory.\n\n\u001b[32m    node biddle g" +
+                                        "et http://google.com\u001b[39m\n\n    Download a file to an alternate location." +
+                                        "\n\n\u001b[32m    node biddle get http://google.com ../mydirectory\u001b[39m\n\n" +
+                                        "  \u001b[4m\u001b[1m\u001b[32mhash\u001b[39m\u001b[0m\u001b[24m\n    Prints to c" +
+                                        "onsole a SHA512 hash against a local resource.\n\n\u001b[32m    node biddle hash" +
+                                        " downloads/myfile.zip\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mhelp\u001b[39m" +
+                                        "\u001b[0m\u001b[24m\n    Prints the readme.md file contents to console in a huma" +
+                                        "n friendly way.\n\n    No command will still generate the readme data.\n\n\u001b" +
+                                        "[32m    node biddle\u001b[39m\n\n    The default word wrapping is set to 100 cha" +
+                                        "racters.\n\n\u001b[32m    node biddle help\u001b[39m\n\n    Set a custom word wr" +
+                                        "ap limit.\n\n\u001b[32m    node biddle help 80\u001b[39m\n\n  \u001b[4m\u001b[1m" +
+                                        "\u001b[32minstall\u001b[39m\u001b[0m\u001b[24m\n    (not written yet)\n    Downl" +
+                                        "oads the requested resource, but decompresses and unpackages the\n    zip before" +
+                                        " writing files to disk.\n\n  \u001b[4m\u001b[1m\u001b[32mlist\u001b[39m\u001b[0m" +
+                                        "\u001b[24m\n    Will list all installed and/or published applications with their" +
+                                        "\n    locations and latest versions.  It can take the optional argument \u001b[3" +
+                                        "m\u001b[33minstalled\u001b[39m\u001b[0m\n    or \u001b[3m\u001b[33mpublished" +
+                                        "\u001b[39m\u001b[0m to output a specific list or both lists are produced.\n\n   " +
+                                        " Only output the installed list.\n\n\u001b[32m    node biddle list installed" +
+                                        "\u001b[39m\n\n    Output both lists\n\n\u001b[32m    node biddle list\u001b[39m" +
+                                        "\n\n  \u001b[4m\u001b[1m\u001b[32mmarkdown\u001b[39m\u001b[0m\u001b[24m\n    All" +
+                                        "ows the internal markdown parser used by the \u001b[1mhelp\u001b[0m command to b" +
+                                        "e\n    supplied to a directed file to ease reading of documentation directly fro" +
+                                        "m\n    the command line.\n\n    The first argument after the command is the addr" +
+                                        "ess of the file to read.\n\n\u001b[32m    node biddle markdown applications/exam" +
+                                        "ple/readme.md\u001b[39m\n\n    You can also specify a custom word wrap limit.  T" +
+                                        "he default is still\n    100.\n\n\u001b[32m    node biddle markdown applications" +
+                                        "/example/readme.md 80\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mpublish\u001b[3" +
+                                        "9m\u001b[0m\u001b[24m\n    Writes a hash file and a zip file with a version numb" +
+                                        "er to the\n    publications directory or some other specified location.  Applica" +
+                                        "tions are\n    required to have a file in their root directory named \u001b[3m" +
+                                        "\u001b[33mpackage.json\u001b[39m\u001b[0m with\n    properties: \u001b[3m\u001b[" +
+                                        "33mname\u001b[39m\u001b[0m and \u001b[3m\u001b[33mversion\u001b[39m\u001b[0m.\n" +
+                                        "\n    Create a zip in the default location: ./publications/myapplication\n\n" +
+                                        "\u001b[32m    node biddle publish ../myapplication\u001b[39m\n\n    Publish to a" +
+                                        " custom location: ./myAlternateDirectory/myapplication\n\n\u001b[32m    node bid" +
+                                        "dle publish ../myapplication myAlternateDirectory\u001b[39m\n\n    Use quotes if" +
+                                        " any argument contains spaces:\n\n\u001b[32m    node biddle publish \"c:\\progra" +
+                                        "m files\\myApplication\"\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mstatus\u001b" +
+                                        "[39m\u001b[0m\u001b[24m\n    (not written yet)\n    Will check whether an instal" +
+                                        "led application is behind the latest\n    published version.  Automation is plan" +
+                                        "ned but stil",
+                                name = "biddle_test_help_80";
                             if (er !== null) {
-                                errout({error: er, name: "biddle_test_hash_80"});
+                                errout({error: er, name: name});
                             }
                             if (stder !== null && stder !== "") {
-                                errout({error: stder, name: "biddle_test_help_80"});
+                                errout({error: stder, name: name});
                             }
+                            stdout = stdout.replace(/(\\(\w+)?)$/, "");
                             if (stdout !== help) {
-                                diffFiles("biddle_test_help_80", stdout, hash);
+                                diffFiles(name, stdout, help);
                             }
                             console.log(humantime(false) + " \u001b[32mhelp 80 test passed.\u001b[39m");
                             flag["80"] = true;
@@ -936,24 +1200,152 @@
                             }
                         });
                         child("node biddle help 120", function biddle_test_help_120(er, stdout, stder) {
-                            var help = "\n\u001b[4m\u001b[1m\u001b[31mbiddle\u001b[39m\u001b[0m\u001b[24m\n\u001b[3m\u001b[33mA package management application without a package management service.\u001b[39m\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mLicense\u001b[39m\u001b[0m\u001b[24m\n  MIT, (\u001b[36mhttps://opensource.org/licenses/MIT\u001b[39m)\n\n\u001b[4m\u001b[1m\u001b[36mVersion\u001b[39m\u001b[0m\u001b[24m\n  0.0.3\n\n\u001b[4m\u001b[1m\u001b[36mAbout\u001b[39m\u001b[0m\u001b[24m\n  This application is a cross-OS solution to creating zip files for distribution and fetching files via HTTP(S).  The\n  project's goal is to provide a universal application distribution utility that is language agnostic, operating system\n  independent, and platform independent.  The only additional requirement for distributing application packages is\n  online storage on a web server.  This application provides all the utilities to retrieve, bundle, and unpackage\n  applications.\n\n  biddle is inspired by the incredible awesomeness of NPM, (\u001b[36mhttp://npmjs.com\u001b[39m), but seeks to accomplish a few\n  additional goals:\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mintegrity\u001b[39m\u001b[0m - Downloaded packages will perform a hash comparison before they are unpackaged.  If the hashes\n    don't match the zip file will be saved in the downloads directory awaiting a human touch.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mautonomy\u001b[39m\u001b[0m - There is no central authority here.  Host your own publications and manage them as you please with\n    any name you choose.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mmanagement\u001b[39m\u001b[0m - There is no dependency hell here.  Dependency management will not be automated, but a means to\n    manage and review the status of all installed/published packages is provided.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mfreedom\u001b[39m\u001b[0m - biddle will work everywhere Node.js runs.  It can be used with any application written in any\n    language whether binary or text.\n\n\u001b[4m\u001b[1m\u001b[36mProject Status\u001b[39m\u001b[0m\u001b[24m\n  \u001b[1mUnstable and in early developement.\u001b[0m\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mget\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mhash\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mhelp\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mlist\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mmarkdown\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mpublish\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1munpublish\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mzip\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1munzip\u001b[0m os complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m add support for a \u001b[3m\u001b[33m.biddleignore\u001b[39m\u001b[0m file, this file contain a list of items to not include in the published zip\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m File is read\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Support and processing is not added yet\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Will not include support for comments or wildcards in initial launch\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m add support for \u001b[3m\u001b[33mvariants\u001b[39m\u001b[0m in package.json, which allows named variants where each has a custom ignore list\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1minstall\u001b[0m is \u001b[3m\u001b[33mblocked\u001b[39m\u001b[0m pending configuration work\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Hash files must now become JSON storing hash, name, and version\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m ZIP approach needs to be reevaluated... details in next point\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Advanced configuration work is \u001b[3m\u001b[33munderway now\u001b[39m\u001b[0m.  Configuration details will go into the package.json file.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m I need to revise the approach to creating ZIP files.  I cannot simply point to a directory and zip it\n      for security reasons.  Instead I will need to index the child items of the target directory for addition to a ZIP\n      file.  The reason has to do with potential (malicious), naming collisions uniformity violations.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Allow restriction of named directories when creating a zip so that production only packages don't have\n      dev dependencies, build systems, unit tests, systems files, and so forth\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Allow definition of custom default locations.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1mstatus\u001b[0m is not started.  This command will compare an installed application's version against a\n      published version to determine if out of date.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must allow an app name as an argument to manually check that application or \u001b[3m\u001b[33mall\u001b[39m\u001b[0m to check all installed\n      applications\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Status automation or intervals would be nice... such as checking app versions once a week and providing\n      a message when out of date\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1muninstall\u001b[0m command is \u001b[3m\u001b[33mblocked\u001b[39m\u001b[0m pending completion of \u001b[1minstall\u001b[0m.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must delete the application\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must remove the application from the \u001b[1mlist\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mSupported commands\u001b[39m\u001b[0m\u001b[24m\n  Commands are the third command line argument, or second if the optional \u001b[3m\u001b[33mnode\u001b[39m\u001b[0m argument is absent.  Commands are case\n  insensitive, but values and local paths are case sensitive.  All local address are either absolute from the root or\n  relative from the current working directory.\n\n  \u001b[4m\u001b[1m\u001b[32mget\u001b[39m\u001b[0m\u001b[24m\n    Merely downloads the requested resource and saves it as a file with the same filename. If the filename is not\n    provided in the URI the final directory up to the domain name will become the filename, and if for some reason that\n    doesn't work the default filename is \u001b[3m\u001b[33mdownload.xxx\u001b[39m\u001b[0m.\n\n    Download a file to the default location, which is the provided \u001b[3m\u001b[33mdownloads\u001b[39m\u001b[0m directory.\n\n\u001b[32m    node biddle get http://google.com\u001b[39m\n\n    Download a file to an alternate location.\n\n\u001b[32m    node biddle get http://google.com ../mydirectory\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mhash\u001b[39m\u001b[0m\u001b[24m\n    Prints to console a SHA512 hash against a local resource.\n\n\u001b[32m    node biddle hash downloads/myfile.zip\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mhelp\u001b[39m\u001b[0m\u001b[24m\n    Prints the readme.md file contents to console in a human friendly way.\n\n    No command will still generate the readme data.\n\n\u001b[32m    node biddle\u001b[39m\n\n    The default word wrapping is set to 100 characters.\n\n\u001b[32m    node biddle help\u001b[39m\n\n    Set a custom word wrap limit.\n\n\u001b[32m    node biddle help 80\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32minstall\u001b[39m\u001b[0m\u001b[24m\n    (not written yet)\n    Downloads the requested resource, but decompresses and unpackages the zip before writing files to disk.\n\n  \u001b[4m\u001b[1m\u001b[32mlist\u001b[39m\u001b[0m\u001b[24m\n    Will list all installed and/or published applications with their locations and latest versions.  It can take\n    the optional argument \u001b[3m\u001b[33minstalled\u001b[39m\u001b[0m or \u001b[3m\u001b[33mpublished\u001b[39m\u001b[0m to output a specific list or both lists are produced.\n\n    Only output the installed list.\n\n\u001b[32m    node biddle list installed\u001b[39m\n\n    Output both lists\n\n\u001b[32m    node biddle list\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mmarkdown\u001b[39m\u001b[0m\u001b[24m\n    Allows the internal markdown parser used by the \u001b[1mhelp\u001b[0m command to be supplied to a directed file to ease reading\n    of documentation directly from the command line.\n\n    The first argument after the command is the address of the file to read.\n\n\u001b[32m    node biddle markdown applications/example/readme.md\u001b[39m\n\n    You can also specify a custom word wrap limit.  The default is still 100.\n\n\u001b[32m    node biddle markdown applications/example/readme.md 80\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mpublish\u001b[39m\u001b[0m\u001b[24m\n    Writes a hash file and a zip file with a version number to the publications directory or some other specified\n    location.  Applications are required to have a file in their root directory named \u001b[3m\u001b[33mpackage.json\u001b[39m\u001b[0m with properties: \u001b[3m\u001b[33mname\u001b[39m\u001b[0m\n    and \u001b[3m\u001b[33mversion\u001b[39m\u001b[0m.\n\n    Create a zip in the default location: ./publications/myapplication\n\n\u001b[32m    node biddle publish ../myapplication\u001b[39m\n\n    Publish to a custom location: ./myAlternateDirectory/myapplication\n\n\u001b[32m    node biddle publish ../myapplication myAlternateDirectory\u001b[39m\n\n    Use quotes if any argument contains spaces:\n\n\u001b[32m    node biddle publish \"c:\program files\myApplication\"\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mstatus\u001b[39m\u001b[0m\u001b[24m\n    (not written yet)\n    Will check whether an installed application is behind the latest published version.  Automation is planned but\n    still under consideration.\n\n  \u001b[4m\u001b[1m\u001b[32mtest\u001b[39m\u001b[0m\u001b[24m\n    (not written yet)\n    Run the unit tests.\n\n  \u001b[4m\u001b[1m\u001b[32muninstall\u001b[39m\u001b[0m\u001b[24m\n    (not written yet)\n    Will delete an installed application by name and remove the application from the installed list.\n\n  \u001b[4m\u001b[1m\u001b[32munpublish\u001b[39m\u001b[0m\u001b[24m\n    Will delete a published application by name and remove the application from the published list.  An application\n    name is required and not the address to the application.\n\n\u001b[32m    node biddle unpublish myApplication\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32munzip\u001b[39m\u001b[0m\u001b[24m\n    Unzips a local zipped file.\n\n    Unzip to the default location, the supplied \u001b[3m\u001b[33mdownloads\u001b[39m\u001b[0m directory.\n\n\u001b[32m    node biddle unzip myZipFile.zip\u001b[39m\n\n    Unzip to a specified location.\n\n\u001b[32m    node biddle unzip myZipFile.zip myDirectory\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mzip\u001b[39m\u001b[0m\u001b[24m\n    Zips local files or local directories into a zip file.\n\n    Zip to the default location, the supplied \u001b[3m\u001b[33mdownloads\u001b[39m\u001b[0m directory.\n\n\u001b[32m    node biddle zip ../myApplication\u001b[39m\n\n    Zip to a specified location.\n\n\u001b[32m    node biddle zip ../myApplication myCustom/Location/Directory\u001b[39m\n\n\u001b[4m\u001b[1m\u001b[36mDependencies\u001b[39m\u001b[0m\u001b[24m\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m This application is written in JavaScript and requires Node.js, (\u001b[36mhttps://nodejs.org/en/\u001b[39m), to run.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m This application makes use of zip and hash utilities provided by the operating system.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m The \u001b[3m\u001b[33mtest\u001b[39m\u001b[0m command requires Pretty Diff, (\u001b[36mhttps://github.com/prettydiff/prettydiff.git\u001b[39m), and JSLint,\n    (\u001b[36mhttps://github.com/douglascrockford/JSLint.git\u001b[39m), as git submodules from Github.\n";
+                            var help = "\n\u001b[4m\u001b[1m\u001b[31mbiddle\u001b[39m\u001b[0m\u001b[24m\n\u001b[3m" +
+                                        "\u001b[33mA package management application without a package management service." +
+                                        "\u001b[39m\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mLicense\u001b[39m\u001b[0m" +
+                                        "\u001b[24m\n  MIT, (\u001b[36mhttps://opensource.org/licenses/MIT\u001b[39m)\n\n" +
+                                        "\u001b[4m\u001b[1m\u001b[36mVersion\u001b[39m\u001b[0m\u001b[24m\n  0.0.3\n\n" +
+                                        "\u001b[4m\u001b[1m\u001b[36mAbout\u001b[39m\u001b[0m\u001b[24m\n  This applicati" +
+                                        "on is a cross-OS solution to creating zip files for distribution and fetching fi" +
+                                        "les via HTTP(S).  The\n  project's goal is to provide a universal application di" +
+                                        "stribution utility that is language agnostic, operating system\n  independent, a" +
+                                        "nd platform independent.  The only additional requirement for distributing appli" +
+                                        "cation packages is\n  online storage on a web server.  This application provides" +
+                                        " all the utilities to retrieve, bundle, and unpackage\n  applications.\n\n  bidd" +
+                                        "le is inspired by the incredible awesomeness of NPM, (\u001b[36mhttp://npmjs.com" +
+                                        "\u001b[39m), but seeks to accomplish a few\n  additional goals:\n\n  \u001b[1m" +
+                                        "\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mintegrity\u001b[39m\u001b[0m -" +
+                                        " Downloaded packages will perform a hash comparison before they are unpackaged. " +
+                                        " If the hashes\n    don't match the zip file will be saved in the downloads dire" +
+                                        "ctory awaiting a human touch.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[" +
+                                        "3m\u001b[33mautonomy\u001b[39m\u001b[0m - There is no central authority here.  H" +
+                                        "ost your own publications and manage them as you please with\n    any name you c" +
+                                        "hoose.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mmanagement" +
+                                        "\u001b[39m\u001b[0m - There is no dependency hell here.  Dependency management w" +
+                                        "ill not be automated, but a means to\n    manage and review the status of all in" +
+                                        "stalled/published packages is provided.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[" +
+                                        "0m \u001b[3m\u001b[33mfreedom\u001b[39m\u001b[0m - biddle will work everywhere N" +
+                                        "ode.js runs.  It can be used with any application written in any\n    language w" +
+                                        "hether binary or text.\n\n\u001b[4m\u001b[1m\u001b[36mProject Status\u001b[39m" +
+                                        "\u001b[0m\u001b[24m\n  \u001b[1mUnstable and in early developement.\u001b[0m\n\n" +
+                                        "  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mget\u001b[0m is compl" +
+                                        "ete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mhash\u001b[0m is" +
+                                        " complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mhelp\u001b" +
+                                        "[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mlist" +
+                                        "\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[" +
+                                        "1mmarkdown\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m comma" +
+                                        "nd \u001b[1mpublish\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b" +
+                                        "[0m command \u001b[1munpublish\u001b[0m is complete\n  \u001b[1m\u001b[31m*" +
+                                        "\u001b[39m\u001b[0m command \u001b[1mzip\u001b[0m is complete\n  \u001b[1m\u001b" +
+                                        "[31m*\u001b[39m\u001b[0m command \u001b[1munzip\u001b[0m os complete\n  \u001b[1" +
+                                        "m\u001b[31m*\u001b[39m\u001b[0m add support for a \u001b[3m\u001b[33m.biddleigno" +
+                                        "re\u001b[39m\u001b[0m file, this file contain a list of items to not include in " +
+                                        "the published zip\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m File is read\n   " +
+                                        " \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Support and processing is not added yet" +
+                                        "\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Will not include support for comme" +
+                                        "nts or wildcards in initial launch\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m ad" +
+                                        "d support for \u001b[3m\u001b[33mvariants\u001b[39m\u001b[0m in package.json, wh" +
+                                        "ich allows named variants where each has a custom ignore list\n  \u001b[1m\u001b" +
+                                        "[31m*\u001b[39m\u001b[0m Work on \u001b[1minstall\u001b[0m is \u001b[3m\u001b[33" +
+                                        "mblocked\u001b[39m\u001b[0m pending configuration work\n    \u001b[1m\u001b[31m-" +
+                                        "\u001b[39m\u001b[0m Hash files must now become JSON storing hash, name, and vers" +
+                                        "ion\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m ZIP approach needs to be reeval" +
+                                        "uated... details in next point\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Advanc" +
+                                        "ed configuration work is \u001b[3m\u001b[33munderway now\u001b[39m\u001b[0m.  Co" +
+                                        "nfiguration details will go into the package.json file.\n    \u001b[1m\u001b[31m" +
+                                        "-\u001b[39m\u001b[0m I need to revise the approach to creating ZIP files.  I can" +
+                                        "not simply point to a directory and zip it\n      for security reasons.  Instead" +
+                                        " I will need to index the child items of the target directory for addition to a " +
+                                        "ZIP\n      file.  The reason has to do with potential (malicious), naming collis" +
+                                        "ions uniformity violations.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Allow r" +
+                                        "estriction of named directories when creating a zip so that production only pack" +
+                                        "ages don't have\n      dev dependencies, build systems, unit tests, systems file" +
+                                        "s, and so forth\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Allow definition of" +
+                                        " custom default locations.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on " +
+                                        "\u001b[1mstatus\u001b[0m is not started.  This command will compare an installed" +
+                                        " application's version against a\n      published version to determine if out of" +
+                                        " date.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must allow an app name as an" +
+                                        " argument to manually check that application or \u001b[3m\u001b[33mall\u001b[39m" +
+                                        "\u001b[0m to check all installed\n      applications\n    \u001b[1m\u001b[31m-" +
+                                        "\u001b[39m\u001b[0m Status automation or intervals would be nice... such as chec" +
+                                        "king app versions once a week and providing\n      a message when out of date\n " +
+                                        " \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1muninstall\u001b[0m com" +
+                                        "mand is \u001b[3m\u001b[33mblocked\u001b[39m\u001b[0m pending completion of " +
+                                        "\u001b[1minstall\u001b[0m.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must del" +
+                                        "ete the application\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must remove the" +
+                                        " application from the \u001b[1mlist\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mSupp" +
+                                        "orted commands\u001b[39m\u001b[0m\u001b[24m\n  Commands are the third command li" +
+                                        "ne argument, or second if the optional \u001b[3m\u001b[33mnode\u001b[39m\u001b[0" +
+                                        "m argument is absent.  Commands are case\n  insensitive, but values and local pa" +
+                                        "ths are case sensitive.  All local address are either absolute from the root or" +
+                                        "\n  relative from the current working directory.\n\n  \u001b[4m\u001b[1m\u001b[3" +
+                                        "2mget\u001b[39m\u001b[0m\u001b[24m\n    Merely downloads the requested resource " +
+                                        "and saves it as a file with the same filename. If the filename is not\n    provi" +
+                                        "ded in the URI the final directory up to the domain name will become the filenam" +
+                                        "e, and if for some reason that\n    doesn't work the default filename is \u001b[" +
+                                        "3m\u001b[33mdownload.xxx\u001b[39m\u001b[0m.\n\n    Download a file to the defau" +
+                                        "lt location, which is the provided \u001b[3m\u001b[33mdownloads\u001b[39m\u001b[" +
+                                        "0m directory.\n\n\u001b[32m    node biddle get http://google.com\u001b[39m\n\n  " +
+                                        "  Download a file to an alternate location.\n\n\u001b[32m    node biddle get htt" +
+                                        "p://google.com ../mydirectory\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mhash" +
+                                        "\u001b[39m\u001b[0m\u001b[24m\n    Prints to console a SHA512 hash against a loc" +
+                                        "al resource.\n\n\u001b[32m    node biddle hash downloads/myfile.zip\u001b[39m\n" +
+                                        "\n  \u001b[4m\u001b[1m\u001b[32mhelp\u001b[39m\u001b[0m\u001b[24m\n    Prints th" +
+                                        "e readme.md file contents to console in a human friendly way.\n\n    No command " +
+                                        "will still generate the readme data.\n\n\u001b[32m    node biddle\u001b[39m\n\n " +
+                                        "   The default word wrapping is set to 100 characters.\n\n\u001b[32m    node bid" +
+                                        "dle help\u001b[39m\n\n    Set a custom word wrap limit.\n\n\u001b[32m    node bi" +
+                                        "ddle help 80\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32minstall\u001b[39m\u001b[" +
+                                        "0m\u001b[24m\n    (not written yet)\n    Downloads the requested resource, but d" +
+                                        "ecompresses and unpackages the zip before writing files to disk.\n\n  \u001b[4m" +
+                                        "\u001b[1m\u001b[32mlist\u001b[39m\u001b[0m\u001b[24m\n    Will list all installe" +
+                                        "d and/or published applications with their locations and latest versions.  It ca" +
+                                        "n take\n    the optional argument \u001b[3m\u001b[33minstalled\u001b[39m\u001b[0" +
+                                        "m or \u001b[3m\u001b[33mpublished\u001b[39m\u001b[0m to output a specific list o" +
+                                        "r both lists are produced.\n\n    Only output the installed list.\n\n\u001b[32m " +
+                                        "   node biddle list installed\u001b[39m\n\n    Output both lists\n\n\u001b[32m  " +
+                                        "  node biddle list\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mmarkdown\u001b[39m" +
+                                        "\u001b[0m\u001b[24m\n    Allows the internal markdown parser used by the \u001b[" +
+                                        "1mhelp\u001b[0m command to be supplied to a directed file to ease reading\n    o" +
+                                        "f documentation directly from the command line.\n\n    The first argument after " +
+                                        "the command is the address of the file to read.\n\n\u001b[32m    node biddle mar" +
+                                        "kdown applications/example/readme.md\u001b[39m\n\n    You can also specify a cus" +
+                                        "tom word wrap limit.  The default is still 100.\n\n\u001b[32m    node biddle mar" +
+                                        "kdown applications/example/readme.md 80\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[" +
+                                        "32mpublish\u001b[39m\u001b[0m\u001b[24m\n    Writes a hash file and a zip file w" +
+                                        "ith a version number to the publications directory or some other specified\n    " +
+                                        "location.  Applications are required to have a file in their root directory name" +
+                                        "d \u001b[3m\u001b[33mpackage.json\u001b[39m\u001b[0m with properties: \u001b[3m" +
+                                        "\u001b[33mname\u001b[39m\u001b[0m\n    and \u001b[3m\u001b[33mversion\u001b[39m" +
+                                        "\u001b[0m.\n\n    Create a zip in the default location: ./publications/myapplica" +
+                                        "tion\n\n\u001b[32m    node biddle publish ../myapplication\u001b[39m\n\n    Publ" +
+                                        "ish to a custom location: ./myAlternateDirectory/myapplication\n\n\u001b[32m    " +
+                                        "node biddle publish ../myapplication myAlternateDirectory\u001b[39m\n\n    Use q" +
+                                        "uotes if any argument contains spaces:\n\n\u001b[32m    node biddle publish \"c:" +
+                                        "\\program files\\myApplication\"\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mstat" +
+                                        "us\u001b[39m\u001b[0m\u001b[24m\n    (not written yet)\n    Will check whether a" +
+                                        "n installed application is behind the latest published version.  Automation is p" +
+                                        "lanned but\n    still under consideration.\n\n  \u001b[4m\u001b[1m\u001b[32mtest" +
+                                        "\u001b[39m\u001b[0m\u001b[24m\n    (not written yet)\n    Run the un",
+                                name = "biddle_test_help_120";
                             if (er !== null) {
-                                errout({error: er, name: "biddle_test_hash_120"});
+                                errout({error: er, name: name});
                             }
                             if (stder !== null && stder !== "") {
-                                errout({error: stder, name: "biddle_test_help_120"});
+                                errout({error: stder, name: name});
                             }
+                            stdout = stdout.replace(/(\\(\w+)?)$/, "");
                             if (stdout !== help) {
-                                diffFiles("biddle_test_help_120", stdout, hash);
+                                diffFiles(name, stdout, help);
                             }
                             console.log(humantime(false) + " \u001b[32mhelp 120 test passed.\u001b[39m");
                             flag["120"] = true;
-                            if (flag["80"] === true && flag["60"] === true) {
+                            if (flag["60"] === true && flag["80"] === true) {
                                 next();
                             }
                         });
                     },
-                    install: function biddle_test_install() {
+                    install : function biddle_test_install() {
                         var dateobj  = new Date(),
                             day      = (dateobj.getDate() > 9)
                                 ? "" + dateobj.getDate()
@@ -979,51 +1371,52 @@
                                 if (modules[keys[ind]].name.length > longname) {
                                     longname = modules[keys[ind]].name.length;
                                 }
-                                fs.stat(modules[mod].dir, function biddle_test_install_handler_stat(erstat, stats) {
-                                    var clone = function biddle_test_install_handler_stat_clone() {
-                                        console.log("Cloning " + modules[mod].name);
-                                        child("git submodule add " + modules[mod].repo, function biddle_test_install_handler_stat_clone_submodule(era, stdouta, stdoutera) {
-                                            if (era !== null && era.toString().indexOf("already exists in the index") < 0) {
-                                                errout({error: era, name: "biddle_test_install_handler_stat_clone_submodule"});
+                                fs
+                                    .stat(modules[mod].dir, function biddle_test_install_handler_stat(erstat, stats) {
+                                        var clone = function biddle_test_install_handler_stat_clone() {
+                                            console.log("Cloning " + modules[mod].name);
+                                            child("git submodule add " + modules[mod].repo, function biddle_test_install_handler_stat_clone_submodule(era, stdouta, stdoutera) {
+                                                if (era !== null && era.toString().indexOf("already exists in the index") < 0) {
+                                                    errout({error: era, name: "biddle_test_install_handler_stat_clone_submodule"});
+                                                }
+                                                if (stdoutera !== null && stdoutera !== "" && stdoutera.indexOf("Cloning into '") < 0 && stdoutera.indexOf("already exists in the index") < 0) {
+                                                    errout({error: stdoutera, name: "biddle_test_install_handler_stat_clone_submodule"});
+                                                }
+                                                ind += 1;
+                                                editions(mod, true, ind);
+                                                return stdouta;
+                                            });
+                                        };
+                                        if (erstat !== null && erstat !== undefined) {
+                                            if (erstat.toString() === "Error: ENOENT: no such file or directory, stat '" + modules[mod].dir + "'") {
+                                                return clone();
                                             }
-                                            if (stdoutera !== null && stdoutera !== "" && stdoutera.indexOf("Cloning into '") < 0 && stdoutera.indexOf("already exists in the index") < 0) {
-                                                errout({error: stdoutera, name: "biddle_test_install_handler_stat_clone_submodule"});
-                                            }
-                                            ind += 1;
-                                            editions(mod, true, ind);
-                                            return stdouta;
-                                        });
-                                    };
-                                    if (erstat !== null && erstat !== undefined) {
-                                        if (erstat.toString() === "Error: ENOENT: no such file or directory, stat '" + modules[mod].dir + "'") {
-                                            return clone();
+                                            return errout({error: erstat, name: "biddle_test_install_handler_stat"});
                                         }
-                                        return errout({error: erstat, name: "biddle_test_install_handler_stat"});
-                                    }
-                                    if (stats.isDirectory() === true) {
-                                        return fs.readdir(modules[mod].dir, function biddle_test_install_handler_stat_readdir(direrr, files) {
-                                            if (typeof direrr === "string") {
-                                                return errout({error: direrr, name: "biddle_test_install_handler_stat_readdir"});
-                                            }
-                                            ind += 1;
-                                            if (files.length < 1) {
-                                                child("rm -rf " + modules[mod].dir, function biddle_test_install_handler_stat_readdir_clone(errp, stdoutp, stdouterp) {
-                                                    if (errp !== null) {
-                                                        errout({error: errp, name: "biddle_test_install_handler_stat_readdir_clone"});
-                                                    }
-                                                    if (stdouterp !== null && stdouterp !== "") {
-                                                        errout({error: stdouterp, name: "biddle_test_install_handler_stat_readdir_clone"});
-                                                    }
-                                                    clone();
-                                                    return stdoutp;
-                                                });
-                                            } else {
-                                                editions(mod, false);
-                                            }
-                                        });
-                                    }
-                                    clone();
-                                });
+                                        if (stats.isDirectory() === true) {
+                                            return fs.readdir(modules[mod].dir, function biddle_test_install_handler_stat_readdir(direrr, files) {
+                                                if (typeof direrr === "string") {
+                                                    return errout({error: direrr, name: "biddle_test_install_handler_stat_readdir"});
+                                                }
+                                                ind += 1;
+                                                if (files.length < 1) {
+                                                    child("rm -rf " + modules[mod].dir, function biddle_test_install_handler_stat_readdir_clone(errp, stdoutp, stdouterp) {
+                                                        if (errp !== null) {
+                                                            errout({error: errp, name: "biddle_test_install_handler_stat_readdir_clone"});
+                                                        }
+                                                        if (stdouterp !== null && stdouterp !== "") {
+                                                            errout({error: stdouterp, name: "biddle_test_install_handler_stat_readdir_clone"});
+                                                        }
+                                                        clone();
+                                                        return stdoutp;
+                                                    });
+                                                } else {
+                                                    editions(mod, false);
+                                                }
+                                            });
+                                        }
+                                        clone();
+                                    });
                             };
                         editions = function biddle_test_install_editions(appName, cloned) {
                             var modout = function biddle_test_install_editions_modout() {
@@ -1093,23 +1486,22 @@
                             if (ind === keys.length) {
                                 if (today !== date) {
                                     ind = 0;
-                                    fs
-                                        .writeFile("today.js", "/\u002aglobal module\u002a/(function () {\"use strict\";var today=" + date + ";module.exports=today;}());", function biddle_test_install_editions_writeToday(werr) {
-                                            if (werr !== null && werr !== undefined) {
-                                                errout({error: werr, name: "biddle_test_install_editions_writeToday"});
-                                            }
-                                            if (cloned === true) {
-                                                console.log("Submodules downloaded.");
-                                            } else {
-                                                console.log("Submodules updated!");
-                                            }
-                                            if (flag.apps === true) {
-                                                modout();
-                                            } else {
-                                                console.log("Checked for new versions of submodules.");
-                                                flag.today = true;
-                                            }
-                                        });
+                                    fs.writeFile("today.js", "/\u002aglobal module\u002a/(function () {\"use strict\";var today=" + date + ";module.exports=today;}());", function biddle_test_install_editions_writeToday(werr) {
+                                        if (werr !== null && werr !== undefined) {
+                                            errout({error: werr, name: "biddle_test_install_editions_writeToday"});
+                                        }
+                                        if (cloned === true) {
+                                            console.log("Submodules downloaded.");
+                                        } else {
+                                            console.log("Submodules updated!");
+                                        }
+                                        if (flag.apps === true) {
+                                            modout();
+                                        } else {
+                                            console.log("Checked for new versions of submodules.");
+                                            flag.today = true;
+                                        }
+                                    });
                                     if (cloned === true) {
                                         child("git submodule init", function biddle_test_install_editions_init(erc, stdoutc, stdouterc) {
                                             if (erc !== null) {
@@ -1164,7 +1556,7 @@
                         };
                         handler(0);
                     },
-                    lint   : function biddle_test_lint() {
+                    lint    : function biddle_test_lint() {
                         var ignoreDirectory = [
                                 ".git", "applications", "downloads", "publications"
                             ],
@@ -1324,6 +1716,442 @@
                                 };
                             readDir(__dirname.replace(/((\/|\\)test)$/, ""));
                         }());
+                    },
+                    markdown: function biddle_test_markdown() {
+                        var flag = {
+                            "120": false,
+                            "60" : false,
+                            "80" : false
+                        };
+                        child("node biddle markdown ../prettydiff/README.md 60", function biddle_test_markdown_60(er, stdout, stder) {
+                            var markdown = "\nTry it online at http://prettydiff.com/,\n(\u001b[36mhttp://prettydiff.com/" +
+                                        "\u001b[39m).\n\n\u001b[4m\u001b[1m\u001b[31mPretty Diff logo Pretty Diff\u001b[3" +
+                                        "9m\u001b[0m\u001b[24m\n\nTravis CI Build,\n(\u001b[36mhttps://travis-ci.org/pret" +
+                                        "tydiff/prettydiff\u001b[39m)\nAppVeyor Build,\n(\u001b[36mhttps://ci.appveyor.co" +
+                                        "m/project/prettydiff/prettydiff\u001b[39m)\nGitter,\n(\u001b[36mhttps://gitter.i" +
+                                        "m/prettydiff/prettydiff?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&" +
+                                        "utm_content=badge\u001b[39m)\nTwitter Tweets,\n(\u001b[36mhttps://twitter.com/in" +
+                                        "tent/tweet?text=Handy%20web%20development%20tool:%20%20url=http%3A%2F%2Fprettydi" +
+                                        "ff.com\u001b[39m)\n\n\u001b[4m\u001b[1m\u001b[36mSummary\u001b[39m\u001b[0m" +
+                                        "\u001b[24m\n\n  Language aware code comparison tool for several web\n  based lan" +
+                                        "guages. It also beautifies, minifies, and a few\n  other things.\n\n\u001b[4m" +
+                                        "\u001b[1m\u001b[36mBenefits - see overview page, (http://prettydiff.com/overview" +
+                                        ".xhtml), for more details\u001b[39m\u001b[0m\u001b[24m\n\n  \u001b[1m\u001b[31m*" +
+                                        "\u001b[39m\u001b[0m ES6 / JS2015 ready\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0" +
+                                        "m React JSX format support,\n    (\u001b[36mhttp://prettydiff.com/guide/react_js" +
+                                        "x.xhtml\u001b[39m)\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m LESS, SCSS (Sass)," +
+                                        " and CSS support\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Separate support for" +
+                                        " XML and HTML\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Recursive command line " +
+                                        "directory diff,\n    (\u001b[36mhttp://prettydiff.com/guide/diffcli.xhtml\u001b[" +
+                                        "39m)\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m JavaScript scope in colors,\n   " +
+                                        " (\u001b[36mhttp://prettydiff.com/guide/jshtml.xhtml\u001b[39m)\n  \u001b[1m" +
+                                        "\u001b[31m*\u001b[39m\u001b[0m Supports presets for popular styleguides,\n    (" +
+                                        "\u001b[36mhttp://prettydiff.com/guide/styleguide.xhtml\u001b[39m)\n  \u001b[1m" +
+                                        "\u001b[31m*\u001b[39m\u001b[0m Markup beautification with optional opt out,\n   " +
+                                        " (\u001b[36mhttp://prettydiff.com/guide/tag_ignore.xhtml\u001b[39m)\n  \u001b[1m" +
+                                        "\u001b[31m*\u001b[39m\u001b[0m JavaScript auto correction,\n    (\u001b[36mhttp:" +
+                                        "//prettydiff.com/guide/jscorrect.xhtml\u001b[39m)\n  \u001b[1m\u001b[31m*\u001b[" +
+                                        "39m\u001b[0m Supports a ton of options,\n    (\u001b[36mhttp://prettydiff.com/do" +
+                                        "cumentation.php#function_properties\u001b[39m)\n  \u001b[1m\u001b[31m*\u001b[39m" +
+                                        "\u001b[0m Default beautifier,\n    (\u001b[36mhttps://atom.io/packages/atom-beau" +
+                                        "tify/\u001b[39m), for several\n    languages in Atom.io, (\u001b[36mhttps://atom" +
+                                        ".io/\u001b[39m)\n\n\u001b[4m\u001b[1m\u001b[36mExecuting Pretty Diff\u001b[39m" +
+                                        "\u001b[0m\u001b[24m\n\n  \u001b[4m\u001b[1m\u001b[32mRun with Node.js / CommonJS" +
+                                        " / RequireJS\u001b[39m\u001b[0m\u001b[24m\n\n    A Node.js command line utility " +
+                                        "is provided by\n    api/node-local.js.  This file can execute in the\n    follow" +
+                                        "ing modes:\n\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m auto - Determine if th" +
+                                        "e resource is text, a\n      file, or a directory and process as such (except th" +
+                                        "at\n      directories are processed with the subdirectory option)\n    \u001b[1m" +
+                                        "\u001b[31m*\u001b[39m\u001b[0m screen - code input is on the command line\n     " +
+                                        " and output is to the command line\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m " +
+                                        "filescreen - code input is in a file and the\n      output is to the command lin" +
+                                        "e\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m file - the input and the output r" +
+                                        "eside in\n      files\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m directory - e" +
+                                        "verything in a directory is\n      processed into a specified output directory e" +
+                                        "xcept\n      \".\", \"..\", and subdirectories\n    \u001b[1m\u001b[31m*\u001b[3" +
+                                        "9m\u001b[0m subdirectory - process the entire directory\n      tree\n\n    " +
+                                        "\u001b[4m\u001b[1m\u001b[33mExecute in the context of a NodeJS application\u001b" +
+                                        "[39m\u001b[0m\u001b[24m\n\n      Add this code to your application\n\n\u001b[32m" +
+                                        "    var prettydiff = require(\"prettydiff\"),\u001b[39m\n\u001b[32m        args " +
+                                        "      = {\u001b[39m\n\u001b[32m            source: \"asdf\",\u001b[39m\n\u001b[3" +
+                                        "2m            diff  : \"asdd\",\u001b[39m\n\u001b[32m            lang  : \"text" +
+                                        "\"\u001b[39m\n\u001b[32m        },\u001b[39m\n\u001b[32m        output     = pre" +
+                                        "ttydiff(args);\u001b[39m\n\n    \u001b[4m\u001b[1m\u001b[33mExecute from the com" +
+                                        "mand line\u001b[39m\u001b[0m\u001b[24m\n\n      Run in windows\n\n\u001b[32m    " +
+                                        "node api/node-local.js source:\"c:\\myDirectory\" readmethod:\"subdirectory\" di" +
+                                        "ff:\"c:\\myOtherDirectory\"\u001b[39m\n\n      Run in Linux and OSX\n\n\u001b[32" +
+                                        "m    node api/node-local.js source:\"myDirectory\" mode:\"beautify\" readmethod:" +
+                                        "\"subdirectory\" output:\"path/to/outputDirectory\"\u001b[39m\n\n      To see a " +
+                                        "\u001b[3m\u001b[33mman\u001b[39m\u001b[0m page provide no arguments or\n      th" +
+                                        "ese: help, man, manual\n\n\u001b[32m    node api/node-local.js h\u001b[39m\n" +
+                                        "\u001b[32m    node api/node-local.js help\u001b[39m\n\u001b[32m    node api/node" +
+                                        "-local.js man\u001b[39m\n\u001b[32m    node api/node-local.js manual\u001b[39m\n" +
+                                        "\n      To see only the version number supply only \u001b[3m\u001b[33mv\u001b[39" +
+                                        "m\u001b[0m or\n      \u001b[3m\u001b[33mversion\u001b[39m\u001b[0m as an argumen" +
+                                        "t:\n\n\u001b[32m    node api/node-local.js v\u001b[39m\n\u001b[32m    node api/n" +
+                                        "ode-local.js version\u001b[39m\n\n      To see a list of current settings on the" +
+                                        "\n      console supply \u001b[3m\u001b[33mlist\u001b[39m\u001b[0m as an argument" +
+                                        ":\n\n\u001b[32m    node api/node-local.js l\u001b[39m\n\u001b[32m    node api/no" +
+                                        "de-local.js list\u001b[39m\n\n    \u001b[4m\u001b[1m\u001b[33mSet configurations" +
+                                        " with a **.prettydiffrc** file.\u001b[39m\u001b[0m\u001b[24m\n\n      Pretty Dif" +
+                                        "f will first look for a .prettydiffrc\n      file from the current directory in " +
+                                        "the command prompt.\n      If the .prettydiffrc is not present in the current\n " +
+                                        "     directory it will then look for it in the\n      application's directory.\n" +
+                                        "\n      The .prettydiffrc first checks for JSON format.\n      This allows a sim" +
+                                        "ple means of defining options in a\n      file. It also allows a JavaScript appl" +
+                                        "ication format,\n      (\u001b[36mhttp://prettydiff.com/.prettydiffrc\u001b[39m)" +
+                                        ", so that options\n      can be set conditionally.\n\n  \u001b[4m\u001b[1m\u001b" +
+                                        "[32mRun in a web browser with api/dom.js\u001b[39m\u001b[0m\u001b[24m\n\n    Ple" +
+                                        "ase feel free to use index.xhtml file to\n    supplement dom.js.  Otherwise, dom" +
+                                        ".js requires\n    supplemental assistance to map DOM nodes from an HTML\n    sou" +
+                                        "rce.  dom.js is fault tolerant so nodes mapped to the\n    supplied index.xhtml " +
+                                        "don't need to be supported from\n    custom HTML.\n\n    To run Pretty Diff usin" +
+                                        "g dom.js include the\n    following two script tags and bind the\n    global.pre" +
+                                        "ttydiff.pd.recycle(), function to the\n    executing event.  Please refer to ind" +
+                                        "ex.xhtml for an\n    HTML example and documentation.xhtml for option and\n    ex" +
+                                        "ecution information.\n\n\u001b[32m    <script src=\"lib/global.js\" type=\"appli" +
+                                        "cation/javascript\"></script>\u001b[39m\n\u001b[32m    <script src=\"lib/languag" +
+                                        "e.js\" type=\"application/javascript\"></script>\u001b[39m\n\u001b[32m    <scrip" +
+                                        "t src=\"lib/options.js\" type=\"application/javascript\"></script>\u001b[39m\n" +
+                                        "\u001b[32m    <script src=\"lib/finalFile.js\" type=\"application/javascript\"><" +
+                                        "/script>\u001b[39m\n\u001b[32m    <script src=\"lib/safeSort.js\" type=\"applica" +
+                                        "tion/javascript\"></script>\u001b[39m\n\u001b[32m    <script src=\"ace/ace.js\" " +
+                                        "type=\"application/javascript\"></script> **(optional)**\u001b[39m\n\u001b[32m  " +
+                                        "  <script src=\"api/dom.js\" type=\"application/javascript\"></script>\u001b[39m" +
+                                        "\n\u001b[32m    <script src=\"lib/csspretty.js\" type=\"application/javascript\"" +
+                                        "></script>\u001b[39m\n\u001b[32m    <script src=\"lib/csvpretty.js\" type=\"appl" +
+                                        "ication/javascript\"></script>\u001b[39m\n\u001b[32m    <script src=\"lib/diffvi" +
+                                        "ew.js\" type=\"application/javascript\"></script>\u001b[39m\n\u001b[32m    <scri" +
+                                        "pt src=\"lib/jspretty.js\" type=\"application/javascript\"></script>\u001b[39m\n" +
+                                        "\u001b[32m    <script src=\"lib/markuppretty.js\" type=\"application/javascript" +
+                                        "\"></script>\u001b[39m\n\u001b[32m    <script src=\"prettydiff.js\" type=\"appli" +
+                                        "cation/javascript\"></script>\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mExecute" +
+                                        " with vanilla JS\u001b[39m\u001b[0m\u001b[24m\n\n\u001b[32m    var global = {}," +
+                                        "\u001b[39m\n\u001b[32m        args   = {\u001b[39m\n\u001b[32m            source" +
+                                        ": \"asdf\",\u001b[39m\n\u001b[32m            diff  : \"asdd\",\u001b[39m\n\u001b" +
+                                        "[32m            lang  : \"text\"\u001b[39m\n\u001b[32m        },\u001b[39m\n" +
+                                        "\u001b[32m        output = prettydiff(args);\u001b[39m\n\n  \u001b[4m\u001b[1m" +
+                                        "\u001b[32mRun Pretty Diff in Atom, (https://atom.io/), code editor with the atom" +
+                                        "-beautify, (https://atom.io/packages/atom-beautify), package.\u001b[39m\u001b[0m" +
+                                        "\u001b[24m\n\n  \u001b[4m\u001b[1m\u001b[32mRun the unit tests\u001b[39m\u001b[0" +
+                                        "m\u001b[24m\n\n\u001b[32m    cd prettydiff\u001b[39m\n\u001b[32m    node test/li" +
+                                        "nt.js\u001b[39m\n\n\u001b[4m\u001b[1m\u001b[36mLicense:\u001b[39m\u001b[0m\u001b" +
+                                        "[24m\n\n   \u001b[1m@source\u001b[0m http://prettydiff.com/prettydiff.js\n\n   " +
+                                        "\u001b[1m@documentation\u001b[0m English:\n  http://prettydiff.com/documentation" +
+                                        ".xhtml\n\n   \u001b[1m@licstart\u001b[0m The following is the entire license not" +
+                                        "ice\n  for Pretty Diff.\n\n   This code may not be used or redistributed unless " +
+                                        "the\n  following\n   conditions are met:\n\n  \u001b[1m\u001b[31m*\u001b[39m" +
+                                        "\u001b[0m Prettydiff created by Austin Cheney originally on\n    3 Mar 2009. htt" +
+                                        "p://prettydiff.com/\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m The use of diffvi" +
+                                        "ew.js and prettydiff.js must\n    contain the following copyright:\n  \u001b[1m" +
+                                        "\u001b[31m*\u001b[39m\u001b[0m Copyright (c), 2007, Snowtide Informatics\n    Sy" +
+                                        "stems, Inc. All rights reserved.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Re" +
+                                        "distributions of source code must retain\n      the above copyright notice, this" +
+                                        " list of conditions\n      and the following disclaimer.\n    \u001b[1m\u001b[31" +
+                                        "m-\u001b[39m\u001b[0m Redistributions in binary form must\n      reproduce the",
+                                name     = "biddle_test_markdown_60";
+                            if (er !== null) {
+                                errout({error: er, name: name});
+                            }
+                            if (stder !== null && stder !== "") {
+                                errout({error: stder, name: name});
+                            }
+                            stdout = stdout.replace(/(\\(\w+)?)$/, "");
+                            if (stdout !== markdown) {
+                                diffFiles(name, stdout, markdown);
+                            }
+                            console.log(humantime(false) + " \u001b[32mmarkdown 60 test passed.\u001b[39m");
+                            flag["60"] = true;
+                            if (flag["80"] === true && flag["120"] === true) {
+                                next();
+                            }
+                        });
+                        child("node biddle markdown ../prettydiff/README.md 80", function biddle_test_markdown_80(er, stdout, stder) {
+                            var markdown = "\nTry it online at http://prettydiff.com/, (\u001b[36mhttp://prettydiff.com/" +
+                                        "\u001b[39m).\n\n\u001b[4m\u001b[1m\u001b[31mPretty Diff logo Pretty Diff\u001b[3" +
+                                        "9m\u001b[0m\u001b[24m\n\nTravis CI Build, (\u001b[36mhttps://travis-ci.org/prett" +
+                                        "ydiff/prettydiff\u001b[39m)\nAppVeyor Build, (\u001b[36mhttps://ci.appveyor.com/" +
+                                        "project/prettydiff/prettydiff\u001b[39m)\nGitter,\n(\u001b[36mhttps://gitter.im/" +
+                                        "prettydiff/prettydiff?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&ut" +
+                                        "m_content=badge\u001b[39m)\nTwitter Tweets,\n(\u001b[36mhttps://twitter.com/inte" +
+                                        "nt/tweet?text=Handy%20web%20development%20tool:%20%20url=http%3A%2F%2Fprettydiff" +
+                                        ".com\u001b[39m)\n\n\u001b[4m\u001b[1m\u001b[36mSummary\u001b[39m\u001b[0m\u001b[" +
+                                        "24m\n\n  Language aware code comparison tool for several web based languages. It" +
+                                        "\n  also beautifies, minifies, and a few other things.\n\n\u001b[4m\u001b[1m" +
+                                        "\u001b[36mBenefits - see overview page, (http://prettydiff.com/overview.xhtml), " +
+                                        "for more details\u001b[39m\u001b[0m\u001b[24m\n\n  \u001b[1m\u001b[31m*\u001b[39" +
+                                        "m\u001b[0m ES6 / JS2015 ready\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m React J" +
+                                        "SX format support,\n    (\u001b[36mhttp://prettydiff.com/guide/react_jsx.xhtml" +
+                                        "\u001b[39m)\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m LESS, SCSS (Sass), and CS" +
+                                        "S support\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Separate support for XML an" +
+                                        "d HTML\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Recursive command line directo" +
+                                        "ry diff,\n    (\u001b[36mhttp://prettydiff.com/guide/diffcli.xhtml\u001b[39m)\n " +
+                                        " \u001b[1m\u001b[31m*\u001b[39m\u001b[0m JavaScript scope in colors, (\u001b[36m" +
+                                        "http://prettydiff.com/guide/jshtml.xhtml\u001b[39m)\n  \u001b[1m\u001b[31m*" +
+                                        "\u001b[39m\u001b[0m Supports presets for popular styleguides,\n    (\u001b[36mht" +
+                                        "tp://prettydiff.com/guide/styleguide.xhtml\u001b[39m)\n  \u001b[1m\u001b[31m*" +
+                                        "\u001b[39m\u001b[0m Markup beautification with optional opt out,\n    (\u001b[36" +
+                                        "mhttp://prettydiff.com/guide/tag_ignore.xhtml\u001b[39m)\n  \u001b[1m\u001b[31m*" +
+                                        "\u001b[39m\u001b[0m JavaScript auto correction,\n    (\u001b[36mhttp://prettydif" +
+                                        "f.com/guide/jscorrect.xhtml\u001b[39m)\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0" +
+                                        "m Supports a ton of options,\n    (\u001b[36mhttp://prettydiff.com/documentation" +
+                                        ".php#function_properties\u001b[39m)\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m D" +
+                                        "efault beautifier, (\u001b[36mhttps://atom.io/packages/atom-beautify/\u001b[39m)" +
+                                        ", for\n    several languages in Atom.io, (\u001b[36mhttps://atom.io/\u001b[39m)" +
+                                        "\n\n\u001b[4m\u001b[1m\u001b[36mExecuting Pretty Diff\u001b[39m\u001b[0m\u001b[2" +
+                                        "4m\n\n  \u001b[4m\u001b[1m\u001b[32mRun with Node.js / CommonJS / RequireJS" +
+                                        "\u001b[39m\u001b[0m\u001b[24m\n\n    A Node.js command line utility is provided " +
+                                        "by api/node-local.js.  This\n    file can execute in the following modes:\n\n   " +
+                                        " \u001b[1m\u001b[31m*\u001b[39m\u001b[0m auto - Determine if the resource is tex" +
+                                        "t, a file, or a directory\n      and process as such (except that directories ar" +
+                                        "e processed with the\n      subdirectory option)\n    \u001b[1m\u001b[31m*\u001b" +
+                                        "[39m\u001b[0m screen - code input is on the command line and output is to the\n " +
+                                        "     command line\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m filescreen - code" +
+                                        " input is in a file and the output is to the\n      command line\n    \u001b[1m" +
+                                        "\u001b[31m*\u001b[39m\u001b[0m file - the input and the output reside in files\n" +
+                                        "    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m directory - everything in a director" +
+                                        "y is processed into a\n      specified output directory except \".\", \"..\", an" +
+                                        "d subdirectories\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subdirectory - pro" +
+                                        "cess the entire directory tree\n\n    \u001b[4m\u001b[1m\u001b[33mExecute in the" +
+                                        " context of a NodeJS application\u001b[39m\u001b[0m\u001b[24m\n\n      Add this " +
+                                        "code to your application\n\n\u001b[32m    var prettydiff = require(\"prettydiff" +
+                                        "\"),\u001b[39m\n\u001b[32m        args       = {\u001b[39m\n\u001b[32m          " +
+                                        "  source: \"asdf\",\u001b[39m\n\u001b[32m            diff  : \"asdd\",\u001b[39m" +
+                                        "\n\u001b[32m            lang  : \"text\"\u001b[39m\n\u001b[32m        },\u001b[3" +
+                                        "9m\n\u001b[32m        output     = prettydiff(args);\u001b[39m\n\n    \u001b[4m" +
+                                        "\u001b[1m\u001b[33mExecute from the command line\u001b[39m\u001b[0m\u001b[24m\n" +
+                                        "\n      Run in windows\n\n\u001b[32m    node api/node-local.js source:\"c:\\myDi" +
+                                        "rectory\" readmethod:\"subdirectory\" diff:\"c:\\myOtherDirectory\"\u001b[39m\n" +
+                                        "\n      Run in Linux and OSX\n\n\u001b[32m    node api/node-local.js source:\"my" +
+                                        "Directory\" mode:\"beautify\" readmethod:\"subdirectory\" output:\"path/to/outpu" +
+                                        "tDirectory\"\u001b[39m\n\n      To see a \u001b[3m\u001b[33mman\u001b[39m\u001b[" +
+                                        "0m page provide no arguments or these: help, man, manual\n\n\u001b[32m    node a" +
+                                        "pi/node-local.js h\u001b[39m\n\u001b[32m    node api/node-local.js help\u001b[39" +
+                                        "m\n\u001b[32m    node api/node-local.js man\u001b[39m\n\u001b[32m    node api/no" +
+                                        "de-local.js manual\u001b[39m\n\n      To see only the version number supply only" +
+                                        " \u001b[3m\u001b[33mv\u001b[39m\u001b[0m or \u001b[3m\u001b[33mversion\u001b[39m" +
+                                        "\u001b[0m as an\n      argument:\n\n\u001b[32m    node api/node-local.js v\u001b" +
+                                        "[39m\n\u001b[32m    node api/node-local.js version\u001b[39m\n\n      To see a l" +
+                                        "ist of current settings on the console supply \u001b[3m\u001b[33mlist\u001b[39m" +
+                                        "\u001b[0m as an\n      argument:\n\n\u001b[32m    node api/node-local.js l\u001b" +
+                                        "[39m\n\u001b[32m    node api/node-local.js list\u001b[39m\n\n    \u001b[4m\u001b" +
+                                        "[1m\u001b[33mSet configurations with a **.prettydiffrc** file.\u001b[39m\u001b[0" +
+                                        "m\u001b[24m\n\n      Pretty Diff will first look for a .prettydiffrc file from t" +
+                                        "he\n      current directory in the command prompt. If the .prettydiffrc is not\n" +
+                                        "      present in the current directory it will then look for it in the\n      ap" +
+                                        "plication's directory.\n\n      The .prettydiffrc first checks for JSON format. " +
+                                        "This allows a\n      simple means of defining options in a file. It also allows " +
+                                        "a JavaScript\n      application format, (\u001b[36mhttp://prettydiff.com/.pretty" +
+                                        "diffrc\u001b[39m), so that options\n      can be set conditionally.\n\n  \u001b[" +
+                                        "4m\u001b[1m\u001b[32mRun in a web browser with api/dom.js\u001b[39m\u001b[0m" +
+                                        "\u001b[24m\n\n    Please feel free to use index.xhtml file to supplement dom.js." +
+                                        "\n    Otherwise, dom.js requires supplemental assistance to map DOM nodes from a" +
+                                        "n\n    HTML source.  dom.js is fault tolerant so nodes mapped to the supplied\n " +
+                                        "   index.xhtml don't need to be supported from custom HTML.\n\n    To run Pretty" +
+                                        " Diff using dom.js include the following two script tags\n    and bind the globa" +
+                                        "l.prettydiff.pd.recycle(), function to the executing\n    event.  Please refer t" +
+                                        "o index.xhtml for an HTML example and\n    documentation.xhtml for option and ex" +
+                                        "ecution information.\n\n\u001b[32m    <script src=\"lib/global.js\" type=\"appli" +
+                                        "cation/javascript\"></script>\u001b[39m\n\u001b[32m    <script src=\"lib/languag" +
+                                        "e.js\" type=\"application/javascript\"></script>\u001b[39m\n\u001b[32m    <scrip" +
+                                        "t src=\"lib/options.js\" type=\"application/javascript\"></script>\u001b[39m\n" +
+                                        "\u001b[32m    <script src=\"lib/finalFile.js\" type=\"application/javascript\"><" +
+                                        "/script>\u001b[39m\n\u001b[32m    <script src=\"lib/safeSort.js\" type=\"applica" +
+                                        "tion/javascript\"></script>\u001b[39m\n\u001b[32m    <script src=\"ace/ace.js\" " +
+                                        "type=\"application/javascript\"></script> **(optional)**\u001b[39m\n\u001b[32m  " +
+                                        "  <script src=\"api/dom.js\" type=\"application/javascript\"></script>\u001b[39m" +
+                                        "\n\u001b[32m    <script src=\"lib/csspretty.js\" type=\"application/javascript\"" +
+                                        "></script>\u001b[39m\n\u001b[32m    <script src=\"lib/csvpretty.js\" type=\"appl" +
+                                        "ication/javascript\"></script>\u001b[39m\n\u001b[32m    <script src=\"lib/diffvi" +
+                                        "ew.js\" type=\"application/javascript\"></script>\u001b[39m\n\u001b[32m    <scri" +
+                                        "pt src=\"lib/jspretty.js\" type=\"application/javascript\"></script>\u001b[39m\n" +
+                                        "\u001b[32m    <script src=\"lib/markuppretty.js\" type=\"application/javascript" +
+                                        "\"></script>\u001b[39m\n\u001b[32m    <script src=\"prettydiff.js\" type=\"appli" +
+                                        "cation/javascript\"></script>\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mExecute" +
+                                        " with vanilla JS\u001b[39m\u001b[0m\u001b[24m\n\n\u001b[32m    var global = {}," +
+                                        "\u001b[39m\n\u001b[32m        args   = {\u001b[39m\n\u001b[32m            source" +
+                                        ": \"asdf\",\u001b[39m\n\u001b[32m            diff  : \"asdd\",\u001b[39m\n\u001b" +
+                                        "[32m            lang  : \"text\"\u001b[39m\n\u001b[32m        },\u001b[39m\n" +
+                                        "\u001b[32m        output = prettydiff(args);\u001b[39m\n\n  \u001b[4m\u001b[1m" +
+                                        "\u001b[32mRun Pretty Diff in Atom, (https://atom.io/), code editor with the atom" +
+                                        "-beautify, (https://atom.io/packages/atom-beautify), package.\u001b[39m\u001b[0m" +
+                                        "\u001b[24m\n\n  \u001b[4m\u001b[1m\u001b[32mRun the unit tests\u001b[39m\u001b[0" +
+                                        "m\u001b[24m\n\n\u001b[32m    cd prettydiff\u001b[39m\n\u001b[32m    node test/li" +
+                                        "nt.js\u001b[39m\n\n\u001b[4m\u001b[1m\u001b[36mLicense:\u001b[39m\u001b[0m\u001b" +
+                                        "[24m\n\n   \u001b[1m@source\u001b[0m http://prettydiff.com/prettydiff.js\n\n   " +
+                                        "\u001b[1m@documentation\u001b[0m English: http://prettydiff.com/documentation.xh" +
+                                        "tml\n\n   \u001b[1m@licstart\u001b[0m The following is the entire license notice" +
+                                        " for Pretty Diff.\n\n   This code may not be used or redistributed unless the fo" +
+                                        "llowing\n   conditions are met:\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Pre" +
+                                        "ttydiff created by Austin Cheney originally on 3 Mar 2009.\n    http://prettydif" +
+                                        "f.com/\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m The use of diffview.js and pre" +
+                                        "ttydiff.js must contain the following\n    copyright:\n  \u001b[1m\u001b[31m*" +
+                                        "\u001b[39m\u001b[0m Copyright (c), 2007, Snowtide Informatics Systems, Inc. All " +
+                                        "rights\n    reserved.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Redistributio" +
+                                        "ns of source code must retain the above copyright\n      notice, this list of co" +
+                                        "nditions and the following disclaimer.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b" +
+                                        "[0m Redistributions in binary form must reproduce the above\n      copyright not" +
+                                        "ice, this list of conditions and the following disclaimer i",
+                                name     = "biddle_test_markdown_80";
+                            if (er !== null) {
+                                errout({error: er, name: name});
+                            }
+                            if (stder !== null && stder !== "") {
+                                errout({error: stder, name: name});
+                            }
+                            stdout = stdout.replace(/(\\(\w+)?)$/, "");
+                            if (stdout !== markdown) {
+                                diffFiles(name, stdout, markdown);
+                            }
+                            console.log(humantime(false) + " \u001b[32mmarkdown 80 test passed.\u001b[39m");
+                            flag["80"] = true;
+                            if (flag["60"] === true && flag["120"] === true) {
+                                next();
+                            }
+                        });
+                        child("node biddle markdown ../prettydiff/README.md 120", function biddle_test_markdown_120(er, stdout, stder) {
+                            var markdown = "\nTry it online at http://prettydiff.com/, (\u001b[36mhttp://prettydiff.com/" +
+                                        "\u001b[39m).\n\n\u001b[4m\u001b[1m\u001b[31mPretty Diff logo Pretty Diff\u001b[3" +
+                                        "9m\u001b[0m\u001b[24m\n\nTravis CI Build, (\u001b[36mhttps://travis-ci.org/prett" +
+                                        "ydiff/prettydiff\u001b[39m)\nAppVeyor Build, (\u001b[36mhttps://ci.appveyor.com/" +
+                                        "project/prettydiff/prettydiff\u001b[39m)\nGitter,\n(\u001b[36mhttps://gitter.im/" +
+                                        "prettydiff/prettydiff?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&ut" +
+                                        "m_content=badge\u001b[39m)\nTwitter Tweets,\n(\u001b[36mhttps://twitter.com/inte" +
+                                        "nt/tweet?text=Handy%20web%20development%20tool:%20%20url=http%3A%2F%2Fprettydiff" +
+                                        ".com\u001b[39m)\n\n\u001b[4m\u001b[1m\u001b[36mSummary\u001b[39m\u001b[0m\u001b[" +
+                                        "24m\n\n  Language aware code comparison tool for several web based languages. It" +
+                                        " also beautifies, minifies, and a few other\n  things.\n\n\u001b[4m\u001b[1m" +
+                                        "\u001b[36mBenefits - see overview page, (http://prettydiff.com/overview.xhtml), " +
+                                        "for more details\u001b[39m\u001b[0m\u001b[24m\n\n  \u001b[1m\u001b[31m*\u001b[39" +
+                                        "m\u001b[0m ES6 / JS2015 ready\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m React J" +
+                                        "SX format support, (\u001b[36mhttp://prettydiff.com/guide/react_jsx.xhtml\u001b[" +
+                                        "39m)\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m LESS, SCSS (Sass), and CSS suppo" +
+                                        "rt\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Separate support for XML and HTML" +
+                                        "\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Recursive command line directory dif" +
+                                        "f, (\u001b[36mhttp://prettydiff.com/guide/diffcli.xhtml\u001b[39m)\n  \u001b[1m" +
+                                        "\u001b[31m*\u001b[39m\u001b[0m JavaScript scope in colors, (\u001b[36mhttp://pre" +
+                                        "ttydiff.com/guide/jshtml.xhtml\u001b[39m)\n  \u001b[1m\u001b[31m*\u001b[39m" +
+                                        "\u001b[0m Supports presets for popular styleguides, (\u001b[36mhttp://prettydiff" +
+                                        ".com/guide/styleguide.xhtml\u001b[39m)\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0" +
+                                        "m Markup beautification with optional opt out, (\u001b[36mhttp://prettydiff.com/" +
+                                        "guide/tag_ignore.xhtml\u001b[39m)\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Jav" +
+                                        "aScript auto correction, (\u001b[36mhttp://prettydiff.com/guide/jscorrect.xhtml" +
+                                        "\u001b[39m)\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Supports a ton of options" +
+                                        ", (\u001b[36mhttp://prettydiff.com/documentation.php#function_properties\u001b[3" +
+                                        "9m)\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Default beautifier, (\u001b[36mht" +
+                                        "tps://atom.io/packages/atom-beautify/\u001b[39m), for several languages in Atom." +
+                                        "io,\n    (\u001b[36mhttps://atom.io/\u001b[39m)\n\n\u001b[4m\u001b[1m\u001b[36mE" +
+                                        "xecuting Pretty Diff\u001b[39m\u001b[0m\u001b[24m\n\n  \u001b[4m\u001b[1m\u001b[" +
+                                        "32mRun with Node.js / CommonJS / RequireJS\u001b[39m\u001b[0m\u001b[24m\n\n    A" +
+                                        " Node.js command line utility is provided by api/node-local.js.  This file can e" +
+                                        "xecute in the following modes:\n\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m au" +
+                                        "to - Determine if the resource is text, a file, or a directory and process as su" +
+                                        "ch (except that\n      directories are processed with the subdirectory option)\n" +
+                                        "    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m screen - code input is on the comman" +
+                                        "d line and output is to the command line\n    \u001b[1m\u001b[31m*\u001b[39m" +
+                                        "\u001b[0m filescreen - code input is in a file and the output is to the command " +
+                                        "line\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m file - the input and the outpu" +
+                                        "t reside in files\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m directory - every" +
+                                        "thing in a directory is processed into a specified output directory except \".\"" +
+                                        ", \"..\",\n      and subdirectories\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m" +
+                                        " subdirectory - process the entire directory tree\n\n    \u001b[4m\u001b[1m" +
+                                        "\u001b[33mExecute in the context of a NodeJS application\u001b[39m\u001b[0m" +
+                                        "\u001b[24m\n\n      Add this code to your application\n\n\u001b[32m    var prett" +
+                                        "ydiff = require(\"prettydiff\"),\u001b[39m\n\u001b[32m        args       = {" +
+                                        "\u001b[39m\n\u001b[32m            source: \"asdf\",\u001b[39m\n\u001b[32m       " +
+                                        "     diff  : \"asdd\",\u001b[39m\n\u001b[32m            lang  : \"text\"\u001b[3" +
+                                        "9m\n\u001b[32m        },\u001b[39m\n\u001b[32m        output     = prettydiff(ar" +
+                                        "gs);\u001b[39m\n\n    \u001b[4m\u001b[1m\u001b[33mExecute from the command line" +
+                                        "\u001b[39m\u001b[0m\u001b[24m\n\n      Run in windows\n\n\u001b[32m    node api/" +
+                                        "node-local.js source:\"c:\\myDirectory\" readmethod:\"subdirectory\" diff:\"c:" +
+                                        "\\myOtherDirectory\"\u001b[39m\n\n      Run in Linux and OSX\n\n\u001b[32m    no" +
+                                        "de api/node-local.js source:\"myDirectory\" mode:\"beautify\" readmethod:\"subdi" +
+                                        "rectory\" output:\"path/to/outputDirectory\"\u001b[39m\n\n      To see a \u001b[" +
+                                        "3m\u001b[33mman\u001b[39m\u001b[0m page provide no arguments or these: help, man" +
+                                        ", manual\n\n\u001b[32m    node api/node-local.js h\u001b[39m\n\u001b[32m    node" +
+                                        " api/node-local.js help\u001b[39m\n\u001b[32m    node api/node-local.js man" +
+                                        "\u001b[39m\n\u001b[32m    node api/node-local.js manual\u001b[39m\n\n      To se" +
+                                        "e only the version number supply only \u001b[3m\u001b[33mv\u001b[39m\u001b[0m or" +
+                                        " \u001b[3m\u001b[33mversion\u001b[39m\u001b[0m as an argument:\n\n\u001b[32m    " +
+                                        "node api/node-local.js v\u001b[39m\n\u001b[32m    node api/node-local.js version" +
+                                        "\u001b[39m\n\n      To see a list of current settings on the console supply " +
+                                        "\u001b[3m\u001b[33mlist\u001b[39m\u001b[0m as an argument:\n\n\u001b[32m    node" +
+                                        " api/node-local.js l\u001b[39m\n\u001b[32m    node api/node-local.js list\u001b[" +
+                                        "39m\n\n    \u001b[4m\u001b[1m\u001b[33mSet configurations with a **.prettydiffrc" +
+                                        "** file.\u001b[39m\u001b[0m\u001b[24m\n\n      Pretty Diff will first look for a" +
+                                        " .prettydiffrc file from the current directory in the command prompt. If\n      " +
+                                        "the .prettydiffrc is not present in the current directory it will then look for " +
+                                        "it in the application's directory.\n\n      The .prettydiffrc first checks for J" +
+                                        "SON format. This allows a simple means of defining options in a file.\n      It " +
+                                        "also allows a JavaScript application format, (\u001b[36mhttp://prettydiff.com/.p" +
+                                        "rettydiffrc\u001b[39m), so that options can be set\n      conditionally.\n\n  " +
+                                        "\u001b[4m\u001b[1m\u001b[32mRun in a web browser with api/dom.js\u001b[39m\u001b" +
+                                        "[0m\u001b[24m\n\n    Please feel free to use index.xhtml file to supplement dom." +
+                                        "js.  Otherwise, dom.js requires supplemental\n    assistance to map DOM nodes fr" +
+                                        "om an HTML source.  dom.js is fault tolerant so nodes mapped to the supplied\n  " +
+                                        "  index.xhtml don't need to be supported from custom HTML.\n\n    To run Pretty " +
+                                        "Diff using dom.js include the following two script tags and bind the\n    global" +
+                                        ".prettydiff.pd.recycle(), function to the executing event.  Please refer to inde" +
+                                        "x.xhtml for an HTML example\n    and documentation.xhtml for option and executio" +
+                                        "n information.\n\n\u001b[32m    <script src=\"lib/global.js\" type=\"application" +
+                                        "/javascript\"></script>\u001b[39m\n\u001b[32m    <script src=\"lib/language.js\"" +
+                                        " type=\"application/javascript\"></script>\u001b[39m\n\u001b[32m    <script src=" +
+                                        "\"lib/options.js\" type=\"application/javascript\"></script>\u001b[39m\n\u001b[3" +
+                                        "2m    <script src=\"lib/finalFile.js\" type=\"application/javascript\"></script>" +
+                                        "\u001b[39m\n\u001b[32m    <script src=\"lib/safeSort.js\" type=\"application/jav" +
+                                        "ascript\"></script>\u001b[39m\n\u001b[32m    <script src=\"ace/ace.js\" type=\"a" +
+                                        "pplication/javascript\"></script> **(optional)**\u001b[39m\n\u001b[32m    <scrip" +
+                                        "t src=\"api/dom.js\" type=\"application/javascript\"></script>\u001b[39m\n\u001b" +
+                                        "[32m    <script src=\"lib/csspretty.js\" type=\"application/javascript\"></scrip" +
+                                        "t>\u001b[39m\n\u001b[32m    <script src=\"lib/csvpretty.js\" type=\"application/" +
+                                        "javascript\"></script>\u001b[39m\n\u001b[32m    <script src=\"lib/diffview.js\" " +
+                                        "type=\"application/javascript\"></script>\u001b[39m\n\u001b[32m    <script src=" +
+                                        "\"lib/jspretty.js\" type=\"application/javascript\"></script>\u001b[39m\n\u001b[" +
+                                        "32m    <script src=\"lib/markuppretty.js\" type=\"application/javascript\"></scr" +
+                                        "ipt>\u001b[39m\n\u001b[32m    <script src=\"prettydiff.js\" type=\"application/j" +
+                                        "avascript\"></script>\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mExecute with va" +
+                                        "nilla JS\u001b[39m\u001b[0m\u001b[24m\n\n\u001b[32m    var global = {},\u001b[39" +
+                                        "m\n\u001b[32m        args   = {\u001b[39m\n\u001b[32m            source: \"asdf" +
+                                        "\",\u001b[39m\n\u001b[32m            diff  : \"asdd\",\u001b[39m\n\u001b[32m    " +
+                                        "        lang  : \"text\"\u001b[39m\n\u001b[32m        },\u001b[39m\n\u001b[32m  " +
+                                        "      output = prettydiff(args);\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mRun " +
+                                        "Pretty Diff in Atom, (https://atom.io/), code editor with the atom-beautify, (ht" +
+                                        "tps://atom.io/packages/atom-beautify), package.\u001b[39m\u001b[0m\u001b[24m\n\n" +
+                                        "  \u001b[4m\u001b[1m\u001b[32mRun the unit tests\u001b[39m\u001b[0m\u001b[24m\n" +
+                                        "\n\u001b[32m    cd prettydiff\u001b[39m\n\u001b[32m    node test/lint.js\u001b[3" +
+                                        "9m\n\n\u001b[4m\u001b[1m\u001b[36mLicense:\u001b[39m\u001b[0m\u001b[24m\n\n   " +
+                                        "\u001b[1m@source\u001b[0m http://prettydiff.com/prettydiff.js\n\n   \u001b[1m@do" +
+                                        "cumentation\u001b[0m English: http://prettydiff.com/documentation.xhtml\n\n   " +
+                                        "\u001b[1m@licstart\u001b[0m The following is the entire license notice for Prett" +
+                                        "y Diff.\n\n   This code may not be used or redistributed unless the following\n " +
+                                        "  conditions are met:\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Prettydiff cr" +
+                                        "eated by Austin Cheney originally on 3 Mar 2009. http://prettydiff.com/\n  " +
+                                        "\u001b[1m\u001b[31m*\u001b[39m\u001b[0m The use of diffview.js and prettydiff.js" +
+                                        " must contain the following copyright:\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0" +
+                                        "m Copyright (c), 2007, Snowtide Informatics Systems, Inc. All rights reserved.\n" +
+                                        "    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Redistributions of source code must " +
+                                        "retain the above copyright notice, this list of conditions and the\n      follow" +
+                                        "ing disclaimer.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Redistributions in " +
+                                        "binary form must reproduce the above copyright notice, this list of conditions a" +
+                                        "nd\n      the following disclaimer in the documentation and/or other materials p" +
+                                        "rovided with the distribution.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b",
+                                name     = "biddle_test_markdown_120";
+                            if (er !== null) {
+                                errout({error: er, name: name});
+                            }
+                            if (stder !== null && stder !== "") {
+                                errout({error: stder, name: name});
+                            }
+                            stdout = stdout.replace(/(\\(\w+)?)$/, "");
+                            if (stdout !== markdown) {
+                                diffFiles(name, stdout, markdown);
+                            }
+                            console.log(humantime(false) + " \u001b[32mmarkdown 120 test passed.\u001b[39m");
+                            flag["120"] = true;
+                            if (flag["60"] === true && flag["80"] === true) {
+                                next();
+                            }
+                        });
                     }
                 };
 
@@ -1731,8 +2559,16 @@
                 } else {
                     ind = output.join("\n");
                 }
-                if (input[3] === "test") {
-                    ind = ind.replace(/\u001b/g, "\\u001b").replace(/\r\n/g, "\\n").replace(/\n/g, "\\n").replace(/"/g, "\\\"").replace(/\\\\"/g, "\\\"");
+                if ((data.command === "help" && input[3] === "test") || (data.command === "markdown" && input[4] === "test")) {
+                    ind = ind
+                        .slice(0, 8192)
+                        .replace(/(\\(\w+)?)$/, "")
+                        .replace(/\\(?!(\\))/g, "\\\\")
+                        .replace(/\u001b/g, "\\u001b")
+                        .replace(/\r\n/g, "\\n")
+                        .replace(/\n/g, "\\n")
+                        .replace(/"/g, "\\\"")
+                        .replace(/\\\\"/g, "\\\"");
                 }
                 console.log(ind);
                 process.exit(0);
