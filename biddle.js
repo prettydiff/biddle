@@ -7,13 +7,8 @@
         fs        = require("fs"),
         http      = require("http"),
         https     = require("https"),
-        errout    = function biddle_errout(errData) {
-            var error = (typeof errData.error !== "string" || errData.error.toString().indexOf("Error: ") === 0)
-                ? errData.error
-                : "Error: " + errData.error;
-            console.log("Function: " + errData.name);
-            console.log(error);
-            process.exit(1);
+        errout    = function biddle_errout_init() {
+            return true;
         },
         input     = (function biddle_input() {
             var a     = [],
@@ -384,7 +379,7 @@
                         } else {
                             apps
                                 .makedir(addy, function biddle_get_getcall_end_complete() {
-                                    apps.readBinary(url, callback);
+                                    callback(file);
                                 });
                         }
                     });
@@ -579,11 +574,11 @@
                 order     = [
                     "install",
                     "lint",
-                    //"get",
                     "hash",
                     "help",
+                    "markdown",
+                    "get"
                     // "install", not written yet "list",
-                    "markdown"
                     // "publish", "status", not
                     // written yet "uninstall", not written yet "unpublish", "unzip", "zip"
                 ],
@@ -640,7 +635,6 @@
                     var minuteString = "",
                         hourString   = "",
                         secondString = "",
-                        finalTime    = "",
                         finalMem     = "",
                         minutes      = 0,
                         hours        = 0,
@@ -747,22 +741,23 @@
                             : secondString;
                     }
                     if (finished === true) {
-                        finalTime = hourString + minuteString + secondString;
-                        console.log(finalMem + " of memory consumed");
-                        console.log(finalTime + "total time");
-                        console.log("");
-                    } else {
-                        if (hourString === "") {
-                            hourString = "00";
+                        if (path.sep === "\\") {
+                            hourString = "\n" + hourString;
+                        } else {
+                            hourString = "\r\n" + hourString;
                         }
-                        if (minuteString === "") {
-                            minuteString = "00";
-                        }
-                        if ((/^([0-9]\.)/).test(secondString) === true) {
-                            secondString = "0" + secondString;
-                        }
-                        return "\u001b[36m[" + hourString + ":" + minuteString + ":" + secondString + "]\u001b[39m ";
+                        return finalMem + " of memory consumed" + hourString + minuteString + secondString + "total time";
                     }
+                    if (hourString === "") {
+                        hourString = "00";
+                    }
+                    if (minuteString === "") {
+                        minuteString = "00";
+                    }
+                    if ((/^([0-9]\.)/).test(secondString) === true) {
+                        secondString = "0" + secondString;
+                    }
+                    return "\u001b[36m[" + hourString + ":" + minuteString + ":" + secondString + "]\u001b[39m ";
                 },
                 diffFiles = function biddle_test_diffFiles(sampleName, sampleSource, sampleDiff) {
                     var aa     = 0,
@@ -806,7 +801,8 @@
                         console.log(report[0]);
                         return errout({
                             error: colors.del.lineStart + "bad test" + colors.del.lineEnd,
-                            name : sampleName
+                            name : sampleName,
+                            time :humantime(true)
                         });
                     }
                     // report indexes from diffcli feature of diffview.js
@@ -872,17 +868,27 @@
                         });
                     }
                 },
-                fail      = function biddle_test_fail(errtext) {
-                    console.log("");
-                    console.error(errtext);
-                    humantime(true);
-                    process.exit(1);
-                },
                 next      = function biddle_test_nextInit() {
                     return;
                 },
                 phases    = {
-                    //get: function biddle_test_get() {},
+                    get     : function biddle_test_get() {
+                        child("node biddle get http://www.google.com unittest", function biddle_test_get_child(er, stdout, stder) {
+                            var size = "";
+                            if (er !== null) {
+                                errout({error: er, name: "biddle_test_get_child"});
+                            }
+                            if (stder !== null && stder !== "") {
+                                errout({error: stder, name: "biddle_test_get_child"});
+                            }
+                            size = stdout.slice(stdout.indexOf("written at") + 10);
+                            if ((/File\sunittest\S+\swritten\sat\s\d+(,\d+)+\sbytes./).test(stdout) === false || stdout.indexOf(" 0 bytes") > 0 || size.replace(" bytes.", "").length < 4) {
+                                return errout({error: "Unexpected output for test 'get':\r\n\u001b[31m" + stdout + "\u001b[39m", name:"biddle_test_get_child", time:humantime(true)});
+                            }
+                            console.log(humantime(false) + " \u001b[32mget test passed. File written at" + size + "\u001b[39m");
+                            next();
+                        });
+                    },
                     hash    : function biddle_test_hash() {
                         child("node biddle hash LICENSE", function biddle_test_hash_child(er, stdout, stder) {
                             var hash = "be09a71a2cda28b74e9dd206f46c1621aebe29182723f191d8109db4705ced014de469043c397fee" +
@@ -895,7 +901,7 @@
                             }
                             stdout = stdout.replace(/(\r?\n)$/, "");
                             if (stdout !== hash) {
-                                diffFiles("biddle_test_hash_child", stdout, hash);
+                                return diffFiles("biddle_test_hash_child", stdout, hash);
                             }
                             console.log(humantime(false) + " \u001b[32mhash test passed.\u001b[39m");
                             next();
@@ -1045,7 +1051,7 @@
                             }
                             stdout = stdout.replace(/(\\(\w+)?)$/, "");
                             if (stdout !== help) {
-                                diffFiles(name, stdout, help);
+                                return diffFiles(name, stdout, help);
                             }
                             console.log(humantime(false) + " \u001b[32mhelp 60 test passed.\u001b[39m");
                             flag["60"] = true;
@@ -1191,7 +1197,7 @@
                             }
                             stdout = stdout.replace(/(\\(\w+)?)$/, "");
                             if (stdout !== help) {
-                                diffFiles(name, stdout, help);
+                                return diffFiles(name, stdout, help);
                             }
                             console.log(humantime(false) + " \u001b[32mhelp 80 test passed.\u001b[39m");
                             flag["80"] = true;
@@ -1336,7 +1342,7 @@
                             }
                             stdout = stdout.replace(/(\\(\w+)?)$/, "");
                             if (stdout !== help) {
-                                diffFiles(name, stdout, help);
+                                return diffFiles(name, stdout, help);
                             }
                             console.log(humantime(false) + " \u001b[32mhelp 120 test passed.\u001b[39m");
                             flag["120"] = true;
@@ -1554,7 +1560,9 @@
                             }
                             submod(true);
                         };
-                        handler(0);
+                        apps.makedir("unittest", function biddle_test_install_makedir() {
+                            handler(0);
+                        });
                     },
                     lint    : function biddle_test_lint() {
                         var ignoreDirectory = [
@@ -1605,13 +1613,12 @@
                                             .warnings
                                             .forEach(report);
                                         if (failed === true) {
-                                            fail("\u001b[31mLint fail\u001b[39m :(");
-                                        } else {
-                                            console.log(humantime(false) + "\u001b[32mLint is good for file " + (ind + 1) + ":\u001b[39m " + val[0]);
-                                            if (ind === arr.length - 1) {
-                                                console.log("\u001b[32mLint operation complete!\u001b[39m");
-                                                return next();
-                                            }
+                                            return errout({error:"\u001b[31mLint fail\u001b[39m :(", name: "biddle_test_lint_lintrun_lintit", time:humantime(true)});
+                                        }
+                                        console.log(humantime(false) + "\u001b[32mLint is good for file " + (ind + 1) + ":\u001b[39m " + val[0]);
+                                        if (ind === arr.length - 1) {
+                                            console.log("\u001b[32mLint operation complete!\u001b[39m");
+                                            next();
                                         }
                                     }
                                 };
@@ -1858,7 +1865,7 @@
                             }
                             stdout = stdout.replace(/(\\(\w+)?)$/, "");
                             if (stdout !== markdown) {
-                                diffFiles(name, stdout, markdown);
+                                return diffFiles(name, stdout, markdown);
                             }
                             console.log(humantime(false) + " \u001b[32mmarkdown 60 test passed.\u001b[39m");
                             flag["60"] = true;
@@ -2001,7 +2008,7 @@
                             }
                             stdout = stdout.replace(/(\\(\w+)?)$/, "");
                             if (stdout !== markdown) {
-                                diffFiles(name, stdout, markdown);
+                                return diffFiles(name, stdout, markdown);
                             }
                             console.log(humantime(false) + " \u001b[32mmarkdown 80 test passed.\u001b[39m");
                             flag["80"] = true;
@@ -2144,7 +2151,7 @@
                             }
                             stdout = stdout.replace(/(\\(\w+)?)$/, "");
                             if (stdout !== markdown) {
-                                diffFiles(name, stdout, markdown);
+                                return diffFiles(name, stdout, markdown);
                             }
                             console.log(humantime(false) + " \u001b[32mmarkdown 120 test passed.\u001b[39m");
                             flag["120"] = true;
@@ -2163,13 +2170,35 @@
                 };
                 console.log("");
                 if (order.length < 1) {
-                    return complete();
+                    return apps.rmrecurse("unittest", function biddle_test_next_rmdir() {
+                        complete();
+                    });
                 }
                 phases[order[0]]();
                 order.splice(0, 1);
             };
             next();
         };
+    errout           = function biddle_errout(errData) {
+        var error = (typeof errData.error !== "string" || errData.error.toString().indexOf("Error: ") === 0)
+            ? errData.error
+            : "Error: " + errData.error;
+        error = error.replace(/(\s+)$/, "");
+        if (data.command === "test") {
+            apps.rmrecurse("unittest", function errout_dataClean() {
+                console.log("\u001b[31mUnit test failure.\u001b[39m");
+                console.log("Function: " + errData.name);
+                console.log(error);
+                console.log("");
+                console.log(errData.time);
+                process.exit(1);
+            });
+        } else {
+            console.log("Function: " + errData.name);
+            console.log(error);
+            process.exit(1);
+        }
+    };
     data.address     = (function biddle_address() {
         var addy = {
             downloads: data.abspath + "downloads" + path.sep,
@@ -2627,7 +2656,7 @@
                     if (data.command === "get") {
                         get(input[2], function biddle_init_start_getback(filedata) {
                             apps
-                                .writeFile(filedata, data.address.target + data.fileName, function biddle_init_start_getback_callback() {
+                                .writeFile(filedata, data.address.target + path.sep + data.fileName, function biddle_init_start_getback_callback() {
                                     return filedata;
                                 });
                         });
