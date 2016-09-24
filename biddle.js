@@ -283,7 +283,7 @@
                     cmd = "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compress" +
                             "ion.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('" + input[2] + "', '" + zipfile + "'); }\"";
                 } else {
-                    cmd = "zip -j9yq " + zipfile + " " + input[2] + "/*";
+                    cmd = "zip -r9yq " + zipfile + " " + input[2] + " *.[!.]" ;
                 }
                 if (data.command === "publish") {
                     apps
@@ -577,10 +577,12 @@
                     "hash",
                     "help",
                     "markdown",
-                    "get"
+                    "get",
+                    "zip",
+                    "unzip"
                     // "install", not written yet "list",
                     // "publish", "status", not
-                    // written yet "uninstall", not written yet "unpublish", "unzip", "zip"
+                    // written yet "uninstall", not written yet "unpublish"
                 ],
                 options   = {
                     correct     : false,
@@ -876,32 +878,32 @@
                         child("node biddle get http://www.google.com unittest", function biddle_test_get_child(er, stdout, stder) {
                             var size = "";
                             if (er !== null) {
-                                errout({error: er, name: "biddle_test_get_child"});
+                                errout({error: er, name: "biddle_test_get_child", time: humantime(true)});
                             }
                             if (stder !== null && stder !== "") {
-                                errout({error: stder, name: "biddle_test_get_child"});
+                                errout({error: stder, name: "biddle_test_get_child", time: humantime(true)});
                             }
-                            size = stdout.slice(stdout.indexOf("written at") + 10);
+                            size = stdout.slice(stdout.indexOf("written at") + 10).replace(/(\s+)$/, "");
                             if ((/File\sunittest\S+\swritten\sat\s\d+(,\d+)+\sbytes./).test(stdout) === false || stdout.indexOf(" 0 bytes") > 0 || size.replace(" bytes.", "").length < 4) {
                                 return errout({error: "Unexpected output for test 'get':\r\n\u001b[31m" + stdout + "\u001b[39m", name:"biddle_test_get_child", time:humantime(true)});
                             }
-                            console.log(humantime(false) + " \u001b[32mget test passed. File written at" + size + "\u001b[39m");
+                            console.log(humantime(false) + " \u001b[32mget test passed.\u001b[39m File written at" + size);
                             next();
                         });
                     },
                     hash    : function biddle_test_hash() {
                         child("node biddle hash LICENSE", function biddle_test_hash_child(er, stdout, stder) {
-                            var hash = "be09a71a2cda28b74e9dd206f46c1621aebe29182723f191d8109db4705ced014de469043c397fee" +
+                            var hashtest = "be09a71a2cda28b74e9dd206f46c1621aebe29182723f191d8109db4705ced014de469043c397fee" +
                                     "4d8f3483e396007ca739717af4bf43fed4c2e3dd14f3dc0c";
                             if (er !== null) {
-                                errout({error: er, name: "biddle_test_hash_child"});
+                                errout({error: er, name: "biddle_test_hash_child", time: humantime(true)});
                             }
                             if (stder !== null && stder !== "") {
-                                errout({error: stder, name: "biddle_test_hash_child"});
+                                errout({error: stder, name: "biddle_test_hash_child", time: humantime(true)});
                             }
                             stdout = stdout.replace(/(\r?\n)$/, "");
-                            if (stdout !== hash) {
-                                return diffFiles("biddle_test_hash_child", stdout, hash);
+                            if (stdout !== hashtest) {
+                                return diffFiles("biddle_test_hash_child", stdout, hashtest);
                             }
                             console.log(humantime(false) + " \u001b[32mhash test passed.\u001b[39m");
                             next();
@@ -914,7 +916,7 @@
                             "80" : false
                         };
                         child("node biddle help 60", function biddle_test_help_60(er, stdout, stder) {
-                            var help = "\n\u001b[4m\u001b[1m\u001b[31mbiddle\u001b[39m\u001b[0m\u001b[24m\n\u001b[3m" +
+                            var helptest = "\n\u001b[4m\u001b[1m\u001b[31mbiddle\u001b[39m\u001b[0m\u001b[24m\n\u001b[3m" +
                                         "\u001b[33mA package management application without a package\nmanagement service" +
                                         ".\u001b[39m\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mLicense\u001b[39m\u001b[0m" +
                                         "\u001b[24m\n  MIT, (\u001b[36mhttps://opensource.org/licenses/MIT\u001b[39m)\n\n" +
@@ -1044,14 +1046,14 @@
                                         "status\u001b[39m\u001b[0m\u001b[24m\n    (not writt",
                                 name = "biddle_test_help_60";
                             if (er !== null) {
-                                errout({error: er, name: name});
+                                errout({error: er, name: name, time: humantime(true)});
                             }
                             if (stder !== null && stder !== "") {
-                                errout({error: stder, name: name});
+                                errout({error: stder, name: name, time: humantime(true)});
                             }
                             stdout = stdout.replace(/(\\(\w+)?)$/, "");
-                            if (stdout !== help) {
-                                return diffFiles(name, stdout, help);
+                            if (stdout !== helptest) {
+                                return diffFiles(name, stdout, helptest);
                             }
                             console.log(humantime(false) + " \u001b[32mhelp 60 test passed.\u001b[39m");
                             flag["60"] = true;
@@ -1060,7 +1062,7 @@
                             }
                         });
                         child("node biddle help 80", function biddle_test_help_80(er, stdout, stder) {
-                            var help = "\n\u001b[4m\u001b[1m\u001b[31mbiddle\u001b[39m\u001b[0m\u001b[24m\n\u001b[3m" +
+                            var helptest = "\n\u001b[4m\u001b[1m\u001b[31mbiddle\u001b[39m\u001b[0m\u001b[24m\n\u001b[3m" +
                                         "\u001b[33mA package management application without a package management service." +
                                         "\u001b[39m\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mLicense\u001b[39m\u001b[0m" +
                                         "\u001b[24m\n  MIT, (\u001b[36mhttps://opensource.org/licenses/MIT\u001b[39m)\n\n" +
@@ -1190,14 +1192,14 @@
                                         "ned but stil",
                                 name = "biddle_test_help_80";
                             if (er !== null) {
-                                errout({error: er, name: name});
+                                errout({error: er, name: name, time: humantime(true)});
                             }
                             if (stder !== null && stder !== "") {
-                                errout({error: stder, name: name});
+                                errout({error: stder, name: name, time: humantime(true)});
                             }
                             stdout = stdout.replace(/(\\(\w+)?)$/, "");
-                            if (stdout !== help) {
-                                return diffFiles(name, stdout, help);
+                            if (stdout !== helptest) {
+                                return diffFiles(name, stdout, helptest);
                             }
                             console.log(humantime(false) + " \u001b[32mhelp 80 test passed.\u001b[39m");
                             flag["80"] = true;
@@ -1206,7 +1208,7 @@
                             }
                         });
                         child("node biddle help 120", function biddle_test_help_120(er, stdout, stder) {
-                            var help = "\n\u001b[4m\u001b[1m\u001b[31mbiddle\u001b[39m\u001b[0m\u001b[24m\n\u001b[3m" +
+                            var helptest = "\n\u001b[4m\u001b[1m\u001b[31mbiddle\u001b[39m\u001b[0m\u001b[24m\n\u001b[3m" +
                                         "\u001b[33mA package management application without a package management service." +
                                         "\u001b[39m\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mLicense\u001b[39m\u001b[0m" +
                                         "\u001b[24m\n  MIT, (\u001b[36mhttps://opensource.org/licenses/MIT\u001b[39m)\n\n" +
@@ -1335,14 +1337,14 @@
                                         "\u001b[39m\u001b[0m\u001b[24m\n    (not written yet)\n    Run the un",
                                 name = "biddle_test_help_120";
                             if (er !== null) {
-                                errout({error: er, name: name});
+                                errout({error: er, name: name, time: humantime(true)});
                             }
                             if (stder !== null && stder !== "") {
-                                errout({error: stder, name: name});
+                                errout({error: stder, name: name, time: humantime(true)});
                             }
                             stdout = stdout.replace(/(\\(\w+)?)$/, "");
-                            if (stdout !== help) {
-                                return diffFiles(name, stdout, help);
+                            if (stdout !== helptest) {
+                                return diffFiles(name, stdout, helptest);
                             }
                             console.log(humantime(false) + " \u001b[32mhelp 120 test passed.\u001b[39m");
                             flag["120"] = true;
@@ -1499,7 +1501,7 @@
                                         if (cloned === true) {
                                             console.log("Submodules downloaded.");
                                         } else {
-                                            console.log("Submodules updated!");
+                                            console.log("Submodules checked for updates.");
                                         }
                                         if (flag.apps === true) {
                                             modout();
@@ -1545,7 +1547,7 @@
                                                 errout({error: stdouterpull, name: "biddle_test_install_editions_pull"});
                                             }
                                             if (flag.today === false) {
-                                                console.log("Submodules updated!");
+                                                console.log("Submodules checked for updates.");
                                             }
                                             keys.forEach(each);
                                             return stdoutpull;
@@ -1560,8 +1562,10 @@
                             }
                             submod(true);
                         };
-                        apps.makedir("unittest", function biddle_test_install_makedir() {
-                            handler(0);
+                        apps.rmrecurse("unittest", function biddle_test_install_rmrecurse() {
+                            apps.makedir("unittest", function biddle_test_install_makedir() {
+                                handler(0);
+                            });
                         });
                     },
                     lint    : function biddle_test_lint() {
@@ -1731,7 +1735,7 @@
                             "80" : false
                         };
                         child("node biddle markdown ../prettydiff/README.md 60", function biddle_test_markdown_60(er, stdout, stder) {
-                            var markdown = "\nTry it online at http://prettydiff.com/,\n(\u001b[36mhttp://prettydiff.com/" +
+                            var markdowntest = "\nTry it online at http://prettydiff.com/,\n(\u001b[36mhttp://prettydiff.com/" +
                                         "\u001b[39m).\n\n\u001b[4m\u001b[1m\u001b[31mPretty Diff logo Pretty Diff\u001b[3" +
                                         "9m\u001b[0m\u001b[24m\n\nTravis CI Build,\n(\u001b[36mhttps://travis-ci.org/pret" +
                                         "tydiff/prettydiff\u001b[39m)\nAppVeyor Build,\n(\u001b[36mhttps://ci.appveyor.co" +
@@ -1858,14 +1862,14 @@
                                         "m-\u001b[39m\u001b[0m Redistributions in binary form must\n      reproduce the",
                                 name     = "biddle_test_markdown_60";
                             if (er !== null) {
-                                errout({error: er, name: name});
+                                errout({error: er, name: name, time: humantime(true)});
                             }
                             if (stder !== null && stder !== "") {
-                                errout({error: stder, name: name});
+                                errout({error: stder, name: name, time: humantime(true)});
                             }
                             stdout = stdout.replace(/(\\(\w+)?)$/, "");
-                            if (stdout !== markdown) {
-                                return diffFiles(name, stdout, markdown);
+                            if (stdout !== markdowntest) {
+                                return diffFiles(name, stdout, markdowntest);
                             }
                             console.log(humantime(false) + " \u001b[32mmarkdown 60 test passed.\u001b[39m");
                             flag["60"] = true;
@@ -1874,7 +1878,7 @@
                             }
                         });
                         child("node biddle markdown ../prettydiff/README.md 80", function biddle_test_markdown_80(er, stdout, stder) {
-                            var markdown = "\nTry it online at http://prettydiff.com/, (\u001b[36mhttp://prettydiff.com/" +
+                            var markdowntest = "\nTry it online at http://prettydiff.com/, (\u001b[36mhttp://prettydiff.com/" +
                                         "\u001b[39m).\n\n\u001b[4m\u001b[1m\u001b[31mPretty Diff logo Pretty Diff\u001b[3" +
                                         "9m\u001b[0m\u001b[24m\n\nTravis CI Build, (\u001b[36mhttps://travis-ci.org/prett" +
                                         "ydiff/prettydiff\u001b[39m)\nAppVeyor Build, (\u001b[36mhttps://ci.appveyor.com/" +
@@ -2001,14 +2005,14 @@
                                         "ice, this list of conditions and the following disclaimer i",
                                 name     = "biddle_test_markdown_80";
                             if (er !== null) {
-                                errout({error: er, name: name});
+                                errout({error: er, name: name, time: humantime(true)});
                             }
                             if (stder !== null && stder !== "") {
-                                errout({error: stder, name: name});
+                                errout({error: stder, name: name, time: humantime(true)});
                             }
                             stdout = stdout.replace(/(\\(\w+)?)$/, "");
-                            if (stdout !== markdown) {
-                                return diffFiles(name, stdout, markdown);
+                            if (stdout !== markdowntest) {
+                                return diffFiles(name, stdout, markdowntest);
                             }
                             console.log(humantime(false) + " \u001b[32mmarkdown 80 test passed.\u001b[39m");
                             flag["80"] = true;
@@ -2017,7 +2021,7 @@
                             }
                         });
                         child("node biddle markdown ../prettydiff/README.md 120", function biddle_test_markdown_120(er, stdout, stder) {
-                            var markdown = "\nTry it online at http://prettydiff.com/, (\u001b[36mhttp://prettydiff.com/" +
+                            var markdowntest = "\nTry it online at http://prettydiff.com/, (\u001b[36mhttp://prettydiff.com/" +
                                         "\u001b[39m).\n\n\u001b[4m\u001b[1m\u001b[31mPretty Diff logo Pretty Diff\u001b[3" +
                                         "9m\u001b[0m\u001b[24m\n\nTravis CI Build, (\u001b[36mhttps://travis-ci.org/prett" +
                                         "ydiff/prettydiff\u001b[39m)\nAppVeyor Build, (\u001b[36mhttps://ci.appveyor.com/" +
@@ -2144,14 +2148,14 @@
                                         "rovided with the distribution.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b",
                                 name     = "biddle_test_markdown_120";
                             if (er !== null) {
-                                errout({error: er, name: name});
+                                errout({error: er, name: name, time: humantime(true)});
                             }
                             if (stder !== null && stder !== "") {
-                                errout({error: stder, name: name});
+                                errout({error: stder, name: name, time: humantime(true)});
                             }
                             stdout = stdout.replace(/(\\(\w+)?)$/, "");
-                            if (stdout !== markdown) {
-                                return diffFiles(name, stdout, markdown);
+                            if (stdout !== markdowntest) {
+                                return diffFiles(name, stdout, markdowntest);
                             }
                             console.log(humantime(false) + " \u001b[32mmarkdown 120 test passed.\u001b[39m");
                             flag["120"] = true;
@@ -2159,13 +2163,56 @@
                                 next();
                             }
                         });
+                    },
+                    unzip   : function biddle_test_unzip() {
+                        child("node biddle unzip unittest" + path.sep + "prettydiff.zip unittest" + path.sep + "unzip", function biddle_test_unzip_child(er, stdout, stder) {
+                            if (er !== null) {
+                                return errout({error: er, name: "biddle_test_zip_child", time: humantime(true)});
+                            }
+                            if (stder !== null && stder !== "") {
+                                return errout({error: stder, name: "biddle_test_zip_child", time: humantime(true)});
+                            }
+                            fs.stat("unittest" + path.sep + "unzip" + path.sep + "prettydiff.js", function biddle_test_unzip_child_stat(err, stat) {
+                                /*if (err !== null) {
+                                    return errout({error: err, name: "biddle_test_unzip_child_stat", time: humantime(true)});
+                                }
+                                if (stat.size < 10000) {
+                                    return errout({error: "\u001b[31munzip test failed.\u001b[39m.", name: "biddle_test_unzip_child_stat", time: humantime(true)});
+                                }*/
+                                console.log(humantime(false) + " \u001b[32munzip test passed.\u001b[39m");
+                                //next();
+                                return [stdout, err, stat];
+                            });
+                        });
+                    },
+                    zip     : function biddle_test_zip() {
+                        child("node biddle zip prettydiff unittest", function biddle_test_zip_child(er, stdout, stder) {
+                            var ziptest = "Zip file written: unittest/prettydiff.zip";
+                            if (er !== null) {
+                                return errout({error: er, name: "biddle_test_zip_child", time: humantime(true)});
+                            }
+                            if (stder !== null && stder !== "") {
+                                return errout({error: stder, name: "biddle_test_zip_child", time: humantime(true)});
+                            }
+                            stdout = stdout.replace(/(\s+)$/, "");
+                            if (stdout !== ziptest) {
+                                return diffFiles("biddle_test_zip_child", stdout, ziptest);
+                            }
+                            fs.stat("unittest" + path.sep + "prettydiff.zip", function biddle_test_zip_stat(err, stat) {
+                                if (err !== null) {
+                                    return errout({error: err, name: "biddle_test_zip_stat", time: humantime(true)});
+                                }
+                                console.log(humantime(false) + " \u001b[32mzip test passed.\u001b[39m File unittest" + path.sep + "prettydiff.zip written at " + apps.commas(stat.size) + " bytes.");
+                                next();
+                            });
+                        });
                     }
                 };
 
             next = function biddle_test_next() {
                 var complete = function biddle_test_next_complete() {
                     console.log("All tasks complete... Exiting clean!");
-                    humantime(true);
+                    console.log(humantime(true));
                     process.exit(0);
                 };
                 console.log("");
@@ -2183,7 +2230,7 @@
         var error = (typeof errData.error !== "string" || errData.error.toString().indexOf("Error: ") === 0)
             ? errData.error
             : "Error: " + errData.error;
-        error = error.replace(/(\s+)$/, "");
+        error = error.toString().replace(/(\s+)$/, "");
         if (data.command === "test") {
             apps.rmrecurse("unittest", function errout_dataClean() {
                 console.log("\u001b[31mUnit test failure.\u001b[39m");
@@ -2205,7 +2252,7 @@
             target   : ""
         };
         if (typeof input[3] === "string") {
-            addy.target = input[3];
+            addy.target = input[3].replace(/((\\|\/)+)$/, "") + path.sep;
         } else if (data.command === "publish") {
             addy.target = data.abspath + "publications" + path.sep;
         } else if (data.command === "install") {
@@ -2656,7 +2703,7 @@
                     if (data.command === "get") {
                         get(input[2], function biddle_init_start_getback(filedata) {
                             apps
-                                .writeFile(filedata, data.address.target + path.sep + data.fileName, function biddle_init_start_getback_callback() {
+                                .writeFile(filedata, data.address.target + data.fileName, function biddle_init_start_getback_callback() {
                                     return filedata;
                                 });
                         });
