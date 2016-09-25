@@ -1054,7 +1054,7 @@
                             if (stder !== null && stder !== "") {
                                 errout({error: stder, name: name, time: humantime(true)});
                             }
-                            stdout = stdout.replace(/(\\(\w+)?)$/, "");
+                            stdout = stdout.replace(/\r\n/g, "\n").slice(0, 8192).replace(/(\\(\w+)?)$/, "");
                             if (stdout !== helptest) {
                                 return diffFiles(name, stdout, helptest);
                             }
@@ -1200,7 +1200,7 @@
                             if (stder !== null && stder !== "") {
                                 errout({error: stder, name: name, time: humantime(true)});
                             }
-                            stdout = stdout.replace(/(\\(\w+)?)$/, "");
+                            stdout = stdout.replace(/\r\n/g, "\n").slice(0, 8192).replace(/(\\(\w+)?)$/, "");
                             if (stdout !== helptest) {
                                 return diffFiles(name, stdout, helptest);
                             }
@@ -1345,7 +1345,7 @@
                             if (stder !== null && stder !== "") {
                                 errout({error: stder, name: name, time: humantime(true)});
                             }
-                            stdout = stdout.replace(/(\\(\w+)?)$/, "");
+                            stdout = stdout.replace(/\r\n/g, "\n").slice(0, 8192).replace(/(\\(\w+)?)$/, "");
                             if (stdout !== helptest) {
                                 return diffFiles(name, stdout, helptest);
                             }
@@ -1870,7 +1870,7 @@
                             if (stder !== null && stder !== "") {
                                 errout({error: stder, name: name, time: humantime(true)});
                             }
-                            stdout = stdout.replace(/(\\(\w+)?)$/, "");
+                            stdout = stdout.replace(/\r\n/g, "\n").slice(0, 8192).replace(/(\\(\w+)?)$/, "");
                             if (stdout !== markdowntest) {
                                 return diffFiles(name, stdout, markdowntest);
                             }
@@ -2013,7 +2013,7 @@
                             if (stder !== null && stder !== "") {
                                 errout({error: stder, name: name, time: humantime(true)});
                             }
-                            stdout = stdout.replace(/(\\(\w+)?)$/, "");
+                            stdout = stdout.replace(/\r\n/g, "\n").slice(0, 8192).replace(/(\\(\w+)?)$/, "");
                             if (stdout !== markdowntest) {
                                 return diffFiles(name, stdout, markdowntest);
                             }
@@ -2156,7 +2156,7 @@
                             if (stder !== null && stder !== "") {
                                 errout({error: stder, name: name, time: humantime(true)});
                             }
-                            stdout = stdout.replace(/(\\(\w+)?)$/, "");
+                            stdout = stdout.replace(/\r\n/g, "\n").slice(0, 8192).replace(/(\\(\w+)?)$/, "");
                             if (stdout !== markdowntest) {
                                 return diffFiles(name, stdout, markdowntest);
                             }
@@ -2640,11 +2640,11 @@
                 }
                 if ((data.command === "help" && input[3] === "test") || (data.command === "markdown" && input[4] === "test")) {
                     ind = ind
+                        .replace(/\r\n/g, "\n")
                         .slice(0, 8192)
                         .replace(/(\\(\w+)?)$/, "")
                         .replace(/\\(?!(\\))/g, "\\\\")
                         .replace(/\u001b/g, "\\u001b")
-                        .replace(/\r\n/g, "\\n")
                         .replace(/\n/g, "\\n")
                         .replace(/"/g, "\\\"")
                         .replace(/\\\\"/g, "\\\"");
