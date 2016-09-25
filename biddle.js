@@ -1737,7 +1737,7 @@
                             "60" : false,
                             "80" : false
                         };
-                        child("node biddle markdown ../prettydiff/README.md 60", function biddle_test_markdown_60(er, stdout, stder) {
+                        child("node biddle markdown prettydiff" + path.sep + "README.md 60", function biddle_test_markdown_60(er, stdout, stder) {
                             var markdowntest = "\nTry it online at http://prettydiff.com/,\n(\u001b[36mhttp://prettydiff.com/" +
                                         "\u001b[39m).\n\n\u001b[4m\u001b[1m\u001b[31mPretty Diff logo Pretty Diff\u001b[3" +
                                         "9m\u001b[0m\u001b[24m\n\nTravis CI Build,\n(\u001b[36mhttps://travis-ci.org/pret" +
@@ -1880,7 +1880,7 @@
                                 next();
                             }
                         });
-                        child("node biddle markdown ../prettydiff/README.md 80", function biddle_test_markdown_80(er, stdout, stder) {
+                        child("node biddle markdown prettydiff" + path.sep + "README.md 80", function biddle_test_markdown_80(er, stdout, stder) {
                             var markdowntest = "\nTry it online at http://prettydiff.com/, (\u001b[36mhttp://prettydiff.com/" +
                                         "\u001b[39m).\n\n\u001b[4m\u001b[1m\u001b[31mPretty Diff logo Pretty Diff\u001b[3" +
                                         "9m\u001b[0m\u001b[24m\n\nTravis CI Build, (\u001b[36mhttps://travis-ci.org/prett" +
@@ -2023,7 +2023,7 @@
                                 next();
                             }
                         });
-                        child("node biddle markdown ../prettydiff/README.md 120", function biddle_test_markdown_120(er, stdout, stder) {
+                        child("node biddle markdown prettydiff" + path.sep + "README.md 120", function biddle_test_markdown_120(er, stdout, stder) {
                             var markdowntest = "\nTry it online at http://prettydiff.com/, (\u001b[36mhttp://prettydiff.com/" +
                                         "\u001b[39m).\n\n\u001b[4m\u001b[1m\u001b[31mPretty Diff logo Pretty Diff\u001b[3" +
                                         "9m\u001b[0m\u001b[24m\n\nTravis CI Build, (\u001b[36mhttps://travis-ci.org/prett" +
@@ -2190,7 +2190,7 @@
                     },
                     zip     : function biddle_test_zip() {
                         child("node biddle zip prettydiff unittest", function biddle_test_zip_child(er, stdout, stder) {
-                            var ziptest = "Zip file written: unittest/prettydiff.zip";
+                            var ziptest = "Zip file written: unittest" + path.sep + "prettydiff.zip";
                             if (er !== null) {
                                 return errout({error: er, name: "biddle_test_zip_child", time: humantime(true)});
                             }
