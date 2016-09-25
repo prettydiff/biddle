@@ -221,6 +221,9 @@
                     : "rm -rf " + dirToKill;
                 child(cmd, function biddle_rmrecurse_child(err, stdout, stderrout) {
                     if (err !== null) {
+                        if (err.toString().indexOf("Cannot find path") > 0) {
+                            return callback();
+                        }
                         return errout({error: err, name: "biddle_rmrecurse_child"});
                     }
                     if (stderrout !== null && stderrout !== "") {
@@ -283,7 +286,7 @@
                     cmd = "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compress" +
                             "ion.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('" + input[2] + "', '" + zipfile + "'); }\"";
                 } else {
-                    cmd = "zip -r9yq " + zipfile + " " + input[2] + " *.[!.]" ;
+                    cmd = "zip -r9yq " + zipfile + " " + input[2] + " *.[!.]";
                 }
                 if (data.command === "publish") {
                     apps
@@ -743,7 +746,7 @@
                             : secondString;
                     }
                     if (finished === true) {
-                        if (path.sep === "\\") {
+                        if (data.platform === "win32") {
                             hourString = "\n" + hourString;
                         } else {
                             hourString = "\r\n" + hourString;
@@ -1381,49 +1384,49 @@
                                 }
                                 fs
                                     .stat(modules[mod].dir, function biddle_test_install_handler_stat(erstat, stats) {
-                                        var clone = function biddle_test_install_handler_stat_clone() {
-                                            console.log("Cloning " + modules[mod].name);
-                                            child("git submodule add " + modules[mod].repo, function biddle_test_install_handler_stat_clone_submodule(era, stdouta, stdoutera) {
+                                        var add = function biddle_test_install_handler_stat_add() {
+                                            console.log("Adding " + modules[mod].name);
+                                            child("git submodule add " + modules[mod].repo, function biddle_test_install_handler_stat_add_submodule(era, stdouta, stdoutera) {
                                                 if (era !== null && era.toString().indexOf("already exists in the index") < 0) {
-                                                    errout({error: era, name: "biddle_test_install_handler_stat_clone_submodule"});
+                                                    errout({error: era, name: "biddle_test_install_handler_stat_add_submodule", time: humantime(true)});
                                                 }
                                                 if (stdoutera !== null && stdoutera !== "" && stdoutera.indexOf("Cloning into '") < 0 && stdoutera.indexOf("already exists in the index") < 0) {
-                                                    errout({error: stdoutera, name: "biddle_test_install_handler_stat_clone_submodule"});
+                                                    errout({error: stdoutera, name: "biddle_test_install_handler_stat_add_submodule", time: humantime(true)});
                                                 }
-                                                ind += 1;
-                                                editions(mod, true, ind);
+                                                child("git clone " + modules[mod].repo, function biddle_test_install_handler_stat_add_submodule_clone(erb, stdoutb, stdouterb) {
+                                                    if (erb !== null) {
+                                                        errout({error: erb, name: "biddle_test_install_handler_stat_add_submodule_clone", time: humantime(true)});
+                                                    }
+                                                    if (stdouterb !== null && stdouterb !== "" && stdouterb.indexOf("Cloning into '") < 0) {
+                                                        errout({error: stdouterb, name: "biddle_test_install_handler_stat_add_submodule_clone", time: humantime(true)});
+                                                    }
+                                                    ind += 1;
+                                                    editions(mod, true, ind);
+                                                    return stdoutb;
+                                                })
                                                 return stdouta;
                                             });
                                         };
                                         if (erstat !== null && erstat !== undefined) {
-                                            if (erstat.toString() === "Error: ENOENT: no such file or directory, stat '" + modules[mod].dir + "'") {
-                                                return clone();
+                                            if (erstat.toString().indexOf("Error: ENOENT: no such file or directory, stat '") === 0) {
+                                                return add();
                                             }
-                                            return errout({error: erstat, name: "biddle_test_install_handler_stat"});
+                                            return errout({error: erstat, name: "biddle_test_install_handler_stat", time: humantime(true)});
                                         }
                                         if (stats.isDirectory() === true) {
                                             return fs.readdir(modules[mod].dir, function biddle_test_install_handler_stat_readdir(direrr, files) {
                                                 if (typeof direrr === "string") {
-                                                    return errout({error: direrr, name: "biddle_test_install_handler_stat_readdir"});
+                                                    return errout({error: direrr, name: "biddle_test_install_handler_stat_readdir", time: humantime(true)});
                                                 }
                                                 ind += 1;
                                                 if (files.length < 1) {
-                                                    child("rm -rf " + modules[mod].dir, function biddle_test_install_handler_stat_readdir_clone(errp, stdoutp, stdouterp) {
-                                                        if (errp !== null) {
-                                                            errout({error: errp, name: "biddle_test_install_handler_stat_readdir_clone"});
-                                                        }
-                                                        if (stdouterp !== null && stdouterp !== "") {
-                                                            errout({error: stdouterp, name: "biddle_test_install_handler_stat_readdir_clone"});
-                                                        }
-                                                        clone();
-                                                        return stdoutp;
-                                                    });
+                                                    apps.rmrecurse(modules[mod].dir, add);
                                                 } else {
                                                     editions(mod, false);
                                                 }
                                             });
                                         }
-                                        clone();
+                                        add();
                                     });
                             };
                         editions = function biddle_test_install_editions(appName, cloned) {
@@ -1457,13 +1460,13 @@
                                         fs
                                             .readFile(appFile, "utf8", function biddle_test_install_editions_submod_lintread(erread, data) {
                                                 if (erread !== null && erread !== undefined) {
-                                                    errout({error: erread, name: "biddle_test_install_editions_lintread"});
+                                                    errout({error: erread, name: "biddle_test_install_editions_lintread", time: humantime(true)});
                                                 }
                                                 if (data.slice(data.length - 30).indexOf("\nmodule.exports = jslint;") < 0) {
                                                     data = data + "\nmodule.exports = jslint;";
                                                     fs.writeFile(appFile, data, "utf8", function biddle_test_install_editions_submod_lintread_lintwrite(erwrite) {
                                                         if (erwrite !== null && erwrite !== undefined) {
-                                                            errout({error: erwrite, name: "biddle_test_install_editions_lintread_lintwrite"});
+                                                            errout({error: erwrite, name: "biddle_test_install_editions_lintread_lintwrite", time: humantime(true)});
                                                         }
                                                         jslintcomplete();
                                                     });
@@ -1496,7 +1499,7 @@
                                     ind = 0;
                                     fs.writeFile("today.js", "/\u002aglobal module\u002a/(function () {\"use strict\";var today=" + date + ";module.exports=today;}());", function biddle_test_install_editions_writeToday(werr) {
                                         if (werr !== null && werr !== undefined) {
-                                            errout({error: werr, name: "biddle_test_install_editions_writeToday"});
+                                            errout({error: werr, name: "biddle_test_install_editions_writeToday", time: humantime(true)});
                                         }
                                         if (cloned === true) {
                                             console.log("Submodules downloaded.");
@@ -1513,17 +1516,17 @@
                                     if (cloned === true) {
                                         child("git submodule init", function biddle_test_install_editions_init(erc, stdoutc, stdouterc) {
                                             if (erc !== null) {
-                                                errout({error: erc, name: "biddle_test_install_editions_init"});
+                                                errout({error: erc, name: "biddle_test_install_editions_init", time: humantime(true)});
                                             }
                                             if (stdouterc !== null && stdouterc !== "" && stdouterc.indexOf("Cloning into '") < 0 && stdouterc.indexOf("From ") < 0) {
-                                                errout({error: stdouterc, name: "biddle_test_install_editions_init"});
+                                                errout({error: stdouterc, name: "biddle_test_install_editions_init", time: humantime(true)});
                                             }
                                             child("git submodule update", function biddle_test_install_editions_init_update(erd, stdoutd, stdouterd) {
                                                 if (erd !== null) {
-                                                    errout({error: erd, name: "biddle_test_install_editions_init_update"});
+                                                    errout({error: erd, name: "biddle_test_install_editions_init_update", time: humantime(true)});
                                                 }
                                                 if (stdouterd !== null && stdouterd !== "" && stdouterd.indexOf("Cloning into '") < 0 && stdouterd.indexOf("From ") !== 0) {
-                                                    errout({error: stdouterd, name: "biddle_test_install_editions_init_update"});
+                                                    errout({error: stdouterd, name: "biddle_test_install_editions_init_update", time: humantime(true)});
                                                 }
                                                 if (flag.today === false) {
                                                     console.log("Submodules downloaded.");
@@ -1541,10 +1544,10 @@
                                                     flag.apps = true;
                                                     return keys.forEach(each);
                                                 }
-                                                errout({error: errpull, name: "biddle_test_install_editions_pull"});
+                                                errout({error: errpull, name: "biddle_test_install_editions_pull", time: humantime(true)});
                                             }
                                             if (stdouterpull !== null && stdouterpull !== "" && stdouterpull.indexOf("Cloning into '") < 0 && stdouterpull.indexOf("From ") < 0 && stdouterpull.indexOf("fatal: no submodule mapping found in .gitmodules for path ") < 0) {
-                                                errout({error: stdouterpull, name: "biddle_test_install_editions_pull"});
+                                                errout({error: stdouterpull, name: "biddle_test_install_editions_pull", time: humantime(true)});
                                             }
                                             if (flag.today === false) {
                                                 console.log("Submodules checked for updates.");
@@ -2630,7 +2633,7 @@
                     }
                     output.push(lines[b]);
                 }
-                if (path.sep === "\\") {
+                if (data.platform === "win32") {
                     ind = output.join("\r\n");
                 } else {
                     ind = output.join("\n");
