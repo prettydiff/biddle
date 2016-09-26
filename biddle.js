@@ -215,6 +215,17 @@
                         data.status[list] = true;
                     });
             },
+            relToAbs  : function biddle_relToAbs(filepath) {
+              var abs = data.abspath.replace(/((\/|\\)+)$/, "").split(path.sep),
+                  rel = filepath.split(path.sep);
+              if (rel[0] === "..") {
+                do {
+                abs.pop();
+                  rel.splice(0, 1);
+                } while (rel[0] === "..");
+              }
+              return abs.join(path.sep) + path.sep + rel.join(path.sep);
+            },
             rmrecurse : function biddle_rmrecurse(dirToKill, callback) {
                 var cmd = (process.platform === "win32")
                     ? "powershell.exe -nologo -noprofile -command \"rm " + dirToKill + " -r -force\""
@@ -249,16 +260,17 @@
                 cmd        = "",
                 latestcmd  = "",
                 childfunc  = function biddle_zip_childfunc(zipfilename, zipcmd, writejson) {
-                    child(zipcmd, function biddle_zip_childfunc_child(err, stdout, stderr) {
+                    child(zipcmd, function biddle_zip_childfunc_makedir_child(err, stdout, stderr) {
                         if (err !== null) {
-                            return errout({error: err, name: "biddle_publish_zip_childfunc_child"});
+                            return errout({error: err, name: "biddle_publish_zip_childfunc_makedir_child"});
                         }
                         if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
-                            return errout({error: stderr, name: "biddle_publish_zip_childfunc_child"});
+                            return errout({error: stderr, name: "biddle_publish_zip_childfunc_makedir_child"});
                         }
                         if (data.command === "install") {
                             console.log(stdout);
                         }
+                        process.chdir(data.abspath);
                         callback(zipfilename, writejson);
                         return stdout;
                     });
@@ -286,7 +298,7 @@
                     cmd = "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compress" +
                             "ion.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('" + input[2] + "', '" + zipfile + "'); }\"";
                 } else {
-                    cmd = "zip -r9yq " + zipfile + " " + input[2] + " *.[!.]";
+                    cmd = "zip -r9yq " + apps.relToAbs(zipfile) + " ." + path.sep + " *.[!.]";
                 }
                 if (data.command === "publish") {
                     apps
@@ -341,7 +353,9 @@
                             childfunc(zipfile, cmd, true);
                         });
                 } else {
-                    childfunc(zipfile, cmd, false);
+                    apps.makedir(input[2], function biddle_zip_makedir() {
+                        childfunc(zipfile, cmd, false);
+                    });
                 }
             }
             if (data.command === "install" || data.command === "unzip") {
@@ -864,14 +878,13 @@
                             }
                         }
                     }
-                    if (sampleName !== "phases.simulations") {
-                        console.log("");
-                        console.log(diffs + colors.filepath.start + " differences counted." + colors.filepath.end);
-                        errout({
-                            error: "Pretty Diff " + colors.del.lineStart + "failed" + colors.del.lineEnd + " in function: " + colors.filepath.start + sampleName + colors.filepath.end,
-                            name : sampleName
-                        });
-                    }
+                    console.log("");
+                    console.log(diffs + colors.filepath.start + " differences counted." + colors.filepath.end);
+                    errout({
+                        error: "Pretty Diff " + colors.del.lineStart + "failed" + colors.del.lineEnd + " in function: " + colors.filepath.start + sampleName + colors.filepath.end,
+                        name : sampleName,
+                        time : humantime(true)
+                    });
                 },
                 next      = function biddle_test_nextInit() {
                     return;
@@ -2170,10 +2183,10 @@
                     unzip   : function biddle_test_unzip() {
                         child("node biddle unzip unittest" + path.sep + "prettydiff.zip unittest" + path.sep + "unzip", function biddle_test_unzip_child(er, stdout, stder) {
                             if (er !== null) {
-                                return errout({error: er, name: "biddle_test_zip_child", time: humantime(true)});
+                                return errout({error: er, name: "biddle_test_unzip_child", time: humantime(true)});
                             }
                             if (stder !== null && stder !== "") {
-                                return errout({error: stder, name: "biddle_test_zip_child", time: humantime(true)});
+                                return errout({error: stder, name: "biddle_test_unzip_child", time: humantime(true)});
                             }
                             fs.stat("unittest" + path.sep + "unzip" + path.sep + "prettydiff.js", function biddle_test_unzip_child_stat(err, stat) {
                                 /*if (err !== null) {
@@ -2191,7 +2204,7 @@
                     zip     : function biddle_test_zip() {
                         child("node biddle zip prettydiff unittest", function biddle_test_zip_child(er, stdout, stder) {
                             var ziptest = "Zip file written: unittest" + path.sep + "prettydiff.zip";
-                            if (er !== null) {
+                            if (er !== null) {console.log(stdout);
                                 return errout({error: er, name: "biddle_test_zip_child", time: humantime(true)});
                             }
                             if (stder !== null && stder !== "") {
@@ -2235,14 +2248,14 @@
             : "Error: " + errData.error;
         error = error.toString().replace(/(\s+)$/, "");
         if (data.command === "test") {
-            apps.rmrecurse("unittest", function errout_dataClean() {
+            //apps.rmrecurse("unittest", function errout_dataClean() {
                 console.log("\u001b[31mUnit test failure.\u001b[39m");
                 console.log("Function: " + errData.name);
                 console.log(error);
                 console.log("");
                 console.log(errData.time);
                 process.exit(1);
-            });
+            //});
         } else {
             console.log("Function: " + errData.name);
             console.log(error);
