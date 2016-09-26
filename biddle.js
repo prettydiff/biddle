@@ -354,6 +354,7 @@
                         });
                 } else {
                     apps.makedir(input[2], function biddle_zip_makedir() {
+                        process.chdir(input[2]);
                         childfunc(zipfile, cmd, false);
                     });
                 }
@@ -2189,14 +2190,14 @@
                                 return errout({error: stder, name: "biddle_test_unzip_child", time: humantime(true)});
                             }
                             fs.stat("unittest" + path.sep + "unzip" + path.sep + "prettydiff.js", function biddle_test_unzip_child_stat(err, stat) {
-                                /*if (err !== null) {
+                                if (err !== null) {
                                     return errout({error: err, name: "biddle_test_unzip_child_stat", time: humantime(true)});
                                 }
                                 if (stat.size < 10000) {
                                     return errout({error: "\u001b[31munzip test failed.\u001b[39m.", name: "biddle_test_unzip_child_stat", time: humantime(true)});
-                                }*/
+                                }
                                 console.log(humantime(false) + " \u001b[32munzip test passed.\u001b[39m");
-                                //next();
+                                next();
                                 return [stdout, err, stat];
                             });
                         });
@@ -2248,14 +2249,14 @@
             : "Error: " + errData.error;
         error = error.toString().replace(/(\s+)$/, "");
         if (data.command === "test") {
-            //apps.rmrecurse("unittest", function errout_dataClean() {
+            apps.rmrecurse("unittest", function errout_dataClean() {
                 console.log("\u001b[31mUnit test failure.\u001b[39m");
                 console.log("Function: " + errData.name);
                 console.log(error);
                 console.log("");
                 console.log(errData.time);
                 process.exit(1);
-            //});
+            });
         } else {
             console.log("Function: " + errData.name);
             console.log(error);
