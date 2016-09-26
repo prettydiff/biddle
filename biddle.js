@@ -294,9 +294,8 @@
                         .toLowerCase() + "_" + data.packjson.version + ".zip";
                 }
                 if (data.platform === "win32") {
-                    //Compress-Archive .\file1.txt, .\file2.txt -DestinationPath .\files.zip
                     cmd = "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compress" +
-                            "ion.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('" + input[2] + "', '" + zipfile + "'); }\"";
+                            "ion.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('.', '" + apps.relToAbs(zipfile) + "'); }\"";
                 } else {
                     cmd = "zip -r9yq " + apps.relToAbs(zipfile) + " ." + path.sep + " *.[!.]";
                 }
@@ -362,7 +361,7 @@
             if (data.command === "install" || data.command === "unzip") {
                 if (data.platform === "win32") {
                     cmd = "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compress" +
-                            "ion.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('" + zipfile + "', '" + data.address.target + "'); }\"";
+                            "ion.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('" + input[2] + "', '" + data.address.target + "'); }\"";
                 } else {
                     cmd = "unzip -oq " + input[2] + " -d " + data.address.target;
                 }
@@ -2198,7 +2197,7 @@
                                 }
                                 console.log(humantime(false) + " \u001b[32munzip test passed.\u001b[39m");
                                 next();
-                                return [stdout, err, stat];
+                                return stdout;
                             });
                         });
                     },
@@ -2283,7 +2282,11 @@
         if (input[2] === undefined) {
             return "download.xxx";
         }
-        paths = input[2].split(path.sep);
+        if (data.command === "get") {
+            paths = input[2].split("/");
+        } else {
+            paths = input[2].split(path.sep);
+        }
         if (paths[paths.length - 1].length > 0) {
             output = paths[paths.length - 1].toLowerCase();
         } else {
