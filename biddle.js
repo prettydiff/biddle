@@ -34,12 +34,16 @@
             abspath  : (function biddle_abspath() {
                 var absarr = input[0].split(path.sep);
                 absarr.pop();
+                if (absarr[absarr.length - 1] === "bin") {
+                    absarr.pop();
+                }
                 return absarr.join(path.sep) + path.sep;
             }()),
             address  : {},
             command  : (input.length > 1)
                 ? input[1].toLowerCase()
                 : "",
+            cwd      : process.cwd(),
             fileName : "",
             hashFile : "",
             hashZip  : "",
@@ -117,19 +121,36 @@
                 } else {
                     cmd = "sha512sum " + filepath;
                 }
-                child(cmd, function biddle_hashCmd_exec(err, stdout, stderr) {
-                    if (err !== null) {
-                        return errout({error: err, name: "biddle_hashCmd_exec"});
+                fs.stat(filepath, function biddle_hashCmd_stat(er, stat) {
+                    if (er !== null) {
+                        if (er.toString().indexOf("no such file or directory") > 0) {
+                            if (data.command === "install") {
+                                return errout({error: filepath + " \u001b[31mdoes not appear to be a zip file\u001b[39m. Install command expects to receive a zip file and a hash file at the same location and file name.", name: "biddle_hashCmd_stat"});
+                            }
+                            return errout({error: "filepath " + filepath + "is not a file.", name: "biddle_hashCmd_stat"});
+                        }
+                        return errout({error: er, name: "biddle_hashCmd_stat"});
                     }
-                    if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
-                        return errout({error: stderr, name: "biddle_hashCmd_exec"});
+                    if (stat === undefined || stat.isFile() === false) {
+                        if (data.command === "install") {
+                            return errout({error: filepath + " \u001b[31mdoes not appear to be a zip file\u001b[39m. Install command expects to receive a zip file and a hash file at the same location and file name.", name: "biddle_hashCmd_stat"});
+                        }
+                        return errout({error: "filepath " + filepath + "is not a file.", name: "biddle_hashCmd_stat"});
                     }
-                    stdout      = stdout.replace(/\s+/g, "");
-                    stdout      = stdout.replace(filepath, "");
-                    stdout      = stdout.replace("SHA512hashoffile:", "");
-                    stdout      = stdout.replace("CertUtil:-hashfilecommandcompletedsuccessfully.", "");
-                    data[store] = stdout;
-                    callback(stdout);
+                    child(cmd, function biddle_hashCmd_stat_exec(err, stdout, stderr) {
+                        if (err !== null) {
+                            return errout({error: err, name: "biddle_hashCmd_stat_exec"});
+                        }
+                        if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
+                            return errout({error: stderr, name: "biddle_hashCmd_stat_exec"});
+                        }
+                        stdout      = stdout.replace(/\s+/g, "");
+                        stdout      = stdout.replace(filepath, "");
+                        stdout      = stdout.replace("SHA512hashoffile:", "");
+                        stdout      = stdout.replace("CertUtil:-hashfilecommandcompletedsuccessfully.", "");
+                        data[store] = stdout;
+                        callback(stdout);
+                    });
                 });
             },
             help      : function biddle_inithelp() {
@@ -414,10 +435,14 @@
                     });
                 };
             if ((/^(https?:\/\/)/).test(url) === false) {
-                console.log("Address " + url + " is missing the \u001b[36mhttp(s)\u001b[39m scheme, treating as a local path...");
-                apps.makedir(addy, function biddle_get_localFile() {
-                    apps.readBinary(url, callback);
-                });
+                if ((/(\.zip)$/).test(url) === true) {
+                    console.log("Address " + url + " is missing the \u001b[36mhttp(s)\u001b[39m scheme, treating as a local path...");
+                    apps.makedir(addy, function biddle_get_localFile() {
+                        apps.readBinary(url, callback);
+                    });
+                } else {
+                    callback();
+                }
             } else if (a > 0 && a < 10) {
                 https.get(url, getcall);
             } else {
@@ -477,7 +502,6 @@
                 },
                 zippy = function biddle_publish_zippy() {
                     zip(function biddle_publish_zippy_zip(zipfilename, writejson) {
-                        //zipfilename = apps.sanitizef(zipfilename);console.log(zipfilename);
                         apps.hashCmd(zipfilename, "hashFile", function biddle_publish_zippy_zip_hash() {
                             apps
                                 .writeFile(data.hashFile, zipfilename.replace(".zip", ".hash"), function biddle_publish_zippy_zip_hash_writehash() {
@@ -488,7 +512,7 @@
                                     .published[data.packjson.name]
                                     .versions
                                     .push(data.packjson.version);
-                                apps.writeFile(JSON.stringify(data.published), "published.json", function biddle_publish_zippy_zip_hash_writepub() {
+                                apps.writeFile(JSON.stringify(data.published), data.abspath + "published.json", function biddle_publish_zippy_zip_hash_writepub() {
                                     return true;
                                 });
                             }
@@ -554,7 +578,7 @@
                             }
                         });
                     delete data.published[input[2]];
-                    apps.writeFile(JSON.stringify(data.published), "published.json", function biddle_unpublish_callback_writeFile() {
+                    apps.writeFile(JSON.stringify(data.published), data.abspath + "published.json", function biddle_unpublish_callback_writeFile() {
                         flag.pub = true;
                         if (flag.dir === true) {
                             console.log("App \u001b[36m" + input[2] + "\u001b[39m is unpublished.");
@@ -641,7 +665,7 @@
                 },
                 modules   = {
                     jslint    : {
-                        dir    : "JSLint",
+                        dir    : data.abspath + "JSLint",
                         edition: function biddle_test_lint_modules_jslint(obj) {
                             console.log("* " + namepad(obj.name) + " - " + obj.app().edition);
                         },
@@ -650,7 +674,7 @@
                         repo   : "https://github.com/douglascrockford/JSLint.git"
                     },
                     prettydiff: {
-                        dir    : "prettydiff",
+                        dir    : data.abspath + "prettydiff",
                         edition: function biddle_test_lint_modules_prettydiff(obj) {
                             var str = String(global.prettydiff.edition.latest);
                             console.log("* " + namepad(obj.name) + " - 20" + str.slice(0, 2) + "-" + str.slice(2, 4) + "-" + str.slice(4) + ", version " + global.prettydiff.edition.version);
@@ -661,6 +685,10 @@
                     }
                 },
                 keys      = Object.keys(modules),
+                childcmd  = (data.abspath === process.cwd() + path.sep)
+                    ? "node biddle "
+                    : "biddle ",
+                testpath  = data.abspath + "unittest",
                 humantime = function biddle_test_humantime(finished) {
                     var minuteString = "",
                         hourString   = "",
@@ -902,7 +930,7 @@
                 },
                 phases    = {
                     get     : function biddle_test_get() {
-                        child("node biddle get http://www.google.com unittest", function biddle_test_get_child(er, stdout, stder) {
+                        child(childcmd + "get http://www.google.com " + data.abspath + "unittest", function biddle_test_get_child(er, stdout, stder) {
                             var size = "";
                             if (er !== null) {
                                 return errout({error: er, name: "biddle_test_get_child", time: humantime(true)});
@@ -911,7 +939,7 @@
                                 return errout({error: stder, name: "biddle_test_get_child", time: humantime(true)});
                             }
                             size = stdout.slice(stdout.indexOf("written at") + 10).replace(/(\s+)$/, "");
-                            if ((/File\sunittest\S+\swritten\sat\s\d+(,\d+)+\sbytes./).test(stdout) === false || stdout.indexOf(" 0 bytes") > 0 || size.replace(" bytes.", "").length < 4) {
+                            if ((/^(File\u0020)/).test(stdout) === false || stdout.indexOf(" 0 bytes") > 0 || size.replace(" bytes.", "").length < 4) {
                                 return errout({error: "Unexpected output for test 'get':\r\n\u001b[31m" + stdout + "\u001b[39m", name:"biddle_test_get_child", time:humantime(true)});
                             }
                             console.log(humantime(false) + " \u001b[32mget test passed.\u001b[39m File written at" + size);
@@ -919,7 +947,7 @@
                         });
                     },
                     hash    : function biddle_test_hash() {
-                        child("node biddle hash LICENSE", function biddle_test_hash_child(er, stdout, stder) {
+                        child(childcmd + "hash " + data.abspath + "LICENSE", function biddle_test_hash_child(er, stdout, stder) {
                             var hashtest = "be09a71a2cda28b74e9dd206f46c1621aebe29182723f191d8109db4705ced014de469043c397fee" +
                                     "4d8f3483e396007ca739717af4bf43fed4c2e3dd14f3dc0c";
                             if (er !== null) {
@@ -942,7 +970,7 @@
                             "60" : false,
                             "80" : false
                         };
-                        child("node biddle help 60", function biddle_test_help_60(er, stdout, stder) {
+                        child(childcmd + "help 60", function biddle_test_help_60(er, stdout, stder) {
                             var helptest = "\n\u001b[4m\u001b[1m\u001b[31mbiddle\u001b[39m\u001b[0m\u001b[24m\n\u001b[3m" +
                                         "\u001b[33mA package management application without a package\nmanagement service" +
                                         ".\u001b[39m\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mLicense\u001b[39m\u001b[0m" +
@@ -1088,7 +1116,7 @@
                                 next();
                             }
                         });
-                        child("node biddle help 80", function biddle_test_help_80(er, stdout, stder) {
+                        child(childcmd + "help 80", function biddle_test_help_80(er, stdout, stder) {
                             var helptest = "\n\u001b[4m\u001b[1m\u001b[31mbiddle\u001b[39m\u001b[0m\u001b[24m\n\u001b[3m" +
                                         "\u001b[33mA package management application without a package management service." +
                                         "\u001b[39m\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mLicense\u001b[39m\u001b[0m" +
@@ -1234,7 +1262,7 @@
                                 next();
                             }
                         });
-                        child("node biddle help 120", function biddle_test_help_120(er, stdout, stder) {
+                        child(childcmd + "help 120", function biddle_test_help_120(er, stdout, stder) {
                             var helptest = "\n\u001b[4m\u001b[1m\u001b[31mbiddle\u001b[39m\u001b[0m\u001b[24m\n\u001b[3m" +
                                         "\u001b[33mA package management application without a package management service." +
                                         "\u001b[39m\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mLicense\u001b[39m\u001b[0m" +
@@ -1396,7 +1424,7 @@
                                 modout: false,
                                 today : false
                             },
-                            today    = require("./today.js"),
+                            today    = require(data.abspath + "today.js"),
                             editions = function biddle_test_install_editionsInit() {
                                 return;
                             },
@@ -1465,7 +1493,7 @@
                                     next();
                                 },
                                 submod = function biddle_test_install_editions_submod(output) {
-                                    var appFile        = __dirname + path.sep + modules[appName].dir + path.sep + modules[appName].file,
+                                    var appFile        = modules[appName].dir + path.sep + modules[appName].file,
                                         jslintcomplete = function biddle_test_install_editions_submod_jslintcomplete() {
                                             modules.jslint.app = require(appFile);
                                             flag.jslint        = true;
@@ -1589,15 +1617,16 @@
                             }
                             submod(true);
                         };
-                        apps.rmrecurse("unittest", function biddle_test_install_rmrecurse() {
-                            apps.makedir("unittest", function biddle_test_install_makedir() {
+                        process.chdir(__dirname);
+                        apps.rmrecurse(testpath, function biddle_test_install_rmrecurse() {
+                            apps.makedir(testpath, function biddle_test_install_makedir() {
                                 handler(0);
                             });
                         });
                     },
                     lint    : function biddle_test_lint() {
                         var ignoreDirectory = [
-                                ".git", "applications", "downloads", "publications"
+                                ".git", "applications", "bin", "downloads", "publications"
                             ],
                             files           = [],
                             lintrun         = function biddle_test_lint_lintrun() {
@@ -1672,6 +1701,9 @@
                             };
                         console.log("\u001b[36mBeautifying and Linting\u001b[39m");
                         console.log("** Note that line numbers of error messaging reflects beautified code line.");
+                        ignoreDirectory.forEach(function biddle_test_lint_absignore(value, index, array) {
+                            array[index] = data.abspath + value;
+                        });
                         keys.forEach(function biddle_test_lint_updateIgnores(mod) {
                             ignoreDirectory.push(modules[mod].dir);
                         });
@@ -1695,21 +1727,19 @@
                                             if (ft === fc) {
                                                 flag.files = true;
                                             }
-                                            filePath = filePath.replace(process.cwd(), "");
-                                            if (filePath.charAt(0) === path.sep) {
-                                                filePath = filePath.slice(1);
-                                            }
                                             files.push([filePath, data]);
                                             if (flag.files === true && flag.items === true) {
                                                 lintrun();
                                             }
                                         });
                                 },
-                                readDir  = function biddle_test_lint_getFiles_readDir(path) {
+                                readDir  = function biddle_test_lint_getFiles_readDir(filepath) {
                                     fs
-                                        .readdir(path, function biddle_test_lint_getFiles_readDir_callback(erra, list) {
+                                        .readdir(filepath, function biddle_test_lint_getFiles_readDir_callback(erra, list) {
                                             var fileEval = function biddle_test_lint_getFiles_readDir_callback_fileEval(val) {
-                                                var filename = path + "/" + val;
+                                                var filename = (filepath.charAt(filepath.length - 1) === path.sep)
+                                                    ? filepath + val
+                                                    : filepath + path.sep + val;
                                                 fs.stat(filename, function biddle_test_lint_getFiles_readDir_callback_fileEval_stat(errb, stat) {
                                                     var a         = 0,
                                                         ignoreDir = false;
@@ -1720,13 +1750,13 @@
                                                     if (count === total) {
                                                         flag.items = true;
                                                     }
-                                                    if (stat.isFile() === true && (/(\.js)$/).test(val) === true) {
+                                                    if (stat.isFile() === true && (/(\.js)$/).test(filename) === true) {
                                                         ft += 1;
                                                         readFile(filename);
                                                     }
                                                     if (stat.isDirectory() === true) {
                                                         do {
-                                                            if (val === ignoreDirectory[a]) {
+                                                            if (filename === ignoreDirectory[a]) {
                                                                 ignoreDir = true;
                                                                 break;
                                                             }
@@ -1744,7 +1774,7 @@
                                             };
                                             if (erra !== null) {
                                                 return errout({
-                                                    error: "Error reading path: " + path + "\n" + erra,
+                                                    error: "Error reading path: " + filepath + "\n" + erra,
                                                     name : "biddle_test_lint_getFiles_readDir_callback",
                                                     time : humantime(false)
                                                 });
@@ -1753,7 +1783,7 @@
                                             list.forEach(fileEval);
                                         });
                                 };
-                            readDir(__dirname.replace(/((\/|\\)test)$/, ""));
+                            readDir(data.abspath);
                         }());
                     },
                     markdown: function biddle_test_markdown() {
@@ -1762,7 +1792,7 @@
                             "60" : false,
                             "80" : false
                         };
-                        child("node biddle markdown prettydiff" + path.sep + "README.md 60", function biddle_test_markdown_60(er, stdout, stder) {
+                        child(childcmd + "markdown prettydiff" + path.sep + "README.md 60", function biddle_test_markdown_60(er, stdout, stder) {
                             var markdowntest = "\nTry it online at http://prettydiff.com/,\n(\u001b[36mhttp://prettydiff.com/" +
                                         "\u001b[39m).\n\n\u001b[4m\u001b[1m\u001b[31mPretty Diff logo Pretty Diff\u001b[3" +
                                         "9m\u001b[0m\u001b[24m\n\nTravis CI Build,\n(\u001b[36mhttps://travis-ci.org/pret" +
@@ -1905,7 +1935,7 @@
                                 next();
                             }
                         });
-                        child("node biddle markdown prettydiff" + path.sep + "README.md 80", function biddle_test_markdown_80(er, stdout, stder) {
+                        child(childcmd + "markdown prettydiff" + path.sep + "README.md 80", function biddle_test_markdown_80(er, stdout, stder) {
                             var markdowntest = "\nTry it online at http://prettydiff.com/, (\u001b[36mhttp://prettydiff.com/" +
                                         "\u001b[39m).\n\n\u001b[4m\u001b[1m\u001b[31mPretty Diff logo Pretty Diff\u001b[3" +
                                         "9m\u001b[0m\u001b[24m\n\nTravis CI Build, (\u001b[36mhttps://travis-ci.org/prett" +
@@ -2048,7 +2078,7 @@
                                 next();
                             }
                         });
-                        child("node biddle markdown prettydiff" + path.sep + "README.md 120", function biddle_test_markdown_120(er, stdout, stder) {
+                        child(childcmd + "markdown prettydiff" + path.sep + "README.md 120", function biddle_test_markdown_120(er, stdout, stder) {
                             var markdowntest = "\nTry it online at http://prettydiff.com/, (\u001b[36mhttp://prettydiff.com/" +
                                         "\u001b[39m).\n\n\u001b[4m\u001b[1m\u001b[31mPretty Diff logo Pretty Diff\u001b[3" +
                                         "9m\u001b[0m\u001b[24m\n\nTravis CI Build, (\u001b[36mhttps://travis-ci.org/prett" +
@@ -2193,10 +2223,11 @@
                         });
                     },
                     publish : function biddle_test_publish() {
-                        child("node biddle publish prettydiff", function biddle_test_publish_child(er, stdout, stder) {
+                        child(childcmd + "publish " + data.abspath + "prettydiff", function biddle_test_publish_child(er, stdout, stder) {
                             var publishtest = "File publications/prettydiff/prettydiff_latest.zip written at xxx bytes.\nFile publications/prettydiff/prettydiff_xxx.zip written at xxx bytes.",
                                 outputs = stdout.replace(/(\s+)$/, "").replace("\r\n", "\n").split("\n"),
-                                output = "";
+                                output = "",
+                                abspath = new RegExp(data.abspath, "g");
                             if (er !== null) {
                                 errout({error: er, name: "biddle_test_publish_child", time: humantime(true)});
                             }
@@ -2211,13 +2242,13 @@
                             }
                             output = outputs.join("\n");
                             output = output.replace(/\\/g, "/");
-                            output = output.replace(/prettydiff_\d+\.\d+\.\d+\.zip/, "prettydiff_xxx.zip").replace(/\d+(,\d+)*\u0020bytes/g, "xxx bytes");
+                            output = output.replace(/prettydiff_\d+\.\d+\.\d+\.zip/, "prettydiff_xxx.zip").replace(/\d+(,\d+)*\u0020bytes/g, "xxx bytes").replace(abspath, "");
                             if (output !== publishtest) {
                                 return diffFiles("biddle_test_publish_child", output, publishtest);
                             }
-                            fs.readFile("published.json", "utf8", function biddle_test_publish_child_readJSON(err, fileData) {
+                            fs.readFile(data.abspath + "published.json", "utf8", function biddle_test_publish_child_readJSON(err, fileData) {
                                 var jsondata = {},
-                                    pub = "publications" + path.sep + "prettydiff";
+                                    pub = data.abspath + "publications" + path.sep + "prettydiff";
                                 if (err !== null && err !== undefined) {
                                     return errout({error: err, name: "biddle_test_publish_child_readJSON", time: humantime(true)});
                                 }
@@ -2227,7 +2258,7 @@
                                 }
                                 fs.readdir(pub, function biddle_test_publish_child_readJSON_readdir(errr, files) {
                                     var filetest = "prettydiff_v.hash,prettydiff_v.zip,prettydiff_latest.hash,prettydiff_latest.zip",
-                                        filelist = files.sort().join(",").replace(/_\d+\.\d+\.\d+\./g, "_v."),
+                                        filelist = "prettydiff_v.hash,prettydiff_v.zip," + files.sort().join(",").replace(/prettydiff_\d+\.\d+\.\d+\.((zip)|(hash)),/g, ""),
                                         stats    = {},
                                         statfile = function biddle_test_publish_child_readJSON_readdir_statfile(index) {
                                             stats[files[index]] = false;
@@ -2242,7 +2273,7 @@
                                                 stats[files[index]] = true;
                                                 if (stats[files[0]] === true && stats[files[1]] === true && stats[files[2]] === true && stats[files[3]] === true) {
                                                     console.log(humantime(false) + " \u001b[32mpublish test passed.\u001b[39m");
-                                                    child("node biddle publish prettydiff", function biddle_test_publish_child_readJSON_readdir_statfile_statback_publish(erx, stdoutx, stderx) {
+                                                    child(childcmd + "publish " + data.abspath + "prettydiff", function biddle_test_publish_child_readJSON_readdir_statfile_statback_publish(erx, stdoutx, stderx) {
                                                         var publishagain = "Function: biddle_zip_zipfunction\nError: Attempted to publish prettydiff over existing version",
                                                             stack = [];
                                                         if (erx !== null) {
@@ -2282,7 +2313,7 @@
                         });
                     },
                     unpublish: function biddle_test_unpublish() {
-                        child("node biddle unpublish prettydiff", function biddle_test_unpublish_child(er, stdout, stder) {
+                        child(childcmd + "unpublish prettydiff", function biddle_test_unpublish_child(er, stdout, stder) {
                             var unpubtest = "App \u001b[36mprettydiff\u001b[39m is unpublished.";
                             if (er !== null) {
                                 return errout({error: er, name: "biddle_test_unpublish_child", time: humantime(true)});
@@ -2297,7 +2328,7 @@
                             if (data.published.prettydiff !== undefined) {
                                 return errout({error: "prettydiff property not removed from data.published object", name: "biddle_test_unpublish_child", time: humantime(true)});
                             }
-                            fs.stat("publications" + path.sep + "prettydiff", function biddle_test_unpublish_child_stat(err, stat) {
+                            fs.stat(data.abspath + "publications" + path.sep + "prettydiff", function biddle_test_unpublish_child_stat(err, stat) {
                                 if (err !== null && err.toString().indexOf("no such file or directory") < 0) {
                                     return errout({error: err, name: "biddle_test_unpublish_child_stat", time: humantime(true)});
                                 }
@@ -2305,7 +2336,7 @@
                                     return errout({error: "publications" + path.sep + "prettydiff directory not deleted by unpublish command", name: "biddle_test_unpublish_child_stat", time: humantime(true)});
                                 }
                                 if (err.toString().indexOf("no such file or directory") > 0) {
-                                    fs.readFile("published.json", function biddle_test_unpublish_child_stat_readfile(erf, filedata) {
+                                    fs.readFile(data.abspath + "published.json", function biddle_test_unpublish_child_stat_readfile(erf, filedata) {
                                         var jsondata = {};
                                         if (erf !== null && erf !== undefined) {
                                             return errout({error: erf, name: "biddle_test_unpublish_child_stat_readfile", time: humantime(true)});
@@ -2314,7 +2345,7 @@
                                         if (jsondata.prettydiff !== undefined) {
                                             return errout({error: "prettydiff property still present in published.json file", name: "biddle_test_unpublish_child_stat_readfile", time: humantime(true)});
                                         }
-                                        child("node biddle unpublish prettydiff", function biddle_test_unpublish_child_stat_readfile_again(erx, stdoutx, stderx) {
+                                        child(childcmd + "unpublish prettydiff", function biddle_test_unpublish_child_stat_readfile_again(erx, stdoutx, stderx) {
                                             var unpubagain = "Attempted to unpublish \u001b[36mprettydiff\u001b[39m which is \u001b[1m\u001b[31mabsent\u001b[39m\u001b[0m from the list o" +
                                                     "f published applications. Try using the command \u001b[32mbiddle list published" +
                                                     "\u001b[39m.",
@@ -2345,14 +2376,14 @@
                         });
                     },
                     unzip   : function biddle_test_unzip() {
-                        child("node biddle unzip unittest" + path.sep + "prettydiff.zip unittest" + path.sep + "unzip", function biddle_test_unzip_child(er, stdout, stder) {
+                        child(childcmd + "unzip " + data.abspath + "unittest" + path.sep + "prettydiff.zip " + data.abspath + "unittest" + path.sep + "unzip", function biddle_test_unzip_child(er, stdout, stder) {
                             if (er !== null) {
                                 return errout({error: er, name: "biddle_test_unzip_child", time: humantime(true)});
                             }
                             if (stder !== null && stder !== "") {
                                 return errout({error: stder, name: "biddle_test_unzip_child", time: humantime(true)});
                             }
-                            fs.stat("unittest" + path.sep + "unzip" + path.sep + "prettydiff.js", function biddle_test_unzip_child_stat(err, stat) {
+                            fs.stat(testpath + path.sep + "unzip" + path.sep + "prettydiff.js", function biddle_test_unzip_child_stat(err, stat) {
                                 if (err !== null) {
                                     return errout({error: err, name: "biddle_test_unzip_child_stat", time: humantime(true)});
                                 }
@@ -2366,7 +2397,7 @@
                         });
                     },
                     zip     : function biddle_test_zip() {
-                        child("node biddle zip prettydiff unittest", function biddle_test_zip_child(er, stdout, stder) {
+                        child(childcmd + "zip prettydiff " + data.abspath + "unittest", function biddle_test_zip_child(er, stdout, stder) {
                             var ziptest = "Zip file written: unittest" + path.sep + "prettydiff.zip";
                             if (er !== null) {console.log(stdout);
                                 return errout({error: er, name: "biddle_test_zip_child", time: humantime(true)});
@@ -2374,33 +2405,36 @@
                             if (stder !== null && stder !== "") {
                                 return errout({error: stder, name: "biddle_test_zip_child", time: humantime(true)});
                             }
-                            stdout = stdout.replace(/(\s+)$/, "");
+                            stdout = stdout.replace(/(\s+)$/, "").replace(data.abspath, "");
                             if (stdout !== ziptest) {
                                 return diffFiles("biddle_test_zip_child", stdout, ziptest);
                             }
-                            fs.stat("unittest" + path.sep + "prettydiff.zip", function biddle_test_zip_stat(err, stat) {
+                            fs.stat(testpath + path.sep + "prettydiff.zip", function biddle_test_zip_stat(err, stat) {
                                 if (err !== null) {
                                     return errout({error: err, name: "biddle_test_zip_stat", time: humantime(true)});
                                 }
-                                console.log(humantime(false) + " \u001b[32mzip test passed.\u001b[39m File unittest" + path.sep + "prettydiff.zip written at " + apps.commas(stat.size) + " bytes.");
+                                console.log(humantime(false) + " \u001b[32mzip test passed.\u001b[39m File " + data.abspath + "unittest" + path.sep + "prettydiff.zip written at " + apps.commas(stat.size) + " bytes.");
                                 next();
                             });
                         });
                     }
                 };
-
             next = function biddle_test_next() {
                 var complete = function biddle_test_next_complete() {
                     console.log("All tasks complete... Exiting clean!");
                     console.log(humantime(true));
                     process.exit(0);
                 };
+                if (phases.active === "install") {
+                    process.chdir(data.cwd);
+                }
                 console.log("");
                 if (order.length < 1) {
-                    return apps.rmrecurse("unittest", function biddle_test_next_rmdir() {
+                    return apps.rmrecurse(testpath, function biddle_test_next_rmdir() {
                         complete();
                     });
                 }
+                phases.active = order[0];
                 phases[order[0]]();
                 order.splice(0, 1);
             };
@@ -2412,7 +2446,12 @@
             : "Error: " + errData.error;
         error = error.toString().replace(/(\s+)$/, "");
         if (data.command === "test") {
-            apps.rmrecurse("unittest", function errout_dataClean() {
+            process.chdir(data.cwd);
+            if (errData.name.indexOf("biddle_test_publish") === 0) {
+                input[2] = "prettydiff";
+                unpublish();
+            }
+            apps.rmrecurse(data.abspath + "unittest", function errout_dataClean() {
                 console.log("\u001b[31mUnit test failure.\u001b[39m");
                 console.log("Function: " + errData.name);
                 console.log(error);
@@ -2466,7 +2505,7 @@
     };
     apps.writeFile   = function biddle_writeFile(fileData, fileName, callback) {
         var callbacker = function biddle_writeFile_callbacker(size) {
-            if (size > 0 && fileName !== "published.json" && fileName !== "installed.json") {
+            if (size > 0 && fileName.replace(data.abspath, "") !== "published.json" && fileName.replace(data.abspath, "") !== "installed.json") {
                 console.log("File " + fileName + " written at " + apps.commas(size) + " bytes.");
             }
             callback(fileData);
@@ -2575,7 +2614,7 @@
             size = input[3];
         }
         fs
-            .readFile(file, "utf8", function biddle_help_readme(err, readme) {
+            .readFile(data.abspath + file, "utf8", function biddle_help_readme(err, readme) {
                 var lines  = [],
                     listly = [],
                     output = [],
