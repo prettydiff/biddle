@@ -1,0 +1,32 @@
+{
+    "author"     : {
+        "email": "info@prettydiff.com",
+        "name" : "Austin Cheney",
+        "url"  : "http://prettydiff.com/"
+    },
+    "bin"        : "./bin/biddle",
+    "bugs"       : {
+        "email": "info@prettydiff.com",
+        "url"  : "https://github.com/prettydiff/biddle/issues"
+    },
+    "description": "Self-hosted application management and distribution. Package management owned by the developer.",
+    "homepage"   : "http://prettydiff.com/",
+    "keywords"   : [
+        "biddle",
+        "test"
+    ],
+    "license"    : "MIT",
+    "main"       : "biddle.js",
+    "maintainers": [
+        {
+            "email": "info@prettydiff.com",
+            "name" : "austincheney"
+        }
+    ],
+    "name"       : "biddle",
+    "repository" : {
+        "type": "git",
+        "url" : "https://github.com/prettydiff/biddle"
+    },
+    "version"    : "0.0.3"
+}
