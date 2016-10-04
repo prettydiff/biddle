@@ -2007,7 +2007,7 @@
                                 }
                                 console.log(humantime(false) + " \u001b[32mbiddletest.js unzipped.\u001b[39m");
                                 fs.readdir(testpath + path.sep + "unzip", function biddle_test_unzip_child_stat_readDir(erd, files) {
-                                    var count = 3;
+                                    var count = 5;
                                     if (erd !== null) {
                                         return errout({error: erd, name: "biddle_test_unzip_child_stat_readDir", stdout: stdout, time: humantime(true)});
                                     }

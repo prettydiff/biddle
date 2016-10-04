@@ -28,5 +28,9 @@
         "type": "git",
         "url" : "https://github.com/prettydiff/biddle"
     },
+    "variants"    : {
+        "prod": ["test"],
+        "min" : ["lib", "test"]
+    },
     "version"    : "99.99.1234"
 }
