@@ -263,13 +263,13 @@
                     ? "powershell.exe -nologo -noprofile -command \"rm " + dirToKill + " -r -force\""
                     : "rm -rf " + dirToKill;
                 child(cmd, function biddle_rmrecurse_child(err, stdout, stderrout) {
-                    if (err !== null && err.toString().indexOf("No such file or directory") < 0) {
+                    if (err !== null && err.toString().indexOf("No such file or directory") < 0 && err.toString().indexOf(": The directory is not empty.") < 0) {
                         if (err.toString().indexOf("Cannot find path") > 0) {
                             return callback();
                         }
                         return errout({error: err, name: "biddle_rmrecurse_child"});
                     }
-                    if (stderrout !== null && stderrout !== "" && stderrout.indexOf("No such file or directory") < 0) {
+                    if (stderrout !== null && stderrout !== "" && stderrout.indexOf("No such file or directory") < 0 && stderrout.indexOf(": The directory is not empty.") < 0) {
                         return errout({error: stderrout, name: "biddle_rmrecurse_child"});
                     }
                     callback();
@@ -676,9 +676,11 @@
                     }
                 },
                 keys      = Object.keys(modules),
-                childcmd  = (data.abspath === process.cwd() + path.sep)
+                childcmd  = (data.platform === "win32" && data.abspath === process.cwd().toLowerCase() + path.sep)
                     ? "node biddle "
-                    : "biddle ",
+                    : (data.platform !== "win32" && data.abspath === process.cwd() + path.sep)
+                        ? "node biddle "
+                        : "biddle ",
                 testpath  = data.abspath + "unittest",
                 humantime = function biddle_test_humantime(finished) {
                     var minuteString = "",
@@ -1838,7 +1840,7 @@
                             var publishtest = "File publications/biddletest/biddletest_latest.zip written at xxx bytes.\nFile publications/biddletest/biddletest_xxx.zip written at xxx bytes.",
                                 outputs = stdout.replace(/(\s+)$/, "").replace("\r\n", "\n").split("\n"),
                                 output = "",
-                                abspath = new RegExp(data.abspath, "g");
+                                abspath = new RegExp(data.abspath.replace(/\\/g, "\\\\"), "g");
                             if (er !== null) {
                                 errout({error: er, name: "biddle_test_publish_child", stdout: stdout, time: humantime(true)});
                             }
@@ -1854,7 +1856,7 @@
                             output = outputs.join("\n");
                             output = output.replace(/\\/g, "/");
                             output = output.replace(/biddletest_\d+\.\d+\.\d+\.zip/, "biddletest_xxx.zip").replace(/\d+(,\d+)*\u0020bytes/g, "xxx bytes").replace(abspath, "");
-                            if (output !== publishtest) {
+                            if (output !== publishtest) {console.log(output);console.log(publishtest);
                                 return diffFiles("biddle_test_publish_child", output, publishtest);
                             }
                             fs.readFile(data.abspath + "published.json", "utf8", function biddle_test_publish_child_readJSON(err, fileData) {
@@ -1894,7 +1896,7 @@
                                                             if (typeof erx.stack === "string") {
                                                                 stack = erx.stack.split(" at ");
                                                             }
-                                                            if (stack.length < 1 || stack[1].indexOf("ChildProcess.exithandler (child_process.js:202:12)") < 0) {
+                                                            if (stack.length < 1 || stack[1].indexOf("ChildProcess.exithandler (child_process.js:2") < 0) {
                                                                 return errout({error: erx, name: "biddle_test_publish_child_readJSON_readdir_statfile_statback_publish", stdout: stdout, time: humantime(true)});
                                                             }
                                                         }
@@ -2071,8 +2073,8 @@
         };
     errout           = function biddle_errout(errData) {
         var error = (typeof errData.error !== "string" || errData.error.toString().indexOf("Error: ") === 0)
-                ? errData.error.replace("Error: ", "\u001b[1m\u001b[31mError:\u001b[39m\u001b[0m ")
-                : "\u001b[1m\u001b[31mError:\u001b[39m\u001b[0m " + errData.error,
+                ? errData.error.toString().replace("Error: ", "\u001b[1m\u001b[31mError:\u001b[39m\u001b[0m ")
+                : "\u001b[1m\u001b[31mError:\u001b[39m\u001b[0m " + errData.error.toString(),
             stack = new Error().stack;
         if (data.platform === "win32") {
             stack = stack.replace("Error", "Stack trace\r\n-----------");
