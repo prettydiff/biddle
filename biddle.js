@@ -126,37 +126,52 @@
                 } else {
                     cmd = "sha512sum " + filepath;
                 }
-                fs.stat(filepath, function biddle_hashCmd_stat(er, stat) {
-                    if (er !== null) {
-                        if (er.toString().indexOf("no such file or directory") > 0) {
-                            if (data.command === "install") {
-                                return errout({error: filepath + " \u001b[31mdoes not appear to be a zip file\u001b[39m. Install command expects to receive a zip file and a hash file at the same location and file name.", name: "biddle_hashCmd_stat"});
+                fs
+                    .stat(filepath, function biddle_hashCmd_stat(er, stat) {
+                        if (er !== null) {
+                            if (er.toString().indexOf("no such file or directory") > 0) {
+                                if (data.command === "install") {
+                                    return errout({
+                                        error: filepath + " \u001b[31mdoes not appear to be a zip file\u001b[39m. Install command expects t" +
+                                                "o receive a zip file and a hash file at the same location and file name.",
+                                        name : "biddle_hashCmd_stat"
+                                    });
+                                }
+                                return errout({
+                                    error: "filepath " + filepath + " is not a file.",
+                                    name : "biddle_hashCmd_stat"
+                                });
                             }
-                            return errout({error: "filepath " + filepath + " is not a file.", name: "biddle_hashCmd_stat"});
+                            return errout({error: er, name: "biddle_hashCmd_stat"});
                         }
-                        return errout({error: er, name: "biddle_hashCmd_stat"});
-                    }
-                    if (stat === undefined || stat.isFile() === false) {
-                        if (data.command === "install") {
-                            return errout({error: filepath + " \u001b[31mdoes not appear to be a zip file\u001b[39m. Install command expects to receive a zip file and a hash file at the same location and file name.", name: "biddle_hashCmd_stat"});
+                        if (stat === undefined || stat.isFile() === false) {
+                            if (data.command === "install") {
+                                return errout({
+                                    error: filepath + " \u001b[31mdoes not appear to be a zip file\u001b[39m. Install command expects t" +
+                                            "o receive a zip file and a hash file at the same location and file name.",
+                                    name : "biddle_hashCmd_stat"
+                                });
+                            }
+                            return errout({
+                                error: "filepath " + filepath + " is not a file.",
+                                name : "biddle_hashCmd_stat"
+                            });
                         }
-                        return errout({error: "filepath " + filepath + " is not a file.", name: "biddle_hashCmd_stat"});
-                    }
-                    child(cmd, function biddle_hashCmd_stat_exec(err, stdout, stderr) {
-                        if (err !== null) {
-                            return errout({error: err, name: "biddle_hashCmd_stat_exec"});
-                        }
-                        if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
-                            return errout({error: stderr, name: "biddle_hashCmd_stat_exec"});
-                        }
-                        stdout      = stdout.replace(/\s+/g, "");
-                        stdout      = stdout.replace(filepath, "");
-                        stdout      = stdout.replace("SHA512hashoffile:", "");
-                        stdout      = stdout.replace("CertUtil:-hashfilecommandcompletedsuccessfully.", "");
-                        data[store] = stdout;
-                        callback(stdout);
+                        child(cmd, function biddle_hashCmd_stat_exec(err, stdout, stderr) {
+                            if (err !== null) {
+                                return errout({error: err, name: "biddle_hashCmd_stat_exec"});
+                            }
+                            if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
+                                return errout({error: stderr, name: "biddle_hashCmd_stat_exec"});
+                            }
+                            stdout      = stdout.replace(/\s+/g, "");
+                            stdout      = stdout.replace(filepath, "");
+                            stdout      = stdout.replace("SHA512hashoffile:", "");
+                            stdout      = stdout.replace("CertUtil:-hashfilecommandcompletedsuccessfully.", "");
+                            data[store] = stdout;
+                            callback(stdout);
+                        });
                     });
-                });
             },
             help      : function biddle_inithelp() {
                 return true;
@@ -242,21 +257,24 @@
                     });
             },
             relToAbs  : function biddle_relToAbs(filepath) {
-              var abs = data.abspath.replace(/((\/|\\)+)$/, "").split(path.sep),
-                  rel = filepath.split(path.sep);
-                  if (data.platform === "win32" && (/^(\w:\\)/).test(filepath) === true) {
-                      return filepath;
-                  }
-                  if (data.platform !== "win32" && filepath.charAt(0) === "/") {
-                      return filepath;
-                  }
-              if (rel[0] === "..") {
-                do {
-                abs.pop();
-                  rel.splice(0, 1);
-                } while (rel[0] === "..");
-              }
-              return abs.join(path.sep) + path.sep + rel.join(path.sep);
+                var abs = data
+                        .abspath
+                        .replace(/((\/|\\)+)$/, "")
+                        .split(path.sep),
+                    rel = filepath.split(path.sep);
+                if (data.platform === "win32" && (/^(\w:\\)/).test(filepath) === true) {
+                    return filepath;
+                }
+                if (data.platform !== "win32" && filepath.charAt(0) === "/") {
+                    return filepath;
+                }
+                if (rel[0] === "..") {
+                    do {
+                        abs.pop();
+                        rel.splice(0, 1);
+                    } while (rel[0] === "..");
+                }
+                return abs.join(path.sep) + path.sep + rel.join(path.sep);
             },
             rmrecurse : function biddle_rmrecurse(dirToKill, callback) {
                 var cmd = (process.platform === "win32")
@@ -387,10 +405,11 @@
                             childfunc(zipfile, cmd, true);
                         });
                 } else {
-                    apps.makedir(input[2], function biddle_zip_makedir() {
-                        process.chdir(input[2]);
-                        childfunc(zipfile, cmd, false);
-                    });
+                    apps
+                        .makedir(input[2], function biddle_zip_makedir() {
+                            process.chdir(input[2]);
+                            childfunc(zipfile, cmd, false);
+                        });
                 }
             }
             if (data.command === "install" || data.command === "unzip") {
@@ -507,21 +526,22 @@
                 },
                 zippy = function biddle_publish_zippy() {
                     zip(function biddle_publish_zippy_zip(zipfilename, writejson) {
-                        apps.hashCmd(zipfilename, "hashFile", function biddle_publish_zippy_zip_hash() {
-                            apps
-                                .writeFile(data.hashFile, zipfilename.replace(".zip", ".hash"), function biddle_publish_zippy_zip_hash_writehash() {
-                                    return true;
-                                });
-                            if (writejson === true) {
-                                data
-                                    .published[data.packjson.name]
-                                    .versions
-                                    .push(data.packjson.version);
-                                apps.writeFile(JSON.stringify(data.published), data.abspath + "published.json", function biddle_publish_zippy_zip_hash_writepub() {
-                                    return true;
-                                });
-                            }
-                        });
+                        apps
+                            .hashCmd(zipfilename, "hashFile", function biddle_publish_zippy_zip_hash() {
+                                apps
+                                    .writeFile(data.hashFile, zipfilename.replace(".zip", ".hash"), function biddle_publish_zippy_zip_hash_writehash() {
+                                        return true;
+                                    });
+                                if (writejson === true) {
+                                    data
+                                        .published[data.packjson.name]
+                                        .versions
+                                        .push(data.packjson.version);
+                                    apps.writeFile(JSON.stringify(data.published), data.abspath + "published.json", function biddle_publish_zippy_zip_hash_writepub() {
+                                        return true;
+                                    });
+                                }
+                            });
                     });
                 };
             apps.getpjson(function biddle_publish_callback() {
@@ -563,7 +583,7 @@
             });
         },
         unpublish = function biddle_unpublish() {
-            var app  = data.published[input[2]];
+            var app = data.published[input[2]];
             if (app === undefined) {
                 return console.log("Attempted to unpublish \u001b[36m" + input[2] + "\u001b[39m which is \u001b[1m\u001b[31mabsent\u001b[39m\u001b[0m from the list o" +
                         "f published applications. Try using the command \u001b[32mbiddle list published" +
@@ -614,18 +634,16 @@
             var startTime = Date.now(),
                 order     = [
                     "moduleInstall",
-                    "lint",
-                    "hash",
-                    "help",
-                    "markdown",
-                    "get",
-                    "zip",
-                    "unzip",
-                    "publish",
-                    "unpublish"
-                    // "install", not written yet "list",
-                    // "status", not
-                    // written yet "uninstall", not written yet
+                    "lint"//,
+                    //"hash",
+                    //"help",
+                    //"markdown",
+                    //"get",
+                    //"zip",
+                    //"unzip",
+                    //"publish",
+                    //"unpublish"
+                    // "install", "list", "status", "uninstall
                 ],
                 options   = {
                     correct     : false,
@@ -853,7 +871,7 @@
                         return errout({
                             error: colors.del.lineStart + "bad test" + colors.del.lineEnd,
                             name : sampleName,
-                            time :humantime(true)
+                            time : humantime(true)
                         });
                     }
                     // report indexes from diffcli feature of diffview.js
@@ -922,7 +940,7 @@
                     return;
                 },
                 phases    = {
-                    get     : function biddle_test_get() {
+                    get          : function biddle_test_get() {
                         child(childcmd + "get http://www.google.com " + data.abspath + "unittest childtest", function biddle_test_get_child(er, stdout, stder) {
                             var size = "";
                             if (er !== null) {
@@ -931,15 +949,21 @@
                             if (stder !== null && stder !== "") {
                                 return errout({error: stder, name: "biddle_test_get_child", stdout: stdout, time: humantime(true)});
                             }
-                            size = stdout.slice(stdout.indexOf("written at") + 10).replace(/(\s+)$/, "");
+                            size = stdout
+                                .slice(stdout.indexOf("written at") + 10)
+                                .replace(/(\s+)$/, "");
                             if ((/^(File\u0020)/).test(stdout) === false || stdout.indexOf(" 0 bytes") > 0 || size.replace(" bytes.", "").length < 4) {
-                                return errout({error: "Unexpected output for test 'get':\r\n\u001b[31m" + stdout + "\u001b[39m", name:"biddle_test_get_child", time:humantime(true)});
+                                return errout({
+                                    error: "Unexpected output for test 'get':\r\n\u001b[31m" + stdout + "\u001b[39m",
+                                    name : "biddle_test_get_child",
+                                    time : humantime(true)
+                                });
                             }
                             console.log(humantime(false) + " \u001b[32mget test passed.\u001b[39m File written at" + size);
                             next();
                         });
                     },
-                    hash    : function biddle_test_hash() {
+                    hash         : function biddle_test_hash() {
                         child(childcmd + "hash " + data.abspath + "LICENSE childtest", function biddle_test_hash_child(er, stdout, stder) {
                             var hashtest = "be09a71a2cda28b74e9dd206f46c1621aebe29182723f191d8109db4705ced014de469043c397fee" +
                                     "4d8f3483e396007ca739717af4bf43fed4c2e3dd14f3dc0c";
@@ -957,22 +981,153 @@
                             next();
                         });
                     },
-                    help    : function biddle_test_help() {
+                    help         : function biddle_test_help() {
                         var flag = {
                             "120": false,
                             "60" : false,
                             "80" : false
                         };
                         child(childcmd + "help 60 childtest", function biddle_test_help_60(er, stdout, stder) {
-                            var helptest = "\n\u001b[4m\u001b[1m\u001b[31mbiddle\u001b[39m\u001b[0m\u001b[24m\n\u001b[3m\u001b[33mA package management application without a package\nmanagement service.\u001b[39m\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mLicense\u001b[39m\u001b[0m\u001b[24m\n  MIT, (\u001b[36mhttps://opensource.org/licenses/MIT\u001b[39m)\n\n\u001b[4m\u001b[1m\u001b[36mVersion\u001b[39m\u001b[0m\u001b[24m\n  0.0.3\n\n\u001b[4m\u001b[1m\u001b[36mAbout\u001b[39m\u001b[0m\u001b[24m\n  This application is a cross-OS solution to creating zip\n  files for distribution and fetching files via HTTP(S).\n  The project's goal is to provide a universal application\n  distribution utility that is language agnostic, operating\n  system independent, and platform independent.  The only\n  additional requirement for distributing application\n  packages is online storage on a web server.  This\n  application provides all the utilities to retrieve,\n  bundle, and unpackage applications.\n\n  biddle is inspired by the incredible awesomeness of\n  NPM, (\u001b[36mhttp://npmjs.com\u001b[39m), but seeks to accomplish a few\n  additional goals:\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mintegrity\u001b[39m\u001b[0m - Downloaded packages will perform a\n    hash comparison before they are unpackaged.  If the\n    hashes don't match the zip file will be saved in the\n    downloads directory awaiting a human touch.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mautonomy\u001b[39m\u001b[0m - There is no central authority here.\n    Host your own publications and manage them as you please\n    with any name you choose.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mmanagement\u001b[39m\u001b[0m - There is no dependency hell here.\n    Dependency management will not be automated, but a means\n    to manage and review the status of all\n    installed/published packages is provided.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mfreedom\u001b[39m\u001b[0m - biddle will work everywhere Node.js\n    runs.  It can be used with any application written in\n    any language whether binary or text.\n\n\u001b[4m\u001b[1m\u001b[36mProject Status\u001b[39m\u001b[0m\u001b[24m\n  \u001b[1mUnstable and in early developement.\u001b[0m\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mget\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mhash\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mhelp\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mlist\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mmarkdown\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1munpublish\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mzip\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1munzip\u001b[0m is complete\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m although \u001b[1mlist\u001b[0m is marked as complete for thorough\n    testing is required\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mpublish\u001b[0m is removed from complete status.\n    Variant publications by exclusion lists need to be\n    worked out.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m need to add a \u001b[1mglobal\u001b[0m command to allow users to\n    promote biddle to global shell execution\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m add support for a \u001b[3m\u001b[33m.biddleignore\u001b[39m\u001b[0m file, this file\n    contain a list of items to not include in the published\n    zip\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m File is read\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Support and processing is not added yet\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Will not include support for comments or\n      wildcards in initial launch\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m add support for \u001b[3m\u001b[33mvariants\u001b[39m\u001b[0m in package.json,\n      which allows named variants where each has a custom\n      ignore list\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1minstall\u001b[0m is \u001b[3m\u001b[33mblocked\u001b[39m\u001b[0m pending\n      configuration work\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Hash files must now become JSON storing\n      hash, name, and version\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m ZIP approach needs to be reevaluated...\n      details in next point\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m need to work out \u001b[3m\u001b[33mglobal\u001b[39m\u001b[0m install switch\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Advanced configuration work is \u001b[3m\u001b[33munderway now\u001b[39m\u001b[0m.\n      Configuration details will go into the app's\n      package.json file.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m I need to revise the approach to creating\n      ZIP files.  I cannot simply point to a directory and\n      zip it for security reasons.  Instead I will need to\n      index the child items of the target directory for\n      addition to a ZIP file.  The reason has to do with\n      potential (malicious), naming collisions uniformity\n      violations.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Allow restriction of named directories when\n      creating a zip so that production only packages don't\n      have dev dependencies, build systems, unit tests,\n      systems files, and so forth\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Allow definition of custom default\n      locations.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1mstatus\u001b[0m is not started.  This command\n      will compare an installed application's version\n      against a published version to determine if out of\n      date.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must allow an app name as an argument to\n      manually check that application or \u001b[3m\u001b[33mall\u001b[39m\u001b[0m to check all\n      installed applications\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Status automation or intervals would be\n      nice... such as checking app versions once a week and\n      providing a message when out of date\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1muninstall\u001b[0m command is \u001b[3m\u001b[33mblocked\u001b[39m\u001b[0m pending\n      completion of \u001b[1minstall\u001b[0m.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must delete the application\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must remove the application from the \u001b[1mlist\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mSupported commands\u001b[39m\u001b[0m\u001b[24m\n  Commands are the third command line argument, or second\n  if the optional \u001b[3m\u001b[33mnode\u001b[39m\u001b[0m argument is absent.  Commands are\n  case insensitive, but values and local paths are case\n  sensitive.  All local address are either absolute from the\n  root or relative from the current working directory.\n\n  \u001b[4m\u001b[1m\u001b[32mget\u001b[39m\u001b[0m\u001b[24m\n    Merely downloads the requested resource and saves\n    it as a file with the same filename. If the filename is\n    not provided in the URI the final directory up to the\n    domain name will become the filename, and if for some\n    reason that doesn't work the default filename is\n    \u001b[3m\u001b[33mdownload.xxx\u001b[39m\u001b[0m.\n\n    Download a file to the default location, which is\n    the provided \u001b[3m\u001b[33mdownloads\u001b[39m\u001b[0m directory.\n\n\u001b[32m    node biddle get http://google.com\u001b[39m\n\n    Download a file to an alternate location.\n\n\u001b[32m    node biddle get http://google.com ../mydirectory\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mhash\u001b[39m\u001b[0m\u001b[24m\n    Prints to console a SHA512 hash against a local\n    resource.\n\n\u001b[32m    node biddle hash downloads/myfile.zip\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mhelp\u001b[39m\u001b[0m\u001b[24m\n    Prints the readme.md file contents to console in a\n    human friendly way.\n\n    No command will still generate the readme data.\n\n\u001b[32m    node biddle\u001b[39m\n\n    The default word wrapping is set to 100 characters.\n\n\u001b[32m    node biddle help\u001b[39m\n\n    Set a custom word wrap limit.\n\n\u001b[32m    node biddle help 80\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32minstall\u001b[39m\u001b[0m\u001b[24m\n    (not written yet)\n    Downloads the requested resource, but decompresses\n    and unpackages the zip before writing files to disk.\n\n  \u001b[4m\u001b[1m\u001b[32mlist\u001b[39m\u001b[0m\u001b[24m\n    Will list all installed and/or published\n    applications with their locations and latest versions.\n    It can take the optional argument \u001b[3m\u001b[33minstalled\u001b[39m\u001b[0m or \u001b[3m\u001b[33mpublished\u001b[39m\u001b[0m\n    to output a specific list or both lists are produced.\n\n    Only output the installed list.\n\n\u001b[32m    node biddle list installed\u001b[39m\n\n    Output both lists\n\n\u001b[32m    node biddle list\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mmarkdown\u001b[39m\u001b[0m\u001b[24m\n    Allows the internal markdown parser used by the\n    \u001b[1mhelp\u001b[0m command to be supplied to a directed file to ease\n    reading of documentation directly from the command line.\n\n    The first argument after the command is the address\n    of the file to read.\n\n\u001b[32m    node biddle markdown applications/example/readme.md\u001b[39m\n\n    You can also specify a custom word wrap limit.  The\n    default is still 100.\n\n\u001b[32m    node biddle markdown applications/example/readme.md 80\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mpublish\u001b[39m\u001b[0m\u001b[24m\n    Writes a hash file and a zip file with a version\n    number to the publications directory or some other\n    specified location.  Applications are required to have a\n    file in their root directory named \u001b[3m\u001b[33mpackage.json\u001b[39m\u001b[0m with\n    properties: \u001b[3m\u001b[33mname\u001b[39m\u001b[0m and \u001b[3m\u001b[33mversion\u001b[39m\u001b[0m.\n\n    Create a zip in the default location:",
-                                name = "biddle_test_help_60";
+                            var helptest = "\n\u001b[4m\u001b[1m\u001b[31mbiddle\u001b[39m\u001b[0m\u001b[24m\n\u001b[3m" +
+                                        "\u001b[33mA package management application without a package\nmanagement service" +
+                                        ".\u001b[39m\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mLicense\u001b[39m\u001b[0m" +
+                                        "\u001b[24m\n  MIT, (\u001b[36mhttps://opensource.org/licenses/MIT\u001b[39m)\n\n" +
+                                        "\u001b[4m\u001b[1m\u001b[36mVersion\u001b[39m\u001b[0m\u001b[24m\n  0.0.3\n\n" +
+                                        "\u001b[4m\u001b[1m\u001b[36mAbout\u001b[39m\u001b[0m\u001b[24m\n  This applicati" +
+                                        "on is a cross-OS solution to creating zip\n  files for distribution and fetching" +
+                                        " files via HTTP(S).\n  The project's goal is to provide a universal application" +
+                                        "\n  distribution utility that is language agnostic, operating\n  system independ" +
+                                        "ent, and platform independent.  The only\n  additional requirement for distribut" +
+                                        "ing application\n  packages is online storage on a web server.  This\n  applicat" +
+                                        "ion provides all the utilities to retrieve,\n  bundle, and unpackage application" +
+                                        "s.\n\n  biddle is inspired by the incredible awesomeness of\n  NPM, (\u001b[36mh" +
+                                        "ttp://npmjs.com\u001b[39m), but seeks to accomplish a few\n  additional goals:\n" +
+                                        "\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mintegrity\u001b[3" +
+                                        "9m\u001b[0m - Downloaded packages will perform a\n    hash comparison before the" +
+                                        "y are unpackaged.  If the\n    hashes don't match the zip file will be saved in " +
+                                        "the\n    downloads directory awaiting a human touch.\n  \u001b[1m\u001b[31m*" +
+                                        "\u001b[39m\u001b[0m \u001b[3m\u001b[33mautonomy\u001b[39m\u001b[0m - There is no" +
+                                        " central authority here.\n    Host your own publications and manage them as you " +
+                                        "please\n    with any name you choose.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m" +
+                                        " \u001b[3m\u001b[33mmanagement\u001b[39m\u001b[0m - There is no dependency hell " +
+                                        "here.\n    Dependency management will not be automated, but a means\n    to mana" +
+                                        "ge and review the status of all\n    installed/published packages is provided.\n" +
+                                        "  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mfreedom\u001b[39m" +
+                                        "\u001b[0m - biddle will work everywhere Node.js\n    runs.  It can be used with " +
+                                        "any application written in\n    any language whether binary or text.\n\n\u001b[4" +
+                                        "m\u001b[1m\u001b[36mProject Status\u001b[39m\u001b[0m\u001b[24m\n  \u001b[1mUnst" +
+                                        "able and in early developement.\u001b[0m\n\n  \u001b[1m\u001b[31m*\u001b[39m" +
+                                        "\u001b[0m command \u001b[1mget\u001b[0m is complete\n  \u001b[1m\u001b[31m*" +
+                                        "\u001b[39m\u001b[0m command \u001b[1mhash\u001b[0m is complete\n  \u001b[1m" +
+                                        "\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mhelp\u001b[0m is complete\n  " +
+                                        "\u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mlist\u001b[0m is comple" +
+                                        "te\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mmarkdown\u001b[0m" +
+                                        " is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1munpubli" +
+                                        "sh\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command " +
+                                        "\u001b[1mzip\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m com" +
+                                        "mand \u001b[1munzip\u001b[0m is complete\n\n  \u001b[1m\u001b[31m*\u001b[39m" +
+                                        "\u001b[0m although \u001b[1mlist\u001b[0m is marked as complete for thorough\n  " +
+                                        "  testing is required\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[" +
+                                        "1mpublish\u001b[0m is removed from complete status.\n    Variant publications by" +
+                                        " exclusion lists need to be\n    worked out.\n  \u001b[1m\u001b[31m*\u001b[39m" +
+                                        "\u001b[0m need to add a \u001b[1mglobal\u001b[0m command to allow users to\n    " +
+                                        "promote biddle to global shell execution\n  \u001b[1m\u001b[31m*\u001b[39m\u001b" +
+                                        "[0m add support for a \u001b[3m\u001b[33m.biddleignore\u001b[39m\u001b[0m file, " +
+                                        "this file\n    contain a list of items to not include in the published\n    zip" +
+                                        "\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m File is read\n    \u001b[1m\u001b[" +
+                                        "31m-\u001b[39m\u001b[0m Support and processing is not added yet\n    \u001b[1m" +
+                                        "\u001b[31m-\u001b[39m\u001b[0m Will not include support for comments or\n      w" +
+                                        "ildcards in initial launch\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m add suppor" +
+                                        "t for \u001b[3m\u001b[33mvariants\u001b[39m\u001b[0m in package.json,\n      whi" +
+                                        "ch allows named variants where each has a custom\n      ignore list\n  \u001b[1m" +
+                                        "\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1minstall\u001b[0m is \u001b[3m" +
+                                        "\u001b[33mblocked\u001b[39m\u001b[0m pending\n      configuration work\n    " +
+                                        "\u001b[1m\u001b[31m-\u001b[39m\u001b[0m Hash files must now become JSON storing" +
+                                        "\n      hash, name, and version\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m ZIP" +
+                                        " approach needs to be reevaluated...\n      details in next point\n  \u001b[1m" +
+                                        "\u001b[31m*\u001b[39m\u001b[0m need to work out \u001b[3m\u001b[33mglobal\u001b[" +
+                                        "39m\u001b[0m install switch\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Advanced " +
+                                        "configuration work is \u001b[3m\u001b[33munderway now\u001b[39m\u001b[0m.\n     " +
+                                        " Configuration details will go into the app's\n      package.json file.\n    " +
+                                        "\u001b[1m\u001b[31m-\u001b[39m\u001b[0m I need to revise the approach to creatin" +
+                                        "g\n      ZIP files.  I cannot simply point to a directory and\n      zip it for " +
+                                        "security reasons.  Instead I will need to\n      index the child items of the ta" +
+                                        "rget directory for\n      addition to a ZIP file.  The reason has to do with\n  " +
+                                        "    potential (malicious), naming collisions uniformity\n      violations.\n    " +
+                                        "\u001b[1m\u001b[31m-\u001b[39m\u001b[0m Allow restriction of named directories w" +
+                                        "hen\n      creating a zip so that production only packages don't\n      have dev" +
+                                        " dependencies, build systems, unit tests,\n      systems files, and so forth\n  " +
+                                        "  \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Allow definition of custom default\n  " +
+                                        "    locations.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1mstatu" +
+                                        "s\u001b[0m is not started.  This command\n      will compare an installed applic" +
+                                        "ation's version\n      against a published version to determine if out of\n     " +
+                                        " date.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must allow an app name as an" +
+                                        " argument to\n      manually check that application or \u001b[3m\u001b[33mall" +
+                                        "\u001b[39m\u001b[0m to check all\n      installed applications\n    \u001b[1m" +
+                                        "\u001b[31m-\u001b[39m\u001b[0m Status automation or intervals would be\n      ni" +
+                                        "ce... such as checking app versions once a week and\n      providing a message w" +
+                                        "hen out of date\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1munin" +
+                                        "stall\u001b[0m command is \u001b[3m\u001b[33mblocked\u001b[39m\u001b[0m pending" +
+                                        "\n      completion of \u001b[1minstall\u001b[0m.\n    \u001b[1m\u001b[31m-\u001b" +
+                                        "[39m\u001b[0m Must delete the application\n    \u001b[1m\u001b[31m-\u001b[39m" +
+                                        "\u001b[0m Must remove the application from the \u001b[1mlist\u001b[0m\n\n\u001b[" +
+                                        "4m\u001b[1m\u001b[36mSupported commands\u001b[39m\u001b[0m\u001b[24m\n  Commands" +
+                                        " are the third command line argument, or second\n  if the optional \u001b[3m" +
+                                        "\u001b[33mnode\u001b[39m\u001b[0m argument is absent.  Commands are\n  case inse" +
+                                        "nsitive, but values and local paths are case\n  sensitive.  All local address ar" +
+                                        "e either absolute from the\n  root or relative from the current working director" +
+                                        "y.\n\n  \u001b[4m\u001b[1m\u001b[32mget\u001b[39m\u001b[0m\u001b[24m\n    Merely" +
+                                        " downloads the requested resource and saves\n    it as a file with the same file" +
+                                        "name. If the filename is\n    not provided in the URI the final directory up to " +
+                                        "the\n    domain name will become the filename, and if for some\n    reason that " +
+                                        "doesn't work the default filename is\n    \u001b[3m\u001b[33mdownload.xxx\u001b[" +
+                                        "39m\u001b[0m.\n\n    Download a file to the default location, which is\n    the " +
+                                        "provided \u001b[3m\u001b[33mdownloads\u001b[39m\u001b[0m directory.\n\n\u001b[32" +
+                                        "m    node biddle get http://google.com\u001b[39m\n\n    Download a file to an al" +
+                                        "ternate location.\n\n\u001b[32m    node biddle get http://google.com ../mydirect" +
+                                        "ory\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mhash\u001b[39m\u001b[0m\u001b[24m" +
+                                        "\n    Prints to console a SHA512 hash against a local\n    resource.\n\n\u001b[3" +
+                                        "2m    node biddle hash downloads/myfile.zip\u001b[39m\n\n  \u001b[4m\u001b[1m" +
+                                        "\u001b[32mhelp\u001b[39m\u001b[0m\u001b[24m\n    Prints the readme.md file conte" +
+                                        "nts to console in a\n    human friendly way.\n\n    No command will still genera" +
+                                        "te the readme data.\n\n\u001b[32m    node biddle\u001b[39m\n\n    The default wo" +
+                                        "rd wrapping is set to 100 characters.\n\n\u001b[32m    node biddle help\u001b[39" +
+                                        "m\n\n    Set a custom word wrap limit.\n\n\u001b[32m    node biddle help 80" +
+                                        "\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32minstall\u001b[39m\u001b[0m\u001b[24m" +
+                                        "\n    (not written yet)\n    Downloads the requested resource, but decompresses" +
+                                        "\n    and unpackages the zip before writing files to disk.\n\n  \u001b[4m\u001b[" +
+                                        "1m\u001b[32mlist\u001b[39m\u001b[0m\u001b[24m\n    Will list all installed and/o" +
+                                        "r published\n    applications with their locations and latest versions.\n    It " +
+                                        "can take the optional argument \u001b[3m\u001b[33minstalled\u001b[39m\u001b[0m o" +
+                                        "r \u001b[3m\u001b[33mpublished\u001b[39m\u001b[0m\n    to output a specific list" +
+                                        " or both lists are produced.\n\n    Only output the installed list.\n\n\u001b[32" +
+                                        "m    node biddle list installed\u001b[39m\n\n    Output both lists\n\n\u001b[32m" +
+                                        "    node biddle list\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mmarkdown\u001b[3" +
+                                        "9m\u001b[0m\u001b[24m\n    Allows the internal markdown parser used by the\n    " +
+                                        "\u001b[1mhelp\u001b[0m command to be supplied to a directed file to ease\n    re" +
+                                        "ading of documentation directly from the command line.\n\n    The first argument" +
+                                        " after the command is the address\n    of the file to read.\n\n\u001b[32m    nod" +
+                                        "e biddle markdown applications/example/readme.md\u001b[39m\n\n    You can also s" +
+                                        "pecify a custom word wrap limit.  The\n    default is still 100.\n\n\u001b[32m  " +
+                                        "  node biddle markdown applications/example/readme.md 80\u001b[39m\n\n  \u001b[4" +
+                                        "m\u001b[1m\u001b[32mpublish\u001b[39m\u001b[0m\u001b[24m\n    Writes a hash file" +
+                                        " and a zip file with a version\n    number to the publications directory or some" +
+                                        " other\n    specified location.  Applications are required to have a\n    file i" +
+                                        "n their root directory named \u001b[3m\u001b[33mpackage.json\u001b[39m\u001b[0m " +
+                                        "with\n    properties: \u001b[3m\u001b[33mname\u001b[39m\u001b[0m and \u001b[3m" +
+                                        "\u001b[33mversion\u001b[39m\u001b[0m.\n\n    Create a zip in the default locatio" +
+                                        "n:",
+                                name     = "biddle_test_help_60";
                             if (er !== null) {
                                 return errout({error: er, name: name, stdout: stdout, time: humantime(true)});
                             }
                             if (stder !== null && stder !== "") {
                                 return errout({error: stder, name: name, stdout: stdout, time: humantime(true)});
                             }
-                            stdout = stdout.replace(/\r\n/g, "\n").slice(0, 8192).replace(/(\\(\w+)?)$/, "");
+                            stdout = stdout
+                                .replace(/\r\n/g, "\n")
+                                .slice(0, 8192)
+                                .replace(/(\\(\w+)?)$/, "");
                             if (stdout !== helptest) {
                                 return diffFiles(name, stdout, helptest);
                             }
@@ -983,15 +1138,145 @@
                             }
                         });
                         child(childcmd + "help 80 childtest", function biddle_test_help_80(er, stdout, stder) {
-                            var helptest = "\n\u001b[4m\u001b[1m\u001b[31mbiddle\u001b[39m\u001b[0m\u001b[24m\n\u001b[3m\u001b[33mA package management application without a package management service.\u001b[39m\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mLicense\u001b[39m\u001b[0m\u001b[24m\n  MIT, (\u001b[36mhttps://opensource.org/licenses/MIT\u001b[39m)\n\n\u001b[4m\u001b[1m\u001b[36mVersion\u001b[39m\u001b[0m\u001b[24m\n  0.0.3\n\n\u001b[4m\u001b[1m\u001b[36mAbout\u001b[39m\u001b[0m\u001b[24m\n  This application is a cross-OS solution to creating zip files for\n  distribution and fetching files via HTTP(S).  The project's goal is to provide\n  a universal application distribution utility that is language agnostic,\n  operating system independent, and platform independent.  The only additional\n  requirement for distributing application packages is online storage on a web\n  server.  This application provides all the utilities to retrieve, bundle, and\n  unpackage applications.\n\n  biddle is inspired by the incredible awesomeness of NPM,\n  (\u001b[36mhttp://npmjs.com\u001b[39m), but seeks to accomplish a few additional goals:\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mintegrity\u001b[39m\u001b[0m - Downloaded packages will perform a hash comparison before\n    they are unpackaged.  If the hashes don't match the zip file will be saved\n    in the downloads directory awaiting a human touch.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mautonomy\u001b[39m\u001b[0m - There is no central authority here.  Host your own\n    publications and manage them as you please with any name you choose.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mmanagement\u001b[39m\u001b[0m - There is no dependency hell here.  Dependency management\n    will not be automated, but a means to manage and review the status of all\n    installed/published packages is provided.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mfreedom\u001b[39m\u001b[0m - biddle will work everywhere Node.js runs.  It can be used\n    with any application written in any language whether binary or text.\n\n\u001b[4m\u001b[1m\u001b[36mProject Status\u001b[39m\u001b[0m\u001b[24m\n  \u001b[1mUnstable and in early developement.\u001b[0m\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mget\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mhash\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mhelp\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mlist\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mmarkdown\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1munpublish\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mzip\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1munzip\u001b[0m is complete\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m although \u001b[1mlist\u001b[0m is marked as complete for thorough testing is required\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mpublish\u001b[0m is removed from complete status. Variant publications\n    by exclusion lists need to be worked out.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m need to add a \u001b[1mglobal\u001b[0m command to allow users to promote biddle to\n    global shell execution\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m add support for a \u001b[3m\u001b[33m.biddleignore\u001b[39m\u001b[0m file, this file contain a list of\n    items to not include in the published zip\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m File is read\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Support and processing is not added yet\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Will not include support for comments or wildcards in initial\n      launch\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m add support for \u001b[3m\u001b[33mvariants\u001b[39m\u001b[0m in package.json, which allows named\n      variants where each has a custom ignore list\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1minstall\u001b[0m is \u001b[3m\u001b[33mblocked\u001b[39m\u001b[0m pending configuration work\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Hash files must now become JSON storing hash, name, and version\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m ZIP approach needs to be reevaluated... details in next point\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m need to work out \u001b[3m\u001b[33mglobal\u001b[39m\u001b[0m install switch\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Advanced configuration work is \u001b[3m\u001b[33munderway now\u001b[39m\u001b[0m.  Configuration\n      details will go into the app's package.json file.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m I need to revise the approach to creating ZIP files.  I cannot\n      simply point to a directory and zip it for security reasons.  Instead I\n      will need to index the child items of the target directory for addition to\n      a ZIP file.  The reason has to do with potential (malicious), naming\n      collisions uniformity violations.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Allow restriction of named directories when creating a zip so\n      that production only packages don't have dev dependencies, build systems,\n      unit tests, systems files, and so forth\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Allow definition of custom default locations.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1mstatus\u001b[0m is not started.  This command will compare an\n      installed application's version against a published version to determine\n      if out of date.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must allow an app name as an argument to manually check that\n      application or \u001b[3m\u001b[33mall\u001b[39m\u001b[0m to check all installed applications\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Status automation or intervals would be nice... such as\n      checking app versions once a week and providing a message when out of date\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1muninstall\u001b[0m command is \u001b[3m\u001b[33mblocked\u001b[39m\u001b[0m pending completion of\n      \u001b[1minstall\u001b[0m.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must delete the application\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must remove the application from the \u001b[1mlist\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mSupported commands\u001b[39m\u001b[0m\u001b[24m\n  Commands are the third command line argument, or second if the optional\n  \u001b[3m\u001b[33mnode\u001b[39m\u001b[0m argument is absent.  Commands are case insensitive, but values and local\n  paths are case sensitive.  All local address are either absolute from the root\n  or relative from the current working directory.\n\n  \u001b[4m\u001b[1m\u001b[32mget\u001b[39m\u001b[0m\u001b[24m\n    Merely downloads the requested resource and saves it as a file with the\n    same filename. If the filename is not provided in the URI the final\n    directory up to the domain name will become the filename, and if for some\n    reason that doesn't work the default filename is \u001b[3m\u001b[33mdownload.xxx\u001b[39m\u001b[0m.\n\n    Download a file to the default location, which is the provided\n    \u001b[3m\u001b[33mdownloads\u001b[39m\u001b[0m directory.\n\n\u001b[32m    node biddle get http://google.com\u001b[39m\n\n    Download a file to an alternate location.\n\n\u001b[32m    node biddle get http://google.com ../mydirectory\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mhash\u001b[39m\u001b[0m\u001b[24m\n    Prints to console a SHA512 hash against a local resource.\n\n\u001b[32m    node biddle hash downloads/myfile.zip\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mhelp\u001b[39m\u001b[0m\u001b[24m\n    Prints the readme.md file contents to console in a human friendly way.\n\n    No command will still generate the readme data.\n\n\u001b[32m    node biddle\u001b[39m\n\n    The default word wrapping is set to 100 characters.\n\n\u001b[32m    node biddle help\u001b[39m\n\n    Set a custom word wrap limit.\n\n\u001b[32m    node biddle help 80\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32minstall\u001b[39m\u001b[0m\u001b[24m\n    (not written yet)\n    Downloads the requested resource, but decompresses and unpackages the\n    zip before writing files to disk.\n\n  \u001b[4m\u001b[1m\u001b[32mlist\u001b[39m\u001b[0m\u001b[24m\n    Will list all installed and/or published applications with their\n    locations and latest versions.  It can take the optional argument \u001b[3m\u001b[33minstalled\u001b[39m\u001b[0m\n    or \u001b[3m\u001b[33mpublished\u001b[39m\u001b[0m to output a specific list or both lists are produced.\n\n    Only output the installed list.\n\n\u001b[32m    node biddle list installed\u001b[39m\n\n    Output both lists\n\n\u001b[32m    node biddle list\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mmarkdown\u001b[39m\u001b[0m\u001b[24m\n    Allows the internal markdown parser used by the \u001b[1mhelp\u001b[0m command to be\n    supplied to a directed file to ease reading of documentation directly from\n    the command line.\n\n    The first argument after the command is the address of the file to read.\n\n\u001b[32m    node biddle markdown applications/example/readme.md\u001b[39m\n\n    You can also specify a custom word wrap limit.  The default is still\n    100.\n\n\u001b[32m    node biddle markdown applications/example/readme.md 80\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mpublish\u001b[39m\u001b[0m\u001b[24m\n    Writes a hash file and a zip file with a version number to the\n    publications directory or some other specified location.  Applications are\n    required to have a file in their root directory named \u001b[3m\u001b[33mpackage.json\u001b[39m\u001b[0m with\n    properties: \u001b[3m\u001b[33mname\u001b[39m\u001b[0m and \u001b[3m\u001b[33mversion\u001b[39m\u001b[0m.\n\n    Create a zip in the default location: ./publications/myapplication\n\n\u001b[32m    node biddle publish ../myapplication\u001b[39m\n\n    Publish to a custom location: ./myAlternateD",
-                                name = "biddle_test_help_80";
+                            var helptest = "\n\u001b[4m\u001b[1m\u001b[31mbiddle\u001b[39m\u001b[0m\u001b[24m\n\u001b[3m" +
+                                        "\u001b[33mA package management application without a package management service." +
+                                        "\u001b[39m\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mLicense\u001b[39m\u001b[0m" +
+                                        "\u001b[24m\n  MIT, (\u001b[36mhttps://opensource.org/licenses/MIT\u001b[39m)\n\n" +
+                                        "\u001b[4m\u001b[1m\u001b[36mVersion\u001b[39m\u001b[0m\u001b[24m\n  0.0.3\n\n" +
+                                        "\u001b[4m\u001b[1m\u001b[36mAbout\u001b[39m\u001b[0m\u001b[24m\n  This applicati" +
+                                        "on is a cross-OS solution to creating zip files for\n  distribution and fetching" +
+                                        " files via HTTP(S).  The project's goal is to provide\n  a universal application" +
+                                        " distribution utility that is language agnostic,\n  operating system independent" +
+                                        ", and platform independent.  The only additional\n  requirement for distributing" +
+                                        " application packages is online storage on a web\n  server.  This application pr" +
+                                        "ovides all the utilities to retrieve, bundle, and\n  unpackage applications.\n\n" +
+                                        "  biddle is inspired by the incredible awesomeness of NPM,\n  (\u001b[36mhttp://" +
+                                        "npmjs.com\u001b[39m), but seeks to accomplish a few additional goals:\n\n  " +
+                                        "\u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mintegrity\u001b[39m" +
+                                        "\u001b[0m - Downloaded packages will perform a hash comparison before\n    they " +
+                                        "are unpackaged.  If the hashes don't match the zip file will be saved\n    in th" +
+                                        "e downloads directory awaiting a human touch.\n  \u001b[1m\u001b[31m*\u001b[39m" +
+                                        "\u001b[0m \u001b[3m\u001b[33mautonomy\u001b[39m\u001b[0m - There is no central a" +
+                                        "uthority here.  Host your own\n    publications and manage them as you please wi" +
+                                        "th any name you choose.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m" +
+                                        "\u001b[33mmanagement\u001b[39m\u001b[0m - There is no dependency hell here.  Dep" +
+                                        "endency management\n    will not be automated, but a means to manage and review " +
+                                        "the status of all\n    installed/published packages is provided.\n  \u001b[1m" +
+                                        "\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mfreedom\u001b[39m\u001b[0m - b" +
+                                        "iddle will work everywhere Node.js runs.  It can be used\n    with any applicati" +
+                                        "on written in any language whether binary or text.\n\n\u001b[4m\u001b[1m\u001b[3" +
+                                        "6mProject Status\u001b[39m\u001b[0m\u001b[24m\n  \u001b[1mUnstable and in early " +
+                                        "developement.\u001b[0m\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command " +
+                                        "\u001b[1mget\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m com" +
+                                        "mand \u001b[1mhash\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[" +
+                                        "0m command \u001b[1mhelp\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m" +
+                                        "\u001b[0m command \u001b[1mlist\u001b[0m is complete\n  \u001b[1m\u001b[31m*" +
+                                        "\u001b[39m\u001b[0m command \u001b[1mmarkdown\u001b[0m is complete\n  \u001b[1m" +
+                                        "\u001b[31m*\u001b[39m\u001b[0m command \u001b[1munpublish\u001b[0m is complete\n" +
+                                        "  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mzip\u001b[0m is compl" +
+                                        "ete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1munzip\u001b[0m i" +
+                                        "s complete\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m although \u001b[1mlist" +
+                                        "\u001b[0m is marked as complete for thorough testing is required\n  \u001b[1m" +
+                                        "\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mpublish\u001b[0m is removed from" +
+                                        " complete status. Variant publications\n    by exclusion lists need to be worked" +
+                                        " out.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m need to add a \u001b[1mglobal" +
+                                        "\u001b[0m command to allow users to promote biddle to\n    global shell executio" +
+                                        "n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m add support for a \u001b[3m\u001b[3" +
+                                        "3m.biddleignore\u001b[39m\u001b[0m file, this file contain a list of\n    items " +
+                                        "to not include in the published zip\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m" +
+                                        " File is read\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Support and processin" +
+                                        "g is not added yet\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Will not include" +
+                                        " support for comments or wildcards in initial\n      launch\n  \u001b[1m\u001b[3" +
+                                        "1m*\u001b[39m\u001b[0m add support for \u001b[3m\u001b[33mvariants\u001b[39m" +
+                                        "\u001b[0m in package.json, which allows named\n      variants where each has a c" +
+                                        "ustom ignore list\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1min" +
+                                        "stall\u001b[0m is \u001b[3m\u001b[33mblocked\u001b[39m\u001b[0m pending configur" +
+                                        "ation work\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Hash files must now beco" +
+                                        "me JSON storing hash, name, and version\n    \u001b[1m\u001b[31m-\u001b[39m" +
+                                        "\u001b[0m ZIP approach needs to be reevaluated... details in next point\n  " +
+                                        "\u001b[1m\u001b[31m*\u001b[39m\u001b[0m need to work out \u001b[3m\u001b[33mglob" +
+                                        "al\u001b[39m\u001b[0m install switch\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m " +
+                                        "Advanced configuration work is \u001b[3m\u001b[33munderway now\u001b[39m\u001b[0" +
+                                        "m.  Configuration\n      details will go into the app's package.json file.\n    " +
+                                        "\u001b[1m\u001b[31m-\u001b[39m\u001b[0m I need to revise the approach to creatin" +
+                                        "g ZIP files.  I cannot\n      simply point to a directory and zip it for securit" +
+                                        "y reasons.  Instead I\n      will need to index the child items of the target di" +
+                                        "rectory for addition to\n      a ZIP file.  The reason has to do with potential " +
+                                        "(malicious), naming\n      collisions uniformity violations.\n    \u001b[1m" +
+                                        "\u001b[31m-\u001b[39m\u001b[0m Allow restriction of named directories when creat" +
+                                        "ing a zip so\n      that production only packages don't have dev dependencies, b" +
+                                        "uild systems,\n      unit tests, systems files, and so forth\n    \u001b[1m" +
+                                        "\u001b[31m-\u001b[39m\u001b[0m Allow definition of custom default locations.\n  " +
+                                        "\u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1mstatus\u001b[0m is not " +
+                                        "started.  This command will compare an\n      installed application's version ag" +
+                                        "ainst a published version to determine\n      if out of date.\n    \u001b[1m" +
+                                        "\u001b[31m-\u001b[39m\u001b[0m Must allow an app name as an argument to manually" +
+                                        " check that\n      application or \u001b[3m\u001b[33mall\u001b[39m\u001b[0m to c" +
+                                        "heck all installed applications\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Sta" +
+                                        "tus automation or intervals would be nice... such as\n      checking app version" +
+                                        "s once a week and providing a message when out of date\n  \u001b[1m\u001b[31m*" +
+                                        "\u001b[39m\u001b[0m Work on \u001b[1muninstall\u001b[0m command is \u001b[3m" +
+                                        "\u001b[33mblocked\u001b[39m\u001b[0m pending completion of\n      \u001b[1minsta" +
+                                        "ll\u001b[0m.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must delete the applic" +
+                                        "ation\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must remove the application f" +
+                                        "rom the \u001b[1mlist\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mSupported commands" +
+                                        "\u001b[39m\u001b[0m\u001b[24m\n  Commands are the third command line argument, o" +
+                                        "r second if the optional\n  \u001b[3m\u001b[33mnode\u001b[39m\u001b[0m argument " +
+                                        "is absent.  Commands are case insensitive, but values and local\n  paths are cas" +
+                                        "e sensitive.  All local address are either absolute from the root\n  or relative" +
+                                        " from the current working directory.\n\n  \u001b[4m\u001b[1m\u001b[32mget\u001b[" +
+                                        "39m\u001b[0m\u001b[24m\n    Merely downloads the requested resource and saves it" +
+                                        " as a file with the\n    same filename. If the filename is not provided in the U" +
+                                        "RI the final\n    directory up to the domain name will become the filename, and " +
+                                        "if for some\n    reason that doesn't work the default filename is \u001b[3m" +
+                                        "\u001b[33mdownload.xxx\u001b[39m\u001b[0m.\n\n    Download a file to the default" +
+                                        " location, which is the provided\n    \u001b[3m\u001b[33mdownloads\u001b[39m" +
+                                        "\u001b[0m directory.\n\n\u001b[32m    node biddle get http://google.com\u001b[39" +
+                                        "m\n\n    Download a file to an alternate location.\n\n\u001b[32m    node biddle " +
+                                        "get http://google.com ../mydirectory\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32m" +
+                                        "hash\u001b[39m\u001b[0m\u001b[24m\n    Prints to console a SHA512 hash against a" +
+                                        " local resource.\n\n\u001b[32m    node biddle hash downloads/myfile.zip\u001b[39" +
+                                        "m\n\n  \u001b[4m\u001b[1m\u001b[32mhelp\u001b[39m\u001b[0m\u001b[24m\n    Prints" +
+                                        " the readme.md file contents to console in a human friendly way.\n\n    No comma" +
+                                        "nd will still generate the readme data.\n\n\u001b[32m    node biddle\u001b[39m\n" +
+                                        "\n    The default word wrapping is set to 100 characters.\n\n\u001b[32m    node " +
+                                        "biddle help\u001b[39m\n\n    Set a custom word wrap limit.\n\n\u001b[32m    node" +
+                                        " biddle help 80\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32minstall\u001b[39m" +
+                                        "\u001b[0m\u001b[24m\n    (not written yet)\n    Downloads the requested resource" +
+                                        ", but decompresses and unpackages the\n    zip before writing files to disk.\n\n" +
+                                        "  \u001b[4m\u001b[1m\u001b[32mlist\u001b[39m\u001b[0m\u001b[24m\n    Will list a" +
+                                        "ll installed and/or published applications with their\n    locations and latest " +
+                                        "versions.  It can take the optional argument \u001b[3m\u001b[33minstalled\u001b[" +
+                                        "39m\u001b[0m\n    or \u001b[3m\u001b[33mpublished\u001b[39m\u001b[0m to output a" +
+                                        " specific list or both lists are produced.\n\n    Only output the installed list" +
+                                        ".\n\n\u001b[32m    node biddle list installed\u001b[39m\n\n    Output both lists" +
+                                        "\n\n\u001b[32m    node biddle list\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mma" +
+                                        "rkdown\u001b[39m\u001b[0m\u001b[24m\n    Allows the internal markdown parser use" +
+                                        "d by the \u001b[1mhelp\u001b[0m command to be\n    supplied to a directed file t" +
+                                        "o ease reading of documentation directly from\n    the command line.\n\n    The " +
+                                        "first argument after the command is the address of the file to read.\n\n\u001b[3" +
+                                        "2m    node biddle markdown applications/example/readme.md\u001b[39m\n\n    You c" +
+                                        "an also specify a custom word wrap limit.  The default is still\n    100.\n\n" +
+                                        "\u001b[32m    node biddle markdown applications/example/readme.md 80\u001b[39m\n" +
+                                        "\n  \u001b[4m\u001b[1m\u001b[32mpublish\u001b[39m\u001b[0m\u001b[24m\n    Writes" +
+                                        " a hash file and a zip file with a version number to the\n    publications direc" +
+                                        "tory or some other specified location.  Applications are\n    required to have a" +
+                                        " file in their root directory named \u001b[3m\u001b[33mpackage.json\u001b[39m" +
+                                        "\u001b[0m with\n    properties: \u001b[3m\u001b[33mname\u001b[39m\u001b[0m and " +
+                                        "\u001b[3m\u001b[33mversion\u001b[39m\u001b[0m.\n\n    Create a zip in the defaul" +
+                                        "t location: ./publications/myapplication\n\n\u001b[32m    node biddle publish .." +
+                                        "/myapplication\u001b[39m\n\n    Publish to a custom location: ./myAlternateD",
+                                name     = "biddle_test_help_80";
                             if (er !== null) {
                                 return errout({error: er, name: name, stdout: stdout, time: humantime(true)});
                             }
                             if (stder !== null && stder !== "") {
                                 return errout({error: stder, name: name, stdout: stdout, time: humantime(true)});
                             }
-                            stdout = stdout.replace(/\r\n/g, "\n").slice(0, 8192).replace(/(\\(\w+)?)$/, "");
+                            stdout = stdout
+                                .replace(/\r\n/g, "\n")
+                                .slice(0, 8192)
+                                .replace(/(\\(\w+)?)$/, "");
                             if (stdout !== helptest) {
                                 return diffFiles(name, stdout, helptest);
                             }
@@ -1002,15 +1287,145 @@
                             }
                         });
                         child(childcmd + "help 120 childtest", function biddle_test_help_120(er, stdout, stder) {
-                            var helptest = "\n\u001b[4m\u001b[1m\u001b[31mbiddle\u001b[39m\u001b[0m\u001b[24m\n\u001b[3m\u001b[33mA package management application without a package management service.\u001b[39m\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mLicense\u001b[39m\u001b[0m\u001b[24m\n  MIT, (\u001b[36mhttps://opensource.org/licenses/MIT\u001b[39m)\n\n\u001b[4m\u001b[1m\u001b[36mVersion\u001b[39m\u001b[0m\u001b[24m\n  0.0.3\n\n\u001b[4m\u001b[1m\u001b[36mAbout\u001b[39m\u001b[0m\u001b[24m\n  This application is a cross-OS solution to creating zip files for distribution and fetching files via HTTP(S).  The\n  project's goal is to provide a universal application distribution utility that is language agnostic, operating system\n  independent, and platform independent.  The only additional requirement for distributing application packages is\n  online storage on a web server.  This application provides all the utilities to retrieve, bundle, and unpackage\n  applications.\n\n  biddle is inspired by the incredible awesomeness of NPM, (\u001b[36mhttp://npmjs.com\u001b[39m), but seeks to accomplish a few\n  additional goals:\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mintegrity\u001b[39m\u001b[0m - Downloaded packages will perform a hash comparison before they are unpackaged.  If the hashes\n    don't match the zip file will be saved in the downloads directory awaiting a human touch.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mautonomy\u001b[39m\u001b[0m - There is no central authority here.  Host your own publications and manage them as you please with\n    any name you choose.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mmanagement\u001b[39m\u001b[0m - There is no dependency hell here.  Dependency management will not be automated, but a means to\n    manage and review the status of all installed/published packages is provided.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mfreedom\u001b[39m\u001b[0m - biddle will work everywhere Node.js runs.  It can be used with any application written in any\n    language whether binary or text.\n\n\u001b[4m\u001b[1m\u001b[36mProject Status\u001b[39m\u001b[0m\u001b[24m\n  \u001b[1mUnstable and in early developement.\u001b[0m\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mget\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mhash\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mhelp\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mlist\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mmarkdown\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1munpublish\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mzip\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1munzip\u001b[0m is complete\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m although \u001b[1mlist\u001b[0m is marked as complete for thorough testing is required\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mpublish\u001b[0m is removed from complete status. Variant publications by exclusion lists need to be worked\n    out.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m need to add a \u001b[1mglobal\u001b[0m command to allow users to promote biddle to global shell execution\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m add support for a \u001b[3m\u001b[33m.biddleignore\u001b[39m\u001b[0m file, this file contain a list of items to not include in the published zip\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m File is read\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Support and processing is not added yet\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Will not include support for comments or wildcards in initial launch\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m add support for \u001b[3m\u001b[33mvariants\u001b[39m\u001b[0m in package.json, which allows named variants where each has a custom ignore list\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1minstall\u001b[0m is \u001b[3m\u001b[33mblocked\u001b[39m\u001b[0m pending configuration work\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Hash files must now become JSON storing hash, name, and version\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m ZIP approach needs to be reevaluated... details in next point\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m need to work out \u001b[3m\u001b[33mglobal\u001b[39m\u001b[0m install switch\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Advanced configuration work is \u001b[3m\u001b[33munderway now\u001b[39m\u001b[0m.  Configuration details will go into the app's package.json\n      file.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m I need to revise the approach to creating ZIP files.  I cannot simply point to a directory and zip it\n      for security reasons.  Instead I will need to index the child items of the target directory for addition to a ZIP\n      file.  The reason has to do with potential (malicious), naming collisions uniformity violations.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Allow restriction of named directories when creating a zip so that production only packages don't have\n      dev dependencies, build systems, unit tests, systems files, and so forth\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Allow definition of custom default locations.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1mstatus\u001b[0m is not started.  This command will compare an installed application's version against a\n      published version to determine if out of date.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must allow an app name as an argument to manually check that application or \u001b[3m\u001b[33mall\u001b[39m\u001b[0m to check all installed\n      applications\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Status automation or intervals would be nice... such as checking app versions once a week and providing\n      a message when out of date\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1muninstall\u001b[0m command is \u001b[3m\u001b[33mblocked\u001b[39m\u001b[0m pending completion of \u001b[1minstall\u001b[0m.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must delete the application\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Must remove the application from the \u001b[1mlist\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mSupported commands\u001b[39m\u001b[0m\u001b[24m\n  Commands are the third command line argument, or second if the optional \u001b[3m\u001b[33mnode\u001b[39m\u001b[0m argument is absent.  Commands are case\n  insensitive, but values and local paths are case sensitive.  All local address are either absolute from the root or\n  relative from the current working directory.\n\n  \u001b[4m\u001b[1m\u001b[32mget\u001b[39m\u001b[0m\u001b[24m\n    Merely downloads the requested resource and saves it as a file with the same filename. If the filename is not\n    provided in the URI the final directory up to the domain name will become the filename, and if for some reason that\n    doesn't work the default filename is \u001b[3m\u001b[33mdownload.xxx\u001b[39m\u001b[0m.\n\n    Download a file to the default location, which is the provided \u001b[3m\u001b[33mdownloads\u001b[39m\u001b[0m directory.\n\n\u001b[32m    node biddle get http://google.com\u001b[39m\n\n    Download a file to an alternate location.\n\n\u001b[32m    node biddle get http://google.com ../mydirectory\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mhash\u001b[39m\u001b[0m\u001b[24m\n    Prints to console a SHA512 hash against a local resource.\n\n\u001b[32m    node biddle hash downloads/myfile.zip\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mhelp\u001b[39m\u001b[0m\u001b[24m\n    Prints the readme.md file contents to console in a human friendly way.\n\n    No command will still generate the readme data.\n\n\u001b[32m    node biddle\u001b[39m\n\n    The default word wrapping is set to 100 characters.\n\n\u001b[32m    node biddle help\u001b[39m\n\n    Set a custom word wrap limit.\n\n\u001b[32m    node biddle help 80\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32minstall\u001b[39m\u001b[0m\u001b[24m\n    (not written yet)\n    Downloads the requested resource, but decompresses and unpackages the zip before writing files to disk.\n\n  \u001b[4m\u001b[1m\u001b[32mlist\u001b[39m\u001b[0m\u001b[24m\n    Will list all installed and/or published applications with their locations and latest versions.  It can take\n    the optional argument \u001b[3m\u001b[33minstalled\u001b[39m\u001b[0m or \u001b[3m\u001b[33mpublished\u001b[39m\u001b[0m to output a specific list or both lists are produced.\n\n    Only output the installed list.\n\n\u001b[32m    node biddle list installed\u001b[39m\n\n    Output both lists\n\n\u001b[32m    node biddle list\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mmarkdown\u001b[39m\u001b[0m\u001b[24m\n    Allows the internal markdown parser used by the \u001b[1mhelp\u001b[0m command to be supplied to a directed file to ease reading\n    of documentation directly from the command line.\n\n    The first argument after the command is the address of the file to read.\n\n\u001b[32m    node biddle markdown applications/example/readme.md\u001b[39m\n\n    You can also specify a custom word wrap limit.  The default is still 100.\n\n\u001b[32m    node biddle markdown applications/example/readme.md 80\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mpublish\u001b[39m\u001b[0m\u001b[24m\n    Writes a hash file and a zip file with a version number to the publications directory or some other specified\n    location.  Applications are required to have a file in their root directory named \u001b[3m\u001b[33mpackage.json\u001b[39m\u001b[0m with properties: \u001b[3m\u001b[33mname\u001b[39m\u001b[0m\n    and \u001b[3m\u001b[33mversion\u001b[39m\u001b[0m.\n\n    Create a zip in the default location: ./publications/myapplication\n\n\u001b[32m    node biddle publish ../myapplication\u001b[39m\n\n    Publish to a custom location: ./myAlternateDirectory/myapplication\n\n\u001b[32m    node biddle publish ../myapplication myAlternateDirectory\u001b[",
-                                name = "biddle_test_help_120";
+                            var helptest = "\n\u001b[4m\u001b[1m\u001b[31mbiddle\u001b[39m\u001b[0m\u001b[24m\n\u001b[3m" +
+                                        "\u001b[33mA package management application without a package management service." +
+                                        "\u001b[39m\u001b[0m\n\n\u001b[4m\u001b[1m\u001b[36mLicense\u001b[39m\u001b[0m" +
+                                        "\u001b[24m\n  MIT, (\u001b[36mhttps://opensource.org/licenses/MIT\u001b[39m)\n\n" +
+                                        "\u001b[4m\u001b[1m\u001b[36mVersion\u001b[39m\u001b[0m\u001b[24m\n  0.0.3\n\n" +
+                                        "\u001b[4m\u001b[1m\u001b[36mAbout\u001b[39m\u001b[0m\u001b[24m\n  This applicati" +
+                                        "on is a cross-OS solution to creating zip files for distribution and fetching fi" +
+                                        "les via HTTP(S).  The\n  project's goal is to provide a universal application di" +
+                                        "stribution utility that is language agnostic, operating system\n  independent, a" +
+                                        "nd platform independent.  The only additional requirement for distributing appli" +
+                                        "cation packages is\n  online storage on a web server.  This application provides" +
+                                        " all the utilities to retrieve, bundle, and unpackage\n  applications.\n\n  bidd" +
+                                        "le is inspired by the incredible awesomeness of NPM, (\u001b[36mhttp://npmjs.com" +
+                                        "\u001b[39m), but seeks to accomplish a few\n  additional goals:\n\n  \u001b[1m" +
+                                        "\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mintegrity\u001b[39m\u001b[0m -" +
+                                        " Downloaded packages will perform a hash comparison before they are unpackaged. " +
+                                        " If the hashes\n    don't match the zip file will be saved in the downloads dire" +
+                                        "ctory awaiting a human touch.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[" +
+                                        "3m\u001b[33mautonomy\u001b[39m\u001b[0m - There is no central authority here.  H" +
+                                        "ost your own publications and manage them as you please with\n    any name you c" +
+                                        "hoose.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m \u001b[3m\u001b[33mmanagement" +
+                                        "\u001b[39m\u001b[0m - There is no dependency hell here.  Dependency management w" +
+                                        "ill not be automated, but a means to\n    manage and review the status of all in" +
+                                        "stalled/published packages is provided.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[" +
+                                        "0m \u001b[3m\u001b[33mfreedom\u001b[39m\u001b[0m - biddle will work everywhere N" +
+                                        "ode.js runs.  It can be used with any application written in any\n    language w" +
+                                        "hether binary or text.\n\n\u001b[4m\u001b[1m\u001b[36mProject Status\u001b[39m" +
+                                        "\u001b[0m\u001b[24m\n  \u001b[1mUnstable and in early developement.\u001b[0m\n\n" +
+                                        "  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mget\u001b[0m is compl" +
+                                        "ete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mhash\u001b[0m is" +
+                                        " complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mhelp\u001b" +
+                                        "[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[1mlist" +
+                                        "\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m command \u001b[" +
+                                        "1mmarkdown\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m comma" +
+                                        "nd \u001b[1munpublish\u001b[0m is complete\n  \u001b[1m\u001b[31m*\u001b[39m" +
+                                        "\u001b[0m command \u001b[1mzip\u001b[0m is complete\n  \u001b[1m\u001b[31m*" +
+                                        "\u001b[39m\u001b[0m command \u001b[1munzip\u001b[0m is complete\n\n  \u001b[1m" +
+                                        "\u001b[31m*\u001b[39m\u001b[0m although \u001b[1mlist\u001b[0m is marked as comp" +
+                                        "lete for thorough testing is required\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m" +
+                                        " command \u001b[1mpublish\u001b[0m is removed from complete status. Variant publ" +
+                                        "ications by exclusion lists need to be worked\n    out.\n  \u001b[1m\u001b[31m*" +
+                                        "\u001b[39m\u001b[0m need to add a \u001b[1mglobal\u001b[0m command to allow user" +
+                                        "s to promote biddle to global shell execution\n  \u001b[1m\u001b[31m*\u001b[39m" +
+                                        "\u001b[0m add support for a \u001b[3m\u001b[33m.biddleignore\u001b[39m\u001b[0m " +
+                                        "file, this file contain a list of items to not include in the published zip\n   " +
+                                        " \u001b[1m\u001b[31m-\u001b[39m\u001b[0m File is read\n    \u001b[1m\u001b[31m-" +
+                                        "\u001b[39m\u001b[0m Support and processing is not added yet\n    \u001b[1m\u001b" +
+                                        "[31m-\u001b[39m\u001b[0m Will not include support for comments or wildcards in i" +
+                                        "nitial launch\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m add support for \u001b[" +
+                                        "3m\u001b[33mvariants\u001b[39m\u001b[0m in package.json, which allows named vari" +
+                                        "ants where each has a custom ignore list\n  \u001b[1m\u001b[31m*\u001b[39m\u001b" +
+                                        "[0m Work on \u001b[1minstall\u001b[0m is \u001b[3m\u001b[33mblocked\u001b[39m" +
+                                        "\u001b[0m pending configuration work\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0" +
+                                        "m Hash files must now become JSON storing hash, name, and version\n    \u001b[1m" +
+                                        "\u001b[31m-\u001b[39m\u001b[0m ZIP approach needs to be reevaluated... details i" +
+                                        "n next point\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m need to work out \u001b[" +
+                                        "3m\u001b[33mglobal\u001b[39m\u001b[0m install switch\n  \u001b[1m\u001b[31m*" +
+                                        "\u001b[39m\u001b[0m Advanced configuration work is \u001b[3m\u001b[33munderway n" +
+                                        "ow\u001b[39m\u001b[0m.  Configuration details will go into the app's package.jso" +
+                                        "n\n      file.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m I need to revise the" +
+                                        " approach to creating ZIP files.  I cannot simply point to a directory and zip i" +
+                                        "t\n      for security reasons.  Instead I will need to index the child items of " +
+                                        "the target directory for addition to a ZIP\n      file.  The reason has to do wi" +
+                                        "th potential (malicious), naming collisions uniformity violations.\n    \u001b[1" +
+                                        "m\u001b[31m-\u001b[39m\u001b[0m Allow restriction of named directories when crea" +
+                                        "ting a zip so that production only packages don't have\n      dev dependencies, " +
+                                        "build systems, unit tests, systems files, and so forth\n    \u001b[1m\u001b[31m-" +
+                                        "\u001b[39m\u001b[0m Allow definition of custom default locations.\n  \u001b[1m" +
+                                        "\u001b[31m*\u001b[39m\u001b[0m Work on \u001b[1mstatus\u001b[0m is not started. " +
+                                        " This command will compare an installed application's version against a\n      p" +
+                                        "ublished version to determine if out of date.\n    \u001b[1m\u001b[31m-\u001b[39" +
+                                        "m\u001b[0m Must allow an app name as an argument to manually check that applicat" +
+                                        "ion or \u001b[3m\u001b[33mall\u001b[39m\u001b[0m to check all installed\n      a" +
+                                        "pplications\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m Status automation or in" +
+                                        "tervals would be nice... such as checking app versions once a week and providing" +
+                                        "\n      a message when out of date\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m Wo" +
+                                        "rk on \u001b[1muninstall\u001b[0m command is \u001b[3m\u001b[33mblocked\u001b[39" +
+                                        "m\u001b[0m pending completion of \u001b[1minstall\u001b[0m.\n    \u001b[1m\u001b" +
+                                        "[31m-\u001b[39m\u001b[0m Must delete the application\n    \u001b[1m\u001b[31m-" +
+                                        "\u001b[39m\u001b[0m Must remove the application from the \u001b[1mlist\u001b[0m" +
+                                        "\n\n\u001b[4m\u001b[1m\u001b[36mSupported commands\u001b[39m\u001b[0m\u001b[24m" +
+                                        "\n  Commands are the third command line argument, or second if the optional " +
+                                        "\u001b[3m\u001b[33mnode\u001b[39m\u001b[0m argument is absent.  Commands are cas" +
+                                        "e\n  insensitive, but values and local paths are case sensitive.  All local addr" +
+                                        "ess are either absolute from the root or\n  relative from the current working di" +
+                                        "rectory.\n\n  \u001b[4m\u001b[1m\u001b[32mget\u001b[39m\u001b[0m\u001b[24m\n    " +
+                                        "Merely downloads the requested resource and saves it as a file with the same fil" +
+                                        "ename. If the filename is not\n    provided in the URI the final directory up to" +
+                                        " the domain name will become the filename, and if for some reason that\n    does" +
+                                        "n't work the default filename is \u001b[3m\u001b[33mdownload.xxx\u001b[39m\u001b" +
+                                        "[0m.\n\n    Download a file to the default location, which is the provided " +
+                                        "\u001b[3m\u001b[33mdownloads\u001b[39m\u001b[0m directory.\n\n\u001b[32m    node" +
+                                        " biddle get http://google.com\u001b[39m\n\n    Download a file to an alternate l" +
+                                        "ocation.\n\n\u001b[32m    node biddle get http://google.com ../mydirectory\u001b" +
+                                        "[39m\n\n  \u001b[4m\u001b[1m\u001b[32mhash\u001b[39m\u001b[0m\u001b[24m\n    Pri" +
+                                        "nts to console a SHA512 hash against a local resource.\n\n\u001b[32m    node bid" +
+                                        "dle hash downloads/myfile.zip\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mhelp" +
+                                        "\u001b[39m\u001b[0m\u001b[24m\n    Prints the readme.md file contents to console" +
+                                        " in a human friendly way.\n\n    No command will still generate the readme data." +
+                                        "\n\n\u001b[32m    node biddle\u001b[39m\n\n    The default word wrapping is set " +
+                                        "to 100 characters.\n\n\u001b[32m    node biddle help\u001b[39m\n\n    Set a cust" +
+                                        "om word wrap limit.\n\n\u001b[32m    node biddle help 80\u001b[39m\n\n  \u001b[4" +
+                                        "m\u001b[1m\u001b[32minstall\u001b[39m\u001b[0m\u001b[24m\n    (not written yet)" +
+                                        "\n    Downloads the requested resource, but decompresses and unpackages the zip " +
+                                        "before writing files to disk.\n\n  \u001b[4m\u001b[1m\u001b[32mlist\u001b[39m" +
+                                        "\u001b[0m\u001b[24m\n    Will list all installed and/or published applications w" +
+                                        "ith their locations and latest versions.  It can take\n    the optional argument" +
+                                        " \u001b[3m\u001b[33minstalled\u001b[39m\u001b[0m or \u001b[3m\u001b[33mpublished" +
+                                        "\u001b[39m\u001b[0m to output a specific list or both lists are produced.\n\n   " +
+                                        " Only output the installed list.\n\n\u001b[32m    node biddle list installed" +
+                                        "\u001b[39m\n\n    Output both lists\n\n\u001b[32m    node biddle list\u001b[39m" +
+                                        "\n\n  \u001b[4m\u001b[1m\u001b[32mmarkdown\u001b[39m\u001b[0m\u001b[24m\n    All" +
+                                        "ows the internal markdown parser used by the \u001b[1mhelp\u001b[0m command to b" +
+                                        "e supplied to a directed file to ease reading\n    of documentation directly fro" +
+                                        "m the command line.\n\n    The first argument after the command is the address o" +
+                                        "f the file to read.\n\n\u001b[32m    node biddle markdown applications/example/r" +
+                                        "eadme.md\u001b[39m\n\n    You can also specify a custom word wrap limit.  The de" +
+                                        "fault is still 100.\n\n\u001b[32m    node biddle markdown applications/example/r" +
+                                        "eadme.md 80\u001b[39m\n\n  \u001b[4m\u001b[1m\u001b[32mpublish\u001b[39m\u001b[0" +
+                                        "m\u001b[24m\n    Writes a hash file and a zip file with a version number to the " +
+                                        "publications directory or some other specified\n    location.  Applications are " +
+                                        "required to have a file in their root directory named \u001b[3m\u001b[33mpackage" +
+                                        ".json\u001b[39m\u001b[0m with properties: \u001b[3m\u001b[33mname\u001b[39m" +
+                                        "\u001b[0m\n    and \u001b[3m\u001b[33mversion\u001b[39m\u001b[0m.\n\n    Create " +
+                                        "a zip in the default location: ./publications/myapplication\n\n\u001b[32m    nod" +
+                                        "e biddle publish ../myapplication\u001b[39m\n\n    Publish to a custom location:" +
+                                        " ./myAlternateDirectory/myapplication\n\n\u001b[32m    node biddle publish ../my" +
+                                        "application myAlternateDirectory\u001b[",
+                                name     = "biddle_test_help_120";
                             if (er !== null) {
                                 return errout({error: er, name: name, stdout: stdout, time: humantime(true)});
                             }
                             if (stder !== null && stder !== "") {
                                 return errout({error: stder, name: name, stdout: stdout, time: humantime(true)});
                             }
-                            stdout = stdout.replace(/\r\n/g, "\n").slice(0, 8192).replace(/(\\(\w+)?)$/, "");
+                            stdout = stdout
+                                .replace(/\r\n/g, "\n")
+                                .slice(0, 8192)
+                                .replace(/(\\(\w+)?)$/, "");
                             if (stdout !== helptest) {
                                 return diffFiles(name, stdout, helptest);
                             }
@@ -1021,9 +1436,9 @@
                             }
                         });
                     },
-                    lint    : function biddle_test_lint() {
+                    lint         : function biddle_test_lint() {
                         var ignoreDirectory = [
-                                ".git", "applications", "bin", "downloads", "publications"
+                                ".git", "applications", "bin", "downloads", "publications", "unittest"
                             ],
                             files           = [],
                             lintrun         = function biddle_test_lint_lintrun() {
@@ -1070,7 +1485,7 @@
                                             .warnings
                                             .forEach(report);
                                         if (failed === true) {
-                                            return errout({error:"\u001b[31mLint fail\u001b[39m :(", name: "biddle_test_lint_lintrun_lintit", time:humantime(true)});
+                                            return errout({error: "\u001b[31mLint fail\u001b[39m :(", name: "biddle_test_lint_lintrun_lintit", time: humantime(true)});
                                         }
                                         console.log(humantime(false) + "\u001b[32mLint is good for file " + (ind + 1) + ":\u001b[39m " + val[0]);
                                         if (ind === arr.length - 1) {
@@ -1105,32 +1520,28 @@
                             ignoreDirectory.push(modules[mod].dir);
                         });
                         (function biddle_test_lint_getFiles() {
-                            var fc       = 0,
-                                ft       = 0,
-                                total    = 0,
-                                count    = 0,
-                                flag     = {
-                                    files: false,
-                                    items: false
-                                },
-                                idLen    = ignoreDirectory.length,
-                                readFile = function biddle_test_lint_getFiles_readFile(filePath) {
+                            var enddir    = 0,
+                                enditem   = 0,
+                                endread   = 0,
+                                startdir  = 0,
+                                startitem = 0,
+                                startread = 0,
+                                idLen     = ignoreDirectory.length,
+                                readFile  = function biddle_test_lint_getFiles_readFile(filePath) {
                                     fs
                                         .readFile(filePath, "utf8", function biddle_test_lint_getFiles_readFile_callback(err, data) {
                                             if (err !== null && err !== undefined) {
                                                 return errout({error: err, name: "biddle_test_lint_getFiles_readFile_callback", time: humantime(false)});
                                             }
-                                            fc += 1;
-                                            if (ft === fc) {
-                                                flag.files = true;
-                                            }
                                             files.push([filePath, data]);
-                                            if (flag.files === true && flag.items === true) {
+                                            endread += 1;
+                                            if (endread === startread && enditem === startitem && enddir === startdir) {
                                                 lintrun();
                                             }
                                         });
                                 },
-                                readDir  = function biddle_test_lint_getFiles_readDir(filepath) {
+                                readDir   = function biddle_test_lint_getFiles_readDir(filepath) {
+                                    startdir += 1;
                                     fs
                                         .readdir(filepath, function biddle_test_lint_getFiles_readDir_callback(erra, list) {
                                             var fileEval = function biddle_test_lint_getFiles_readDir_callback_fileEval(val) {
@@ -1138,34 +1549,26 @@
                                                     ? filepath + val
                                                     : filepath + path.sep + val;
                                                 fs.stat(filename, function biddle_test_lint_getFiles_readDir_callback_fileEval_stat(errb, stat) {
-                                                    var a         = 0,
-                                                        ignoreDir = false;
+                                                    var a = 0;
                                                     if (errb !== null) {
                                                         return errout({error: errb, name: "biddle_test_lint_getFiles_readDir_callback_fileEval_stat", time: humantime(false)});
                                                     }
-                                                    count += 1;
-                                                    if (count === total) {
-                                                        flag.items = true;
-                                                    }
+                                                    enditem += 1;
                                                     if (stat.isFile() === true && (/(\.js)$/).test(filename) === true) {
-                                                        ft += 1;
+                                                        startread += 1;
                                                         readFile(filename);
                                                     }
                                                     if (stat.isDirectory() === true) {
                                                         do {
                                                             if (filename === ignoreDirectory[a]) {
-                                                                ignoreDir = true;
-                                                                break;
+                                                                if (endread === startread && enditem === startitem && enddir === startdir) {
+                                                                    lintrun();
+                                                                }
+                                                                return;
                                                             }
                                                             a += 1;
                                                         } while (a < idLen);
-                                                        if (ignoreDir === true) {
-                                                            if (flag.files === true && flag.items === true) {
-                                                                lintrun();
-                                                            }
-                                                        } else {
-                                                            biddle_test_lint_getFiles_readDir(filename);
-                                                        }
+                                                        biddle_test_lint_getFiles_readDir(filename);
                                                     }
                                                 });
                                             };
@@ -1176,20 +1579,21 @@
                                                     time : humantime(false)
                                                 });
                                             }
-                                            total += list.length;
+                                            enddir    += 1;
+                                            startitem += list.length;
                                             list.forEach(fileEval);
                                         });
                                 };
                             readDir(data.abspath);
                         }());
                     },
-                    markdown: function biddle_test_markdown() {
+                    markdown     : function biddle_test_markdown() {
                         var flag = {
                             "120": false,
                             "60" : false,
                             "80" : false
                         };
-                        child(childcmd + "markdown biddletest" + path.sep + "README.md 60 childtest", function biddle_test_markdown_60(er, stdout, stder) {
+                        child(childcmd + "markdown test" + path.sep + "biddletesta" + path.sep + "READMEa.md 60 childtest", function biddle_test_markdown_60(er, stdout, stder) {
                             var markdowntest = "\nTry it online at http://prettydiff.com/,\n(\u001b[36mhttp://prettydiff.com/" +
                                         "\u001b[39m).\n\n\u001b[4m\u001b[1m\u001b[31mPretty Diff logo Pretty Diff\u001b[3" +
                                         "9m\u001b[0m\u001b[24m\n\nTravis CI Build,\n(\u001b[36mhttps://travis-ci.org/pret" +
@@ -1315,14 +1719,17 @@
                                         "distributions of source code must retain\n      the above copyright notice, this" +
                                         " list of conditions\n      and the following disclaimer.\n    \u001b[1m\u001b[31" +
                                         "m-\u001b[39m\u001b[0m Redistributions in binary form must\n      reproduce the",
-                                name     = "biddle_test_markdown_60";
+                                name         = "biddle_test_markdown_60";
                             if (er !== null) {
                                 return errout({error: er, name: name, stdout: stdout, time: humantime(true)});
                             }
                             if (stder !== null && stder !== "") {
                                 return errout({error: stder, name: name, stdout: stdout, time: humantime(true)});
                             }
-                            stdout = stdout.replace(/\r\n/g, "\n").slice(0, 8192).replace(/(\\(\w+)?)$/, "");
+                            stdout = stdout
+                                .replace(/\r\n/g, "\n")
+                                .slice(0, 8192)
+                                .replace(/(\\(\w+)?)$/, "");
                             if (stdout !== markdowntest) {
                                 return diffFiles(name, stdout, markdowntest);
                             }
@@ -1332,7 +1739,7 @@
                                 next();
                             }
                         });
-                        child(childcmd + "markdown biddletest" + path.sep + "README.md 80 childtest", function biddle_test_markdown_80(er, stdout, stder) {
+                        child(childcmd + "markdown test" + path.sep + "biddletesta" + path.sep + "READMEa.md 80 childtest", function biddle_test_markdown_80(er, stdout, stder) {
                             var markdowntest = "\nTry it online at http://prettydiff.com/, (\u001b[36mhttp://prettydiff.com/" +
                                         "\u001b[39m).\n\n\u001b[4m\u001b[1m\u001b[31mPretty Diff logo Pretty Diff\u001b[3" +
                                         "9m\u001b[0m\u001b[24m\n\nTravis CI Build, (\u001b[36mhttps://travis-ci.org/prett" +
@@ -1458,14 +1865,17 @@
                                         "nditions and the following disclaimer.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b" +
                                         "[0m Redistributions in binary form must reproduce the above\n      copyright not" +
                                         "ice, this list of conditions and the following disclaimer i",
-                                name     = "biddle_test_markdown_80";
+                                name         = "biddle_test_markdown_80";
                             if (er !== null) {
                                 return errout({error: er, name: name, stdout: stdout, time: humantime(true)});
                             }
                             if (stder !== null && stder !== "") {
                                 return errout({error: stder, name: name, stdout: stdout, time: humantime(true)});
                             }
-                            stdout = stdout.replace(/\r\n/g, "\n").slice(0, 8192).replace(/(\\(\w+)?)$/, "");
+                            stdout = stdout
+                                .replace(/\r\n/g, "\n")
+                                .slice(0, 8192)
+                                .replace(/(\\(\w+)?)$/, "");
                             if (stdout !== markdowntest) {
                                 return diffFiles(name, stdout, markdowntest);
                             }
@@ -1475,7 +1885,7 @@
                                 next();
                             }
                         });
-                        child(childcmd + "markdown biddletest" + path.sep + "README.md 120 childtest", function biddle_test_markdown_120(er, stdout, stder) {
+                        child(childcmd + "markdown test" + path.sep + "biddletesta" + path.sep + "READMEa.md 120 childtest", function biddle_test_markdown_120(er, stdout, stder) {
                             var markdowntest = "\nTry it online at http://prettydiff.com/, (\u001b[36mhttp://prettydiff.com/" +
                                         "\u001b[39m).\n\n\u001b[4m\u001b[1m\u001b[31mPretty Diff logo Pretty Diff\u001b[3" +
                                         "9m\u001b[0m\u001b[24m\n\nTravis CI Build, (\u001b[36mhttps://travis-ci.org/prett" +
@@ -1601,14 +2011,17 @@
                                         "binary form must reproduce the above copyright notice, this list of conditions a" +
                                         "nd\n      the following disclaimer in the documentation and/or other materials p" +
                                         "rovided with the distribution.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b",
-                                name     = "biddle_test_markdown_120";
+                                name         = "biddle_test_markdown_120";
                             if (er !== null) {
                                 return errout({error: er, name: name, stdout: stdout, time: humantime(true)});
                             }
                             if (stder !== null && stder !== "") {
                                 return errout({error: stder, name: name, stdout: stdout, time: humantime(true)});
                             }
-                            stdout = stdout.replace(/\r\n/g, "\n").slice(0, 8192).replace(/(\\(\w+)?)$/, "");
+                            stdout = stdout
+                                .replace(/\r\n/g, "\n")
+                                .slice(0, 8192)
+                                .replace(/(\\(\w+)?)$/, "");
                             if (stdout !== markdowntest) {
                                 return diffFiles(name, stdout, markdowntest);
                             }
@@ -1666,7 +2079,7 @@
                                                     ind += 1;
                                                     editions(mod, true, ind);
                                                     return stdoutb;
-                                                })
+                                                });
                                                 return stdouta;
                                             });
                                         };
@@ -1830,17 +2243,22 @@
                         };
                         process.chdir(__dirname);
                         apps.rmrecurse(testpath, function biddle_test_moduleInstall_rmrecurse() {
-                            apps.makedir(testpath, function biddle_test_moduleInstall_makedir() {
-                                handler(0);
-                            });
+                            apps
+                                .makedir(testpath, function biddle_test_moduleInstall_makedir() {
+                                    handler(0);
+                                });
                         });
                     },
-                    publish : function biddle_test_publish() {
-                        child(childcmd + "publish " + data.abspath + "biddletest childtest", function biddle_test_publish_child(er, stdout, stder) {
-                            var publishtest = "File publications/biddletest/biddletest_latest.zip written at xxx bytes.\nFile publications/biddletest/biddletest_xxx.zip written at xxx bytes.",
-                                outputs = stdout.replace(/(\s+)$/, "").replace("\r\n", "\n").split("\n"),
-                                output = "",
-                                abspath = new RegExp(data.abspath.replace(/\\/g, "\\\\"), "g");
+                    publish      : function biddle_test_publish() {
+                        child(childcmd + "publish " + data.abspath + "test" + path.sep + "biddletesta childtest", function biddle_test_publish_child(er, stdout, stder) {
+                            var publishtest = "File publications/biddletesta/biddletesta_latest.zip written at xxx bytes.\nFile p" +
+                                            "ublications/biddletesta/biddletesta_xxx.zip written at xxx bytes.",
+                                outputs     = stdout
+                                    .replace(/(\s+)$/, "")
+                                    .replace("\r\n", "\n")
+                                    .split("\n"),
+                                output      = "",
+                                abspath     = new RegExp(data.abspath.replace(/\\/g, "\\\\"), "g");
                             if (er !== null) {
                                 errout({error: er, name: "biddle_test_publish_child", stdout: stdout, time: humantime(true)});
                             }
@@ -1849,88 +2267,114 @@
                             }
                             outputs[0] = "File " + outputs[0].slice(outputs[0].indexOf("publications"));
                             outputs[1] = "File " + outputs[1].slice(outputs[1].indexOf("publications"));
-                            if (outputs[1].indexOf("biddletest_latest.zip") > 0) {
+                            if (outputs[1].indexOf("biddletesta_latest.zip") > 0) {
                                 outputs.push(outputs[0]);
                                 outputs.splice(0, 1);
                             }
                             output = outputs.join("\n");
                             output = output.replace(/\\/g, "/");
-                            output = output.replace(/biddletest_\d+\.\d+\.\d+\.zip/, "biddletest_xxx.zip").replace(/\d+(,\d+)*\u0020bytes/g, "xxx bytes").replace(abspath, "");
-                            if (output !== publishtest) {console.log(output);console.log(publishtest);
+                            output = output
+                                .replace(/biddletesta_\d+\.\d+\.\d+\.zip/, "biddletesta_xxx.zip")
+                                .replace(/\d+(,\d+)*\u0020bytes/g, "xxx bytes")
+                                .replace(abspath, "");
+                            if (output !== publishtest) {
+                                console.log(output);
+                                console.log(publishtest);
                                 return diffFiles("biddle_test_publish_child", output, publishtest);
                             }
-                            fs.readFile(data.abspath + "published.json", "utf8", function biddle_test_publish_child_readJSON(err, fileData) {
-                                var jsondata = {},
-                                    pub = data.abspath + "publications" + path.sep + "biddletest";
-                                if (err !== null && err !== undefined) {
-                                    return errout({error: err, name: "biddle_test_publish_child_readJSON", stdout: stdout, time: humantime(true)});
-                                }
-                                jsondata = JSON.parse(fileData);
-                                if (jsondata.biddletest === undefined) {
-                                    return errout({error: "No biddletest property in published.json file.", name: "biddle_test_publish_child_readJSON", stdout: stdout, time: humantime(true)});
-                                }
-                                fs.readdir(pub, function biddle_test_publish_child_readJSON_readdir(errr, files) {
-                                    var filetest = "biddletest_v.hash,biddletest_v.zip,biddletest_latest.hash,biddletest_latest.zip",
-                                        filelist = "biddletest_v.hash,biddletest_v.zip," + files.sort().join(",").replace(/biddletest_\d+\.\d+\.\d+\.((zip)|(hash)),/g, ""),
-                                        stats    = {},
-                                        statfile = function biddle_test_publish_child_readJSON_readdir_statfile(index) {
-                                            stats[files[index]] = false;
-                                            fs.stat(pub + path.sep + files[index], function biddle_test_publish_child_readJSON_readdir_statfile_statback(errs, statobj) {
-                                                if (errs !== null) {
-                                                    return errout({error: errs, name: "biddle_test_publish_child_readJSON_readdir_statfile_statback", stdout: stdout, time: humantime(true)});
-                                                }
-                                                if (files[index].indexOf(".hash") === files[index].length - 5 && statobj.size !== 128) {
-                                                    return errout({error: "Expected hash file " + files[index] + " to be file size 128.", name: "biddle_test_publish_child_readJSON_readdir_statfile_statback", stdout: stdout, time: humantime(true)});
-                                                }
-                                                if (files[index].indexOf(".zip") === files[index].length - 4 && statobj.size > 20000) {
-                                                    return errout({error: "Zip file " + files[index] + " is too big at " + apps.commas(statobj.size) + ".", name: "biddle_test_publish_child_readJSON_readdir_statfile_statback", stdout: stdout, time: humantime(true)});
-                                                }
-                                                console.log(humantime(false) + " " + files[index] + " present at size " + apps.commas(statobj.size) + " bytes.");
-                                                stats[files[index]] = true;
-                                                if (stats[files[0]] === true && stats[files[1]] === true && stats[files[2]] === true && stats[files[3]] === true) {
-                                                    console.log(humantime(false) + " \u001b[32mpublish test passed.\u001b[39m");
-                                                    child(childcmd + "publish " + data.abspath + "biddletest childtest", function biddle_test_publish_child_readJSON_readdir_statfile_statback_publish(erx, stdoutx, stderx) {
-                                                        var publishagain = "\u001b[1m\u001b[36mFunction:\u001b[39m\u001b[0m biddle_zip_zipfunction\n\u001b[1m\u001b[31mError:\u001b[39m\u001b[0m Attempted to publish biddletest over existing version",
-                                                            stack = [];
-                                                        if (erx !== null) {
-                                                            if (typeof erx.stack === "string") {
-                                                                stack = erx.stack.split(" at ");
-                                                            }
-                                                            if (stack.length < 1 || stack[1].indexOf("ChildProcess.exithandler (child_process.js:2") < 0) {
-                                                                return errout({error: erx, name: "biddle_test_publish_child_readJSON_readdir_statfile_statback_publish", stdout: stdout, time: humantime(true)});
-                                                            }
+                            fs
+                                .readFile(data.abspath + "published.json", "utf8", function biddle_test_publish_child_readJSON(err, fileData) {
+                                    var jsondata = {},
+                                        pub      = data.abspath + "publications" + path.sep + "biddletesta";
+                                    if (err !== null && err !== undefined) {
+                                        return errout({error: err, name: "biddle_test_publish_child_readJSON", stdout: stdout, time: humantime(true)});
+                                    }
+                                    jsondata = JSON.parse(fileData);
+                                    if (jsondata.biddletest === undefined) {
+                                        return errout({error: "No biddletesta property in published.json file.", name: "biddle_test_publish_child_readJSON", stdout: stdout, time: humantime(true)});
+                                    }
+                                    fs
+                                        .readdir(pub, function biddle_test_publish_child_readJSON_readdir(errr, files) {
+                                            var filetest = "biddletesta_v.hash,biddletesta_v.zip,biddletesta_latest.hash,biddletesta_latest.zip",
+                                                filelist = "biddletesta_v.hash,biddletesta_v.zip," + files
+                                                    .sort()
+                                                    .join(",")
+                                                    .replace(/biddletesta_\d+\.\d+\.\d+\.((zip)|(hash)),/g, ""),
+                                                stats    = {},
+                                                statfile = function biddle_test_publish_child_readJSON_readdir_statfile(index) {
+                                                    stats[files[index]] = false;
+                                                    fs.stat(pub + path.sep + files[index], function biddle_test_publish_child_readJSON_readdir_statfile_statback(errs, statobj) {
+                                                        if (errs !== null) {
+                                                            return errout({error: errs, name: "biddle_test_publish_child_readJSON_readdir_statfile_statback", stdout: stdout, time: humantime(true)});
                                                         }
-                                                        if (stderx !== null && stderx !== "") {
-                                                            return errout({error: stderx, name: "biddle_test_publish_child_readJSON_readdir_statfile_statback_publish", stdout: stdout, time: humantime(true)});
+                                                        if (files[index].indexOf(".hash") === files[index].length - 5 && statobj.size !== 128) {
+                                                            return errout({
+                                                                error : "Expected hash file " + files[index] + " to be file size 128.",
+                                                                name  : "biddle_test_publish_child_readJSON_readdir_statfile_statback",
+                                                                stdout: stdout,
+                                                                time  : humantime(true)
+                                                            });
                                                         }
-                                                        stdoutx = stdoutx.replace("\r\n", "\n").replace(/(\u0020\d+\.\d+\.\d+\s*)$/, "");
-                                                        if (stdoutx !== publishagain) {
-                                                            return diffFiles("biddle_test_publish_child_readJSON_readdir_statfile_statback_publish", stdoutx, publishagain);
+                                                        if (files[index].indexOf(".zip") === files[index].length - 4 && statobj.size > 20000) {
+                                                            return errout({
+                                                                error : "Zip file " + files[index] + " is too big at " + apps.commas(statobj.size) + ".",
+                                                                name  : "biddle_test_publish_child_readJSON_readdir_statfile_statback",
+                                                                stdout: stdout,
+                                                                time  : humantime(true)
+                                                            });
                                                         }
-                                                        console.log(humantime(false) + " \u001b[32mRedundant publish test (error messaging) passed.\u001b[39m");
-                                                        next();
+                                                        console.log(humantime(false) + " " + files[index] + " present at size " + apps.commas(statobj.size) + " bytes.");
+                                                        stats[files[index]] = true;
+                                                        if (stats[files[0]] === true && stats[files[1]] === true && stats[files[2]] === true && stats[files[3]] === true) {
+                                                            console.log(humantime(false) + " \u001b[32mpublish test passed.\u001b[39m");
+                                                            child(childcmd + "publish " + data.abspath + "test" + path.sep + "biddletesta childtest", function biddle_test_publish_child_readJSON_readdir_statfile_statback_publish(erx, stdoutx, stderx) {
+                                                                var publishagain = "\u001b[1m\u001b[36mFunction:\u001b[39m\u001b[0m biddle_zip_zipfunction\n\u001b[1" +
+                                                                                 "m\u001b[31mError:\u001b[39m\u001b[0m Attempted to publish biddletesta over existi" +
+                                                                                 "ng version",
+                                                                    stack        = [];
+                                                                if (erx !== null) {
+                                                                    if (typeof erx.stack === "string") {
+                                                                        stack = erx
+                                                                            .stack
+                                                                            .split(" at ");
+                                                                    }
+                                                                    if (stack.length < 1 || stack[1].indexOf("ChildProcess.exithandler (child_process.js:2") < 0) {
+                                                                        return errout({error: erx, name: "biddle_test_publish_child_readJSON_readdir_statfile_statback_publish", stdout: stdout, time: humantime(true)});
+                                                                    }
+                                                                }
+                                                                if (stderx !== null && stderx !== "") {
+                                                                    return errout({error: stderx, name: "biddle_test_publish_child_readJSON_readdir_statfile_statback_publish", stdout: stdout, time: humantime(true)});
+                                                                }
+                                                                stdoutx = stdoutx
+                                                                    .replace("\r\n", "\n")
+                                                                    .replace(/(\u0020\d+\.\d+\.\d+\s*)$/, "");
+                                                                if (stdoutx !== publishagain) {
+                                                                    return diffFiles("biddle_test_publish_child_readJSON_readdir_statfile_statback_publish", stdoutx, publishagain);
+                                                                }
+                                                                console.log(humantime(false) + " \u001b[32mRedundant publish test (error messaging) passed.\u001b[39m");
+                                                                next();
+                                                            });
+                                                        }
                                                     });
-                                                }
-                                            });
-                                        };
-                                    if (errr !== null) {
-                                        return errout({error: errr, name: "biddle_test_publish_child_readJSON_readdir", stdout: stdout, time: humantime(true)});
-                                    }
-                                    if (filelist !== filetest) {
-                                        return diffFiles("biddle_test_publish_child_readJSON_readdir", filelist, filetest);
-                                    }
-                                    statfile(0);
-                                    statfile(1);
-                                    statfile(2);
-                                    statfile(3);
+                                                };
+                                            if (errr !== null) {
+                                                return errout({error: errr, name: "biddle_test_publish_child_readJSON_readdir", stdout: stdout, time: humantime(true)});
+                                            }
+                                            if (filelist !== filetest) {
+                                                return diffFiles("biddle_test_publish_child_readJSON_readdir", filelist, filetest);
+                                            }
+                                            statfile(0);
+                                            statfile(1);
+                                            statfile(2);
+                                            statfile(3);
+                                        });
+                                    return stdout;
                                 });
-                                return stdout;
-                            });
                         });
                     },
-                    unpublish: function biddle_test_unpublish() {
-                        child(childcmd + "unpublish biddletest childtest", function biddle_test_unpublish_child(er, stdout, stder) {
-                            var unpubtest = "App \u001b[36mbiddletest\u001b[39m is unpublished.";
+                    unpublish    : function biddle_test_unpublish() {
+                        child(childcmd + "unpublish biddletesta childtest", function biddle_test_unpublish_child(er, stdout, stder) {
+                            var unpubtest = "App \u001b[36mbiddletesta\u001b[39m is unpublished.";
                             if (er !== null) {
                                 return errout({error: er, name: "biddle_test_unpublish_child", stdout: stdout, time: humantime(true)});
                             }
@@ -1941,112 +2385,140 @@
                             if (stdout !== unpubtest) {
                                 return diffFiles("biddle_test_unpublish_child", stdout, unpubtest);
                             }
-                            if (data.published.biddletest !== undefined) {
-                                return errout({error: "biddletest property not removed from data.published object", name: "biddle_test_unpublish_child", stdout: stdout, time: humantime(true)});
+                            if (data.published.biddletesta !== undefined) {
+                                return errout({error: "biddletesta property not removed from data.published object", name: "biddle_test_unpublish_child", stdout: stdout, time: humantime(true)});
                             }
-                            fs.stat(data.abspath + "publications" + path.sep + "biddletest", function biddle_test_unpublish_child_stat(err, stat) {
-                                if (err !== null && err.toString().indexOf("no such file or directory") < 0) {
-                                    return errout({error: err, name: "biddle_test_unpublish_child_stat", time: humantime(true)});
-                                }
-                                if (stat !== undefined && stat.isDirectory() === true) {
-                                    return errout({error: "publications" + path.sep + "biddletest directory not deleted by unpublish command", name: "biddle_test_unpublish_child_stat", stdout: stdout, time: humantime(true)});
-                                }
-                                if (err.toString().indexOf("no such file or directory") > 0) {
-                                    fs.readFile(data.abspath + "published.json", function biddle_test_unpublish_child_stat_readfile(erf, filedata) {
-                                        var jsondata = {};
-                                        if (erf !== null && erf !== undefined) {
-                                            return errout({error: erf, name: "biddle_test_unpublish_child_stat_readfile", stdout: stdout, time: humantime(true)});
-                                        }
-                                        jsondata = JSON.parse(filedata);
-                                        if (jsondata.biddletest !== undefined) {
-                                            return errout({error: "biddletest property still present in published.json file", name: "biddle_test_unpublish_child_stat_readfile", stdout: stdout, time: humantime(true)});
-                                        }
-                                        console.log(humantime(false) + " \u001b[32munpublish test passed.\u001b[39m");
-                                        child(childcmd + "unpublish biddletest childtest", function biddle_test_unpublish_child_stat_readfile_again(erx, stdoutx, stderx) {
-                                            var unpubagain = "Attempted to unpublish \u001b[36mbiddletest\u001b[39m which is \u001b[1m\u001b[31mabsent\u001b[39m\u001b[0m from the list o" +
-                                                    "f published applications. Try using the command \u001b[32mbiddle list published" +
-                                                    "\u001b[39m.",
-                                                stack = [];
-                                            if (erx !== null) {
-                                                if (typeof erx.stack === "string") {
-                                                    stack = erx.stack.split(" at ");
-                                                }
-                                                if (stack.length < 1 || stack[1].indexOf("ChildProcess.exithandler (child_process.js:202:12)") < 0) {
-                                                    return errout({error: erx, name: "biddle_test_unpublish_child_stat_readfile_again", stdout: stdout, time: humantime(true)});
-                                                }
-                                            }
-                                            if (stderx !== null && stderx !== "") {
-                                                return errout({error: stderx, name: "biddle_test_unpublish_child_stat_readfile_again", stdout: stdout, time: humantime(true)});
-                                            }
-                                            stdoutx = stdoutx.replace(/(\s+)$/, "");
-                                            if (stdoutx !== unpubagain) {
-                                                return diffFiles("biddle_test_unpublish_child_stat_readfile_again", stdoutx, unpubagain);
-                                            }
-                                            console.log(humantime(false) + " \u001b[32mRedundant unpublish test (error messaging) passed.\u001b[39m");
-                                            next();
+                            fs
+                                .stat(data.abspath + "publications" + path.sep + "biddletesta", function biddle_test_unpublish_child_stat(err, stat) {
+                                    if (err !== null && err.toString().indexOf("no such file or directory") < 0) {
+                                        return errout({error: err, name: "biddle_test_unpublish_child_stat", time: humantime(true)});
+                                    }
+                                    if (stat !== undefined && stat.isDirectory() === true) {
+                                        return errout({
+                                            error : "publications" + path.sep + "biddletesta directory not deleted by unpublish command",
+                                            name  : "biddle_test_unpublish_child_stat",
+                                            stdout: stdout,
+                                            time  : humantime(true)
                                         });
-                                    });
-                                } else {
-                                    return errout({error: "directory publications" + path.sep + "biddletest changed to something else and not deleted", name: "biddle_test_unpublish_child_stat", stdout: stdout, time: humantime(true)});
-                                }
-                            });
+                                    }
+                                    if (err.toString().indexOf("no such file or directory") > 0) {
+                                        fs
+                                            .readFile(data.abspath + "published.json", function biddle_test_unpublish_child_stat_readfile(erf, filedata) {
+                                                var jsondata = {};
+                                                if (erf !== null && erf !== undefined) {
+                                                    return errout({error: erf, name: "biddle_test_unpublish_child_stat_readfile", stdout: stdout, time: humantime(true)});
+                                                }
+                                                jsondata = JSON.parse(filedata);
+                                                if (jsondata.biddletesta !== undefined) {
+                                                    return errout({error: "biddletesta property still present in published.json file", name: "biddle_test_unpublish_child_stat_readfile", stdout: stdout, time: humantime(true)});
+                                                }
+                                                console.log(humantime(false) + " \u001b[32munpublish test passed.\u001b[39m");
+                                                child(childcmd + "unpublish biddletesta childtest", function biddle_test_unpublish_child_stat_readfile_again(erx, stdoutx, stderx) {
+                                                    var unpubagain = "Attempted to unpublish \u001b[36mbiddletesta\u001b[39m which is \u001b[1m\u001b[3" +
+                                                                   "1mabsent\u001b[39m\u001b[0m from the list of published applications. Try using t" +
+                                                                   "he command \u001b[32mbiddle list published\u001b[39m.",
+                                                        stack      = [];
+                                                    if (erx !== null) {
+                                                        if (typeof erx.stack === "string") {
+                                                            stack = erx
+                                                                .stack
+                                                                .split(" at ");
+                                                        }
+                                                        if (stack.length < 1 || stack[1].indexOf("ChildProcess.exithandler (child_process.js:202:12)") < 0) {
+                                                            return errout({error: erx, name: "biddle_test_unpublish_child_stat_readfile_again", stdout: stdout, time: humantime(true)});
+                                                        }
+                                                    }
+                                                    if (stderx !== null && stderx !== "") {
+                                                        return errout({error: stderx, name: "biddle_test_unpublish_child_stat_readfile_again", stdout: stdout, time: humantime(true)});
+                                                    }
+                                                    stdoutx = stdoutx.replace(/(\s+)$/, "");
+                                                    if (stdoutx !== unpubagain) {
+                                                        return diffFiles("biddle_test_unpublish_child_stat_readfile_again", stdoutx, unpubagain);
+                                                    }
+                                                    console.log(humantime(false) + " \u001b[32mRedundant unpublish test (error messaging) passed.\u001b[39m");
+                                                    next();
+                                                });
+                                            });
+                                    } else {
+                                        return errout({
+                                            error : "directory publications" + path.sep + "biddletesta changed to something else and not deleted",
+                                            name  : "biddle_test_unpublish_child_stat",
+                                            stdout: stdout,
+                                            time  : humantime(true)
+                                        });
+                                    }
+                                });
                         });
                     },
-                    unzip   : function biddle_test_unzip() {
-                        child(childcmd + "unzip " + data.abspath + "unittest" + path.sep + "biddletest.zip " + data.abspath + "unittest" + path.sep + "unzip childtest", function biddle_test_unzip_child(er, stdout, stder) {
+                    unzip        : function biddle_test_unzip() {
+                        child(childcmd + "unzip " + data.abspath + "unittest" + path.sep + "biddletesta.zip " + data.abspath + "unittest" + path.sep + "unzip childtest", function biddle_test_unzip_child(er, stdout, stder) {
                             if (er !== null) {
                                 return errout({error: er, name: "biddle_test_unzip_child", stdout: stdout, time: humantime(true)});
                             }
                             if (stder !== null && stder !== "") {
                                 return errout({error: stder, name: "biddle_test_unzip_child", stdout: stdout, time: humantime(true)});
                             }
-                            fs.stat(testpath + path.sep + "unzip" + path.sep + "biddletest.js", function biddle_test_unzip_child_stat(err, stat) {
-                                if (err !== null) {
-                                    return errout({error: err, name: "biddle_test_unzip_child_stat", stdout: stdout, time: humantime(true)});
-                                }
-                                if (stat.size < 10000) {
-                                    return errout({error: "\u001b[31munzip test failed.\u001b[39m.", name: "biddle_test_unzip_child_stat", stdout: stdout, time: humantime(true)});
-                                }
-                                console.log(humantime(false) + " \u001b[32mbiddletest.js unzipped.\u001b[39m");
-                                fs.readdir(testpath + path.sep + "unzip", function biddle_test_unzip_child_stat_readDir(erd, files) {
-                                    var count = 5;
-                                    if (erd !== null) {
-                                        return errout({error: erd, name: "biddle_test_unzip_child_stat_readDir", stdout: stdout, time: humantime(true)});
+                            fs
+                                .stat(testpath + path.sep + "unzip" + path.sep + "biddletesta.js", function biddle_test_unzip_child_stat(err, stat) {
+                                    if (err !== null) {
+                                        return errout({error: err, name: "biddle_test_unzip_child_stat", stdout: stdout, time: humantime(true)});
                                     }
-                                    if (files.length !== count) {
-                                        return errout({error: "Expected " + count + " items unzipped, but there are " + files.length + ".", name: "biddle_test_unzip_child_stat_readDir", stdout: stdout, time: humantime(true)});
+                                    if (stat.size < 10000) {
+                                        return errout({error: "\u001b[31munzip test failed.\u001b[39m.", name: "biddle_test_unzip_child_stat", stdout: stdout, time: humantime(true)});
                                     }
-                                    console.log(humantime(false) + " \u001b[32m" + count + " items unzipped.\u001b[39m");
-                                    console.log(humantime(false) + " \u001b[32munzip test passed.\u001b[39m");
-                                    next();
+                                    console.log(humantime(false) + " \u001b[32mbiddletesta.js unzipped.\u001b[39m");
+                                    fs.readdir(testpath + path.sep + "unzip", function biddle_test_unzip_child_stat_readDir(erd, files) {
+                                        var count = 5;
+                                        if (erd !== null) {
+                                            return errout({error: erd, name: "biddle_test_unzip_child_stat_readDir", stdout: stdout, time: humantime(true)});
+                                        }
+                                        if (files.length !== count) {
+                                            return errout({
+                                                error : "Expected " + count + " items unzipped, but there are " + files.length + ".",
+                                                name  : "biddle_test_unzip_child_stat_readDir",
+                                                stdout: stdout,
+                                                time  : humantime(true)
+                                            });
+                                        }
+                                        console.log(humantime(false) + " \u001b[32m" + count + " items unzipped.\u001b[39m");
+                                        console.log(humantime(false) + " \u001b[32munzip test passed.\u001b[39m");
+                                        next();
+                                    });
+                                    return stdout;
                                 });
-                                return stdout;
-                            });
                         });
                     },
-                    zip     : function biddle_test_zip() {
-                        child(childcmd + "zip " + data.abspath + "biddletest " + data.abspath + "unittest childtest", function biddle_test_zip_child(er, stdout, stder) {
-                            var ziptest = "Zip file written: unittest" + path.sep + "biddletest.zip";
+                    zip          : function biddle_test_zip() {
+                        child(childcmd + "zip " + data.abspath + "test" + path.sep + "biddletesta " + data.abspath + "unittest childtest", function biddle_test_zip_child(er, stdout, stder) {
+                            var ziptest = "Zip file written: unittest" + path.sep + "biddletesta.zip";
                             if (er !== null) {
                                 return errout({error: er, name: "biddle_test_zip_child", stdout: stdout, time: humantime(true)});
                             }
                             if (stder !== null && stder !== "") {
                                 return errout({error: stder, name: "biddle_test_zip_child", stdout: stdout, time: humantime(true)});
                             }
-                            stdout = stdout.replace(/(\s+)$/, "").replace(data.abspath, "");
+                            stdout = stdout
+                                .replace(/(\s+)$/, "")
+                                .replace(data.abspath, "");
                             if (stdout !== ziptest) {
                                 return diffFiles("biddle_test_zip_child", stdout, ziptest);
                             }
-                            fs.stat(testpath + path.sep + "biddletest.zip", function biddle_test_zip_stat(err, stat) {
-                                if (err !== null) {
-                                    return errout({error: err, name: "biddle_test_zip_stat", stdout: stdout, time: humantime(true)});
-                                }
-                                if (stat.size > 20000) {
-                                    return errout({error: "Zip file is too large at " + apps.commas(stat.size) + " bytes.", name: "biddle_test_zip_stat", stdout: stdout, time: humantime(true)});
-                                }
-                                console.log(humantime(false) + " \u001b[32mzip test passed.\u001b[39m File " + data.abspath + "unittest" + path.sep + "biddletest.zip written at " + apps.commas(stat.size) + " bytes.");
-                                next();
-                            });
+                            fs
+                                .stat(testpath + path.sep + "biddletesta.zip", function biddle_test_zip_stat(err, stat) {
+                                    if (err !== null) {
+                                        return errout({error: err, name: "biddle_test_zip_stat", stdout: stdout, time: humantime(true)});
+                                    }
+                                    if (stat.size > 20000) {
+                                        return errout({
+                                            error : "Zip file is too large at " + apps.commas(stat.size) + " bytes.",
+                                            name  : "biddle_test_zip_stat",
+                                            stdout: stdout,
+                                            time  : humantime(true)
+                                        });
+                                    }
+                                    console.log(humantime(false) + " \u001b[32mzip test passed.\u001b[39m File " + data.abspath + "unittest" + path.sep + "biddletesta.zip written at " + apps.commas(stat.size) + " bytes.");
+                                    next();
+                                });
                         });
                     }
                 };
@@ -2073,34 +2545,42 @@
         };
     errout           = function biddle_errout(errData) {
         var error = (typeof errData.error !== "string" || errData.error.toString().indexOf("Error: ") === 0)
-                ? errData.error.toString().replace("Error: ", "\u001b[1m\u001b[31mError:\u001b[39m\u001b[0m ")
-                : "\u001b[1m\u001b[31mError:\u001b[39m\u001b[0m " + errData.error.toString(),
+                ? errData
+                    .error
+                    .toString()
+                    .replace("Error: ", "\u001b[1m\u001b[31mError:\u001b[39m\u001b[0m ")
+                : "\u001b[1m\u001b[31mError:\u001b[39m\u001b[0m " + errData
+                    .error
+                    .toString(),
             stack = new Error().stack;
         if (data.platform === "win32") {
             stack = stack.replace("Error", "Stack trace\r\n-----------");
         } else {
             stack = stack.replace("Error", "Stack trace\n-----------");
         }
-        error = error.toString().replace(/(\s+)$/, "");
+        error = error
+            .toString()
+            .replace(/(\s+)$/, "");
         if (data.command === "test") {
             process.chdir(data.cwd);
             if (errData.name.indexOf("biddle_test_publish") === 0 || errData.name.indexOf("biddle_test_install") === 0) {
                 input[2] = "biddletest";
                 unpublish();
             }
-            apps.rmrecurse(data.abspath + "unittest", function biddle_errout_dataClean() {
-                console.log("\u001b[31mUnit test failure.\u001b[39m");
-                if (errData.stdout !== undefined) {
-                    console.log(errData.stdout);
-                }
-                console.log("\u001b[1m\u001b[36mFunction:\u001b[39m\u001b[0m " + errData.name);
-                console.log(error);
-                console.log("");
-                console.log(stack);
-                console.log("");
-                console.log(errData.time);
-                process.exit(1);
-            });
+            apps
+                .rmrecurse(data.abspath + "unittest", function biddle_errout_dataClean() {
+                    console.log("\u001b[31mUnit test failure.\u001b[39m");
+                    if (errData.stdout !== undefined) {
+                        console.log(errData.stdout);
+                    }
+                    console.log("\u001b[1m\u001b[36mFunction:\u001b[39m\u001b[0m " + errData.name);
+                    console.log(error);
+                    console.log("");
+                    console.log(stack);
+                    console.log("");
+                    console.log(errData.time);
+                    process.exit(1);
+                });
         } else {
             console.log("\u001b[1m\u001b[36mFunction:\u001b[39m\u001b[0m " + errData.name);
             console.log(error);

@@ -1,0 +1,42 @@
+{
+    "author"     : {
+        "email": "info@prettydiff.com",
+        "name" : "Austin Cheney",
+        "url"  : "http://prettydiff.com/"
+    },
+    "bin"        : "./bin/biddle",
+    "bugs"       : {
+        "email": "info@prettydiff.com",
+        "url"  : "https://github.com/prettydiff/biddle/issues"
+    },
+    "description": "Biddle test app b.",
+    "homepage"   : "http://prettydiff.com/",
+    "keywords"   : [
+        "biddle",
+        "test"
+    ],
+    "license"    : "MIT",
+    "main"       : "biddletestb.js",
+    "maintainers": [
+        {
+            "email": "info@prettydiff.com",
+            "name" : "austincheney"
+        }
+    ],
+    "name"       : "biddletestb",
+    "repository" : {
+        "type": "git",
+        "url" : "https://github.com/prettydiff/biddle"
+    },
+    "variants"    : {
+        "prod": {
+            "exclusions": ["testb"],
+            "task"      : []
+        },
+        "min" : {
+            "exclusions": ["libb", "testb"],
+            "task"      : []
+        }
+    },
+    "version"    : "98.98.1234"
+}
