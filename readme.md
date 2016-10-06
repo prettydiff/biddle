@@ -21,6 +21,7 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
 **Unstable and in early developement.**
 
 * command **get** is complete
+* command **global** is complete
 * command **hash** is complete
 * command **help** is complete
 * command **list** is complete
@@ -29,7 +30,7 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
 * command **zip** is complete
 * command **unzip** is complete
 
-* command **global** is complete in unix type OSes, still needs work for windows
+
 * although **list** is marked as complete for thorough testing is required
 * command **publish** is removed from complete status. Variant publications by exclusion lists need to be worked out.
 * need to add a **global** command to allow users to promote biddle to global shell execution
@@ -68,15 +69,23 @@ Download a file to an alternate location.
     node biddle get http://google.com ../mydirectory
 
 ### global
-The global command adds biddle's path to the OS path variable so that biddle can be run from any location without explicitly calling Node.js, example: `biddle help` instead of `node biddle help`. Use the `remove` option to remove biddle from the path. This command requires use of sudo in non-Windows environments.
+The global command adds biddle's path to the OS path variable so that biddle can be run from any location without explicitly calling Node.js, example: `biddle help` instead of `node biddle help`. Use the `remove` option to remove biddle from the path. This command requires use of sudo in non-Windows environments or an administrative console in Windows.
 
-Allowing global availability to biddle in non-Windows environments
+Allowing global availability to biddle in non-Windows environments.
 
     sudo node biddle global
 
-Removing global availability to biddle in non-Windows environments
+Removing global availability to biddle in non-Windows environments.
 
     sudo biddle global remove
+
+Allowing global availability to biddle in Windows. This command requires an administrative console.
+
+    node biddle global
+
+Removing global availability to biddle in non-Windows environments. This command requires an administrative console.
+
+    biddle global remove
 
 ### hash
 Prints to console a SHA512 hash against a local resource.

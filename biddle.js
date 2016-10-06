@@ -283,7 +283,7 @@
                 }
                 return abs.join(path.sep) + path.sep + rel.join(path.sep);
             },
-            rmrecurse : function biddle_rmrecurse(dirToKill, callback) {
+            rmrecurse : function biddle_rmrecurse(dirToKill, callback) {console.log("install");
                 var cmd = (process.platform === "win32")
                     ? "powershell.exe -nologo -noprofile -command \"rm " + dirToKill + " -r -force\""
                     : "rm -rf " + dirToKill;
@@ -354,7 +354,7 @@
                         apps.makedir(data.abspath + "cmd", function biddle_makeGlobal_winRead_winWritePath_winMakeDir() {
                             var cmd = "@IF EXIST \"%~dp0\\node.exe\" (\r\n  \"%~dp0\\node.exe\" \"" + data.abspath + "bin\\biddle\" %*\r\n) ELSE (\r\n  node \"" + data.abspath + "bin\\biddle\" %*\r\n)";
                             apps.writeFile(cmd, data.abspath + "cmd\\biddle.cmd", function biddle_makeGlobal_winRead_winWritePath_winMakeDir_winWriteCmd() {
-                                console.log(data.abspath + "cmd\\biddle.cmd written.");
+                                console.log(data.abspath + "cmd\\biddle.cmd written. Please restart your terminal.");
                             });
                         });
                         return stdoutw;
