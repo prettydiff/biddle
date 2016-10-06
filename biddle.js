@@ -313,7 +313,53 @@
         },
         makeGlobal = function biddle_makeGlobal() {
             if (data.platform === "win32") {
-                return;
+                return child("powershell.exe -nologo -noprofile -command \"[Environment]::GetEnvironmentVariable('PATH','Machine');\"", function biddle_makeGlobal_winRead(er, stdout, stder) {
+                    var remove = "";
+                    if (er !== null) {
+                        return errout({error: er, name: "biddle_makeGlobal_winRead"});
+                    }
+                    if (stder !== null && stder !== "") {
+                        return errout({error: stder, name: "biddle_makeGlobal_winRead"});
+                    }
+                    if (stdout.indexOf(data.abspath) > -1) {
+                        if (input[2] === "remove") {
+                            remove = stdout.replace(";" + data.abspath + "cmd", "").replace(/(\s+)$/, "");
+                            return child("powershell.exe -nologo -noprofile -command \"$PATH='" + remove + "';[Environment]::SetEnvironmentVariable('PATH',$PATH,'Machine');\"", function biddle_makeGlobal_winRead_winRemovePath(erw, stdoutw, stderw) {
+                                if (erw !== null) {
+                                    return errout({error: erw, name: "biddle_makeGlobal_winRead_winRemovePath"});
+                                }
+                                if (stderw !== null && stderw !== "") {
+                                    return errout({error: stderw, name: "biddle_makeGlobal_winRead_winRemovePath"});
+                                }
+                                console.log(data.abspath + "cmd removed from %PATH%.");
+                                apps.rmrecurse(data.abspath + "cmd", function biddle_makeGlobal_winRead_winRemovePath_winRemoveBin() {
+                                    console.log(data.abspath + "cmd deleted.");
+                                });
+                                return stdoutw;
+                            });
+                        }
+                        return errout({error: data.abspath + "cmd is already in %PATH%", name: "biddle_makeGlobal_winRead"});
+                    }
+                    if (input[2] === "remove") {
+                        return errout({error: data.abspath + "cmd is not present in %PATH%", name: "biddle_makeGlobal_winRead"});
+                    }
+                    child("powershell.exe -nologo -noprofile -command \"$PATH=[Environment]::GetEnvironmentVariable('PATH');[Environment]::SetEnvironmentVariable('PATH',$PATH';" + data.abspath + "cmd','Machine');\"", function biddle_makeGlobal_winRead_winWritePath(erw, stdoutw, stderw) {
+                        if (erw !== null) {
+                            return errout({error: erw, name: "biddle_makeGlobal_winRead_winWritePath"});
+                        }
+                        if (stderw !== null && stderw !== "") {
+                            return errout({error: stderw, name: "biddle_makeGlobal_winRead_winWritePath"});
+                        }
+                        console.log(data.abspath + "cmd added to %PATH% and immediately avialable.");
+                        apps.makedir(data.abspath + "cmd", function biddle_makeGlobal_winRead_winWritePath_winMakeDir() {
+                            var cmd = "@IF EXIST \"%~dp0\\node.exe\" (\r\n  \"%~dp0\\node.exe\" \"" + data.abspath + "bin\\biddle\" %*\r\n) ELSE (\r\n  node \"" + data.abspath + "bin\\biddle\" %*\r\n)";
+                            apps.writeFile(cmd, data.abspath + "cmd\\biddle.cmd", function biddle_makeGlobal_winRead_winWritePath_winMakeDir_winWriteCmd() {
+                                console.log(data.abspath + "cmd\\biddle.cmd written.");
+                            });
+                        });
+                        return stdoutw;
+                    });
+                });
             }
             fs.readFile("/etc/paths", "utf8", function biddle_makeGlobal_nixRead(err, filedata) {
                 if (err !== null && err !== undefined) {
@@ -322,7 +368,7 @@
                 if (filedata.indexOf(data.abspath + "bin") > -1) {
                     if (input[2] === "remove") {
                         return apps.writeFile(filedata.replace("\n" + data.abspath + "bin", ""), "/etc/paths", function biddle_makeGlobal_nixRead_nixRemove() {
-                            console.log(data.abspath + path.sep + "bin removed from $PATH.  Please restart your terminal.");
+                            console.log(data.abspath + "bin removed from $PATH.  Please restart your terminal.");
                         });
                     }
                     return errout({error: data.abspath + "bin is already in $PATH", name: "biddle_makeGlobal_nixRead"});
@@ -331,7 +377,7 @@
                     return errout({error: data.abspath + "bin is not present in $PATH", name: "biddle_makeGlobal_nixRead"});
                 }
                 apps.writeFile(filedata + data.abspath + "bin\n", "/etc/paths", function biddle_makeGlobal_nixRead_nixWrite() {
-                    console.log(data.abspath + path.sep + "bin added to $PATH.  Please restart your terminal");
+                    console.log(data.abspath + "bin added to $PATH.  Please restart your terminal");
                 });
             });
         },
