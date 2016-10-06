@@ -15,9 +15,13 @@
             var a     = [],
                 b     = 0,
                 c     = process.argv.length,
-                paths = process
-                    .argv[0]
-                    .split(path.sep);
+                paths = [];
+            if (process.argv[0] === "sudo") {
+                process.argv.splice(0, 1);
+            }
+            paths = process
+                .argv[0]
+                .split(path.sep);
             if (paths[paths.length - 1] === "node" || paths[paths.length - 1] === "node.exe") {
                 b = 1;
             }
@@ -41,6 +45,9 @@
                 absarr.pop();
                 if (absarr[absarr.length - 1] === "bin") {
                     absarr.pop();
+                }
+                if (absarr[absarr.length - 1] !== "biddle") {
+                    absarr.push("biddle");
                 }
                 return absarr.join(path.sep) + path.sep;
             }()),
@@ -303,6 +310,30 @@
             writeFile : function biddle_initWriteFile() {
                 return true;
             }
+        },
+        makeGlobal = function biddle_makeGlobal() {
+            if (data.platform === "win32") {
+                return;
+            }
+            fs.readFile("/etc/paths", "utf8", function biddle_makeGlobal_nixRead(err, filedata) {
+                if (err !== null && err !== undefined) {
+                    return errout({error: err, name: "biddle_makeGlobal_nixRead"});
+                }
+                if (filedata.indexOf(data.abspath + "bin") > -1) {
+                    if (input[2] === "remove") {
+                        return apps.writeFile(filedata.replace("\n" + data.abspath + "bin", ""), "/etc/paths", function biddle_makeGlobal_nixRead_nixRemove() {
+                            console.log(data.abspath + path.sep + "bin removed from $PATH.  Please restart your terminal.");
+                        });
+                    }
+                    return errout({error: data.abspath + "bin is already in $PATH", name: "biddle_makeGlobal_nixRead"});
+                }
+                if (input[2] === "remove") {
+                    return errout({error: data.abspath + "bin is not present in $PATH", name: "biddle_makeGlobal_nixRead"});
+                }
+                apps.writeFile(filedata + data.abspath + "bin\n", "/etc/paths", function biddle_makeGlobal_nixRead_nixWrite() {
+                    console.log(data.abspath + path.sep + "bin added to $PATH.  Please restart your terminal");
+                });
+            });
         },
         zip       = function biddle_zip(callback) {
             var zipfile    = "",
@@ -2638,6 +2669,9 @@
         };
         fs.writeFile(fileName, fileData, function biddle_writeFile_callback(err) {
             if (err !== null) {
+                if (data.platform !== "win32" && data.command === "global" && err.toString().indexOf("EACCES: permission denied")) {
+                    return errout({error: err.toString() + "\n\u001b[31m\u001b[1mThis command requires sudo access.\u001b[0m\u001b[39m Please try 'sudo node biddle global'.", name: "biddle_writeFile_callback"});
+                }
                 return errout({error: err, name: "biddle_writeFile_callback"});
             }
             if (data.command === "get" || data.command === "publish") {
@@ -3006,6 +3040,7 @@
             },
             comlist   = {
                 get      : true,
+                global   : true,
                 hash     : true,
                 help     : true,
                 install  : true,
@@ -3036,7 +3071,7 @@
                         name : "biddle_init_start"
                     });
                 } else {
-                    if (input[2] === undefined && data.command !== "status" && data.command !== "list" && data.command !== "test") {
+                    if (input[2] === undefined && data.command !== "status" && data.command !== "list" && data.command !== "test" && data.command !== "global") {
                         if (data.command === "hash" || data.command === "markdown" || data.command === "unzip" || data.command === "zip") {
                             valuetype = "path to a local file";
                         } else if (data.command === "get" || data.command === "install" || data.command === "publish") {
@@ -3079,6 +3114,8 @@
                         });
                     } else if (data.command === "test") {
                         test();
+                    } else if (data.command === "global") {
+                        makeGlobal();
                     }
                 }
             };
