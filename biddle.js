@@ -86,45 +86,8 @@
                 } while (a > 3);
                 return arr.join("");
             },
-            getpjson  : function biddle_getpjson(callback) {
-                var file = input[2].replace(/(\/|\\)$/, "") + path.sep + "package.json";
-                fs.readFile(file, "utf8", function biddle_getpjson_readfile(err, fileData) {
-                    if (err !== null && err !== undefined) {
-                        if (err.toString().indexOf("no such file or directory") > 0) {
-                            return errout({
-                                error: "The package.json file is missing from " + input[2] + ". biddle cannot publish without a package.json file.",
-                                name : "biddle_getpjson_readFile"
-                            });
-                        }
-                        return errout({error: err, name: "biddle_getpjson_readFile"});
-                    }
-                    data.packjson = JSON.parse(fileData);
-                    if (data.packjson.name === undefined) {
-                        return errout({error: "The package.json file is missing the required \u001b[31mname\u001b[39m property.", name: "biddle_getpjson_readfile"});
-                    }
-                    if (data.packjson.version === undefined) {
-                        return errout({
-                            error: "The package.json file is missing the required \u001b[31mversion\u001b[39m proper" +
-                                      "ty.",
-                            name : "biddle_getpjson_readfile"
-                        });
-                    }
-                    if (typeof data.packjson.name !== "string") {
-                        if (typeof data.packjson.name === "object" && data.packjson.name !== null) {
-                            data.packjson.name = JSON.stringify(data.packjson.name);
-                        } else {
-                            data.packjson.name = String(data.packjson.name);
-                        }
-                    }
-                    if (typeof data.packjson.version !== "string") {
-                        if (typeof data.packjson.version === "object" && data.packjson.version !== null) {
-                            data.packjson.version = JSON.stringify(data.packjson.version);
-                        } else {
-                            data.packjson.version = String(data.packjson.version);
-                        }
-                    }
-                    callback();
-                });
+            getpjson  : function biddle_getPjsonInit() {
+                return true;
             },
             hashCmd   : function biddle_hashCmd(filepath, store, callback) {
                 var cmd = "";
@@ -265,11 +228,15 @@
                         data.status[list] = true;
                     });
             },
-            relToAbs  : function biddle_relToAbs(filepath) {
-                var abs = data
-                        .abspath
-                        .replace(/((\/|\\)+)$/, "")
-                        .split(path.sep),
+            relToAbs  : function biddle_relToAbs(filepath, fromBiddle) {
+                var abs = (fromBiddle === true)
+                        ? data
+                            .abspath
+                            .replace(/((\/|\\)+)$/, "")
+                            .split(path.sep)
+                        : data.cwd
+                            .replace(/((\/|\\)+)$/, "")
+                            .split(path.sep),
                     rel = filepath.split(path.sep);
                 if (data.platform === "win32" && (/^(\w:\\)/).test(filepath) === true) {
                     return filepath;
@@ -445,9 +412,9 @@
                 }
                 if (data.platform === "win32") {
                     cmd = "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compress" +
-                            "ion.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('.', '" + apps.relToAbs(zipfile) + "'); }\"";
+                            "ion.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('.', '" + apps.relToAbs(zipfile, false) + "'); }\"";
                 } else {
-                    cmd = "zip -r9yq " + apps.relToAbs(zipfile) + " ." + path.sep + " *.[!.]";
+                    cmd = "zip -r9yq " + apps.relToAbs(zipfile, false) + " ." + path.sep + " *.[!.]";
                 }
                 if (data.command === "publish") {
                     apps
@@ -1694,7 +1661,7 @@
                             "60" : false,
                             "80" : false
                         };
-                        child(childcmd + "markdown test" + path.sep + "biddletesta" + path.sep + "READMEa.md 60 childtest", function biddle_test_markdown_60(er, stdout, stder) {
+                        child(childcmd + "markdown " + data.abspath + "test" + path.sep + "biddletesta" + path.sep + "READMEa.md 60 childtest", function biddle_test_markdown_60(er, stdout, stder) {
                             var markdowntest = "\nTry it online at http://prettydiff.com/,\n(\u001b[36mhttp://prettydiff.com/" +
                                         "\u001b[39m).\n\n\u001b[4m\u001b[1m\u001b[31mPretty Diff logo Pretty Diff\u001b[3" +
                                         "9m\u001b[0m\u001b[24m\n\nTravis CI Build,\n(\u001b[36mhttps://travis-ci.org/pret" +
@@ -1840,7 +1807,7 @@
                                 next();
                             }
                         });
-                        child(childcmd + "markdown test" + path.sep + "biddletesta" + path.sep + "READMEa.md 80 childtest", function biddle_test_markdown_80(er, stdout, stder) {
+                        child(childcmd + "markdown " + data.abspath + "test" + path.sep + "biddletesta" + path.sep + "READMEa.md 80 childtest", function biddle_test_markdown_80(er, stdout, stder) {
                             var markdowntest = "\nTry it online at http://prettydiff.com/, (\u001b[36mhttp://prettydiff.com/" +
                                         "\u001b[39m).\n\n\u001b[4m\u001b[1m\u001b[31mPretty Diff logo Pretty Diff\u001b[3" +
                                         "9m\u001b[0m\u001b[24m\n\nTravis CI Build, (\u001b[36mhttps://travis-ci.org/prett" +
@@ -1986,7 +1953,7 @@
                                 next();
                             }
                         });
-                        child(childcmd + "markdown test" + path.sep + "biddletesta" + path.sep + "READMEa.md 120 childtest", function biddle_test_markdown_120(er, stdout, stder) {
+                        child(childcmd + "markdown " + data.abspath + "test" + path.sep + "biddletesta" + path.sep + "READMEa.md 120 childtest", function biddle_test_markdown_120(er, stdout, stder) {
                             var markdowntest = "\nTry it online at http://prettydiff.com/, (\u001b[36mhttp://prettydiff.com/" +
                                         "\u001b[39m).\n\n\u001b[4m\u001b[1m\u001b[31mPretty Diff logo Pretty Diff\u001b[3" +
                                         "9m\u001b[0m\u001b[24m\n\nTravis CI Build, (\u001b[36mhttps://travis-ci.org/prett" +
@@ -2731,6 +2698,46 @@
         }
         return apps.sanitizef(output.replace(/\+|<|>|:|"|\/|\\|\||\?|\*|%/g, ""));
     };
+    apps.getpjson    = function biddle_getpjson(callback) {
+        var file = input[2].replace(/(\/|\\)$/, "") + path.sep + "package.json";
+        fs.readFile(file, "utf8", function biddle_getpjson_readfile(err, fileData) {
+            if (err !== null && err !== undefined) {
+                if (err.toString().indexOf("no such file or directory") > 0) {
+                    return errout({
+                        error: "The package.json file is missing from " + input[2] + ". biddle cannot publish without a package.json file. Perhaps " + apps.relToAbs(input[2], false) + " is the incorrect location.",
+                        name : "biddle_getpjson_readFile"
+                    });
+                }
+                return errout({error: err, name: "biddle_getpjson_readFile"});
+            }
+            data.packjson = JSON.parse(fileData);
+            if (data.packjson.name === undefined) {
+                return errout({error: "The package.json file is missing the required \u001b[31mname\u001b[39m property.", name: "biddle_getpjson_readfile"});
+            }
+            if (data.packjson.version === undefined) {
+                return errout({
+                    error: "The package.json file is missing the required \u001b[31mversion\u001b[39m proper" +
+                              "ty.",
+                    name : "biddle_getpjson_readfile"
+                });
+            }
+            if (typeof data.packjson.name !== "string") {
+                if (typeof data.packjson.name === "object" && data.packjson.name !== null) {
+                    data.packjson.name = JSON.stringify(data.packjson.name);
+                } else {
+                    data.packjson.name = String(data.packjson.name);
+                }
+            }
+            if (typeof data.packjson.version !== "string") {
+                if (typeof data.packjson.version === "object" && data.packjson.version !== null) {
+                    data.packjson.version = JSON.stringify(data.packjson.version);
+                } else {
+                    data.packjson.version = String(data.packjson.version);
+                }
+            }
+            callback();
+        });
+    };
     apps.writeFile   = function biddle_writeFile(fileData, fileName, callback) {
         var callbacker = function biddle_writeFile_callbacker(size) {
             if (size > 0 && fileName.replace(data.abspath, "") !== "published.json" && fileName.replace(data.abspath, "") !== "installed.json") {
@@ -2842,14 +2849,14 @@
         });
     };
     apps.help        = function biddle_help() {
-        var file = "readme.md",
+        var file = data.abspath + "readme.md",
             size = input[2];
         if (data.command === "markdown") {
             file = input[2];
             size = input[3];
         }
         fs
-            .readFile(data.abspath + file, "utf8", function biddle_help_readme(err, readme) {
+            .readFile(file, "utf8", function biddle_help_readme(err, readme) {
                 var lines  = [],
                     listly = [],
                     output = [],
@@ -3131,7 +3138,7 @@
             },
             valuetype = "",
             start     = function biddle_init_start() {
-                if (data.command === "help" || data.command === "" || data.command === undefined || data.command === "?" || data.command === "markdown") {
+                if (data.command === "help" || data.command === "" || data.command === undefined || data.command === "?") {
                     apps.help();
                 } else if (isNaN(data.command) === false) {
                     input[1]     = "help";
@@ -3166,6 +3173,8 @@
                                     return filedata;
                                 });
                         });
+                    } else if (data.command === "markdown") {
+                        apps.help();
                     } else if (data.command === "install") {
                         install();
                     } else if (data.command === "list") {

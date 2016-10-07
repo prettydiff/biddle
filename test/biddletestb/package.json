@@ -31,11 +31,11 @@
     "variants"    : {
         "prod": {
             "exclusions": ["testb"],
-            "task"      : []
+            "tasks"     : []
         },
         "min" : {
             "exclusions": ["libb", "testb"],
-            "task"      : []
+            "tasks"     : []
         }
     },
     "version"    : "98.98.1234"

@@ -9,7 +9,7 @@
         "email": "info@prettydiff.com",
         "url"  : "https://github.com/prettydiff/biddle/issues"
     },
-    "description": "Biddle test app a.",
+    "description": "Biddle test app.",
     "homepage"   : "http://prettydiff.com/",
     "keywords"   : [
         "biddle",
@@ -30,12 +30,12 @@
     },
     "variants"    : {
         "prod": {
-            "exclusions": ["testa"],
-            "task"      : []
+            "exclusions": ["test"],
+            "tasks"     : []
         },
         "min" : {
-            "exclusions": ["liba", "testa"],
-            "task"      : []
+            "exclusions": ["lib", "test"],
+            "tasks"     : []
         }
     },
     "version"    : "99.99.1234"
