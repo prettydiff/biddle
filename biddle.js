@@ -395,14 +395,6 @@
                         return stdout;
                     });
                 };
-            if (data.published[data.packjson.name] !== undefined && data.published[data.packjson.name].versions.indexOf(data.packjson.version) > -1) {
-                apps.rmrecurse(data.abspath + "temp", function biddle_zip_publishAgain() {
-                    return errout({
-                        error: "Attempted to publish " + data.packjson.name + " over existing version " + data.packjson.version,
-                        name : "biddle_zip_zipfunction"
-                    });
-                });
-            }
             if (data.command === "publish" || data.command === "zip") {
                 if (data.address.target.indexOf(path.sep + "publications") + 1 === data.address.target.length - 13) {
                     data.address.target = data.address.target + data.packjson.name + path.sep;
@@ -617,6 +609,12 @@
                     var vflag    = 0,
                         variants = Object.keys(data.packjson.publication_variants);
                     variants.push("");
+                    if (data.published[data.packjson.name] !== undefined && data.published[data.packjson.name].versions.indexOf(data.packjson.version) > -1) {
+                        return errout({
+                            error: "Attempted to publish " + data.packjson.name + " over existing version " + data.packjson.version,
+                            name : "biddle_publish_execution"
+                        });
+                    }
                     apps.makedir("temp", function biddle_publish_execution_variantDir() {
                         variants.forEach(function biddle_publish_execution_variantsDir_each(value) {
                             var cmd = "",
@@ -625,8 +623,8 @@
                                     : data.packjson.publication_variants[value];
                             value = apps.sanitizef(value);
                             cmd = (data.platform === "win32")
-                                ? "xcopy "
-                                : "cp -R " + input[2] + " temp" + path.sep + value;
+                                ? "xcopy /E /Q /G /H /Y /J /I " + input[2] + " " + data.abspath + "temp" + path.sep + value
+                                : "cp -R " + input[2] + " " + data.abspath + "temp" + path.sep + value;
                             child(cmd, function biddle_publish_execution_variantsDir_each_copy(er, stdout, stder) {
                                 var complete = function biddle_publish_execution_variantsDir_each_copy_complete() {
                                         var location = (value === "")
@@ -2507,7 +2505,7 @@
                                                             if (stats[files[0]] === true && stats[files[1]] === true && stats[files[2]] === true && stats[files[3]] === true && stats[files[4]] === true && stats[files[5]] === true && stats[files[6]] === true && stats[files[7]] === true && stats[files[8]] === true && stats[files[9]] === true && stats[files[10]] === true && stats[files[11]] === true) {
                                                                 console.log(humantime(false) + " \u001b[32mpublish test passed.\u001b[39m");
                                                                 child(childcmd + "publish " + data.abspath + "test" + path.sep + "biddletesta childtest", function biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish(erx, stdoutx, stderx) {
-                                                                    var publishagain = "\u001b[1m\u001b[36mFunction:\u001b[39m\u001b[0m biddle_zip_zipfunction\n\u001b[1" +
+                                                                    var publishagain = "\u001b[1m\u001b[36mFunction:\u001b[39m\u001b[0m biddle_publish_execution\n\u001b[1" +
                                                                                      "m\u001b[31mError:\u001b[39m\u001b[0m Attempted to publish biddletesta over exist" +
                                                                                      "ing version",
                                                                         stack        = [];
