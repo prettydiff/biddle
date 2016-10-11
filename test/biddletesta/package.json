@@ -1,42 +1,43 @@
 {
-    "author"     : {
+    "author"              : {
         "email": "info@prettydiff.com",
         "name" : "Austin Cheney",
         "url"  : "http://prettydiff.com/"
     },
-    "bin"        : "./bin/biddle",
-    "bugs"       : {
+    "bin"                 : "./bin/biddle",
+    "bugs"                : {
         "email": "info@prettydiff.com",
         "url"  : "https://github.com/prettydiff/biddle/issues"
     },
-    "description": "Biddle test app.",
-    "homepage"   : "http://prettydiff.com/",
-    "keywords"   : [
-        "biddle",
-        "test"
+    "description"         : "Biddle test app.",
+    "homepage"            : "http://prettydiff.com/",
+    "keywords"            : [
+        "biddle", "test"
     ],
-    "license"    : "MIT",
-    "main"       : "biddletesta.js",
-    "maintainers": [
+    "license"             : "MIT",
+    "main"                : "biddletesta.js",
+    "maintainers"         : [
         {
             "email": "info@prettydiff.com",
             "name" : "austincheney"
         }
     ],
-    "name"       : "biddletesta",
-    "repository" : {
-        "type": "git",
-        "url" : "https://github.com/prettydiff/biddle"
-    },
-    "variants"    : {
-        "prod": {
-            "exclusions": ["test"],
+    "name"                : "biddletesta",
+    "publication_variants": {
+        "min" : {
+            "exclusions": [
+                "liba", "testa"
+            ],
             "tasks"     : []
         },
-        "min" : {
-            "exclusions": ["lib", "test"],
+        "prod": {
+            "exclusions": ["testa"],
             "tasks"     : []
         }
     },
-    "version"    : "99.99.1234"
+    "repository"          : {
+        "type": "git",
+        "url" : "https://github.com/prettydiff/biddle"
+    },
+    "version"             : "99.99.1234"
 }
