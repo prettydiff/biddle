@@ -10,6 +10,7 @@
             path : require("path")
         },
         data = {},
+        cmds = {},
         apps = {};
     data.abspath     = "";
     data.address     = {};
@@ -24,10 +25,6 @@
     data.input       = [];
     data.installed   = {};
     data.packjson    = {};
-    data.platform    = process
-        .platform
-        .replace(/\s+/g, "")
-        .toLowerCase();
     data.published   = {};
     apps.commas      = function biddle_commas(number) {
         var str = String(number),
@@ -223,14 +220,7 @@
             });
     };
     apps.hashCmd     = function biddle_hashCmd(filepath, store, callback) {
-        var cmd = "";
-        if (data.platform === "darwin") {
-            cmd = "shasum -a 512 " + filepath;
-        } else if (data.platform === "win32") {
-            cmd = "certUtil -hashfile " + filepath + " SHA512";
-        } else {
-            cmd = "sha512sum " + filepath;
-        }
+        var cmd = cmds.hash(filepath);
         node
             .fs
             .stat(filepath, function biddle_hashCmd_stat(er, stat) {
@@ -691,8 +681,7 @@
     };
     apps.makeGlobal  = function biddle_makeGlobal() {
         if (data.platform === "win32") {
-            return node.child("powershell.exe -nologo -noprofile -command \"[Environment]::GetEnvironmentVariab" +
-                    "le('PATH','Machine');\"",
+            return node.child(cmds.pathRead,
                     function biddle_makeGlobal_winRead(er, stdout, stder) {
                 var remove = "";
                 if (er !== null) {
@@ -706,7 +695,7 @@
                         remove = stdout
                             .replace(";" + data.abspath + "cmd", "")
                             .replace(/(\s+)$/, "");
-                        return node.child("powershell.exe -nologo -noprofile -command \"$PATH='" + remove + "';[Environment]::SetEnvironmentVariable('PATH',$PATH,'Machine');\"", function biddle_makeGlobal_winRead_winRemovePath(erw, stdoutw, stderw) {
+                        return node.child(cmds.pathRemove(remove), function biddle_makeGlobal_winRead_winRemovePath(erw, stdoutw, stderw) {
                             if (erw !== null) {
                                 return apps.errout({error: erw, name: "biddle_makeGlobal_winRead_winRemovePath"});
                             }
@@ -732,8 +721,7 @@
                     });
                 }
                 node
-                    .child("powershell.exe -nologo -noprofile -command \"$PATH=[Environment]::GetEnvironment" +
-                            "Variable('PATH');[Environment]::SetEnvironmentVariable('PATH',$PATH';" + data.abspath + "cmd','Machine');\"", function biddle_makeGlobal_winRead_winWritePath(erw, stdoutw, stderw) {
+                    .child(cmds.pathSet, function biddle_makeGlobal_winRead_winWritePath(erw, stdoutw, stderw) {
                         if (erw !== null) {
                             return apps.errout({error: erw, name: "biddle_makeGlobal_winRead_winWritePath"});
                         }
@@ -753,7 +741,7 @@
         }
         node
             .fs
-            .readFile("/etc/paths", "utf8", function biddle_makeGlobal_nixRead(err, filedata) {
+            .readFile(cmds.pathRead, "utf8", function biddle_makeGlobal_nixRead(err, filedata) {
                 if (err !== null && err !== undefined) {
                     return apps.errout({error: err, name: "biddle_makeGlobal_nixRead"});
                 }
@@ -824,15 +812,11 @@
                     .makedir("temp", function biddle_publish_execution_variantDir() {
                         variants
                             .forEach(function biddle_publish_execution_variantsDir_each(value) {
-                                var cmd    = "",
-                                    varobj = (value === "")
+                                var varobj = (value === "")
                                         ? {}
                                         : data.packjson.publication_variants[value];
                                 value = apps.sanitizef(value);
-                                cmd   = (data.platform === "win32")
-                                    ? "xcopy /E /Q /G /H /Y /J /I " + data.input[2] + " " + data.abspath + "temp" + node.path.sep + value
-                                    : "cp -R " + data.input[2] + " " + data.abspath + "temp" + node.path.sep + value;
-                                node.child(cmd, function biddle_publish_execution_variantsDir_each_copy(er, stdout, stder) {
+                                node.child(cmds.copy(value), function biddle_publish_execution_variantsDir_each_copy(er, stdout, stder) {
                                     var complete   = function biddle_publish_execution_variantsDir_each_copy_complete() {
                                             var location = (value === "")
                                                     ? apps.relToAbs(data.input[2])
@@ -1081,10 +1065,7 @@
         return abs.join(node.path.sep) + node.path.sep + rel.join(node.path.sep);
     };
     apps.rmrecurse   = function biddle_rmrecurse(dirToKill, callback) {
-        var cmd = (process.platform === "win32")
-            ? "powershell.exe -nologo -noprofile -command \"rm " + dirToKill + " -r -force\""
-            : "rm -rf " + dirToKill;
-        node.child(cmd, function biddle_rmrecurse_child(err, stdout, stderrout) {
+        node.child(cmds.remove(dirToKill), function biddle_rmrecurse_child(err, stdout, stderrout) {
             if (err !== null && err.toString().indexOf("No such file or directory") < 0 && err.toString().indexOf(": The directory is not empty.") < 0) {
                 if (err.toString().indexOf("Cannot find path") > 0) {
                     return callback();
@@ -1168,11 +1149,9 @@
                 }
             },
             keys      = Object.keys(modules),
-            childcmd  = (data.platform === "win32" && data.abspath === process.cwd().toLowerCase() + node.path.sep)
+            childcmd  = (data.abspath === process.cwd() + node.path.sep)
                 ? "node biddle "
-                : (data.platform !== "win32" && data.abspath === process.cwd() + node.path.sep)
-                    ? "node biddle "
-                    : "biddle ",
+                : "biddle ",
             testpath  = data.abspath + "unittest",
             humantime = function biddle_test_humantime(finished) {
                 var minuteString = "",
@@ -1999,10 +1978,8 @@
                     });
                     (function biddle_test_lint_getFiles() {
                         var enddir    = 0,
-                            enditem   = 0,
                             endread   = 0,
                             startdir  = 0,
-                            startitem = 0,
                             startread = 0,
                             idLen     = ignoreDirectory.length,
                             readFile  = function biddle_test_lint_getFiles_readFile(filePath) {
@@ -2014,7 +1991,7 @@
                                         }
                                         files.push([filePath, data]);
                                         endread += 1;
-                                        if (endread === startread && enditem === startitem && enddir === startdir) {
+                                        if (endread === startread && enddir === startdir) {
                                             lintrun();
                                         }
                                     });
@@ -2035,7 +2012,6 @@
                                                     if (errb !== null) {
                                                         return apps.errout({error: errb, name: "biddle_test_lint_getFiles_readDir_callback_fileEval_stat", time: humantime(false)});
                                                     }
-                                                    enditem += 1;
                                                     if (stat.isFile() === true && (/(\.js)$/).test(filename) === true) {
                                                         startread += 1;
                                                         readFile(filename);
@@ -2043,7 +2019,7 @@
                                                     if (stat.isDirectory() === true) {
                                                         do {
                                                             if (filename === ignoreDirectory[a]) {
-                                                                if (endread === startread && enditem === startitem && enddir === startdir) {
+                                                                if (endread === startread && enddir === startdir) {
                                                                     lintrun();
                                                                 }
                                                                 return;
@@ -2062,7 +2038,6 @@
                                             });
                                         }
                                         enddir    += 1;
-                                        startitem += list.length;
                                         list.forEach(fileEval);
                                     });
                             };
@@ -2662,7 +2637,7 @@
                         if (ind === keys.length) {
                             if (today !== date) {
                                 ind = 0;
-                                node
+                                /*node
                                     .fs
                                     .writeFile("today.js", "/\u002aglobal module\u002a/(function () {\"use strict\";var today=" + date + ";module.exports=today;}());", function biddle_test_moduleInstall_editions_writeToday(werr) {
                                         if (werr !== null && werr !== undefined) {
@@ -2679,7 +2654,8 @@
                                             console.log("Checked for new versions of submodules.");
                                             flag.today = true;
                                         }
-                                    });
+                                    });*/
+                                    flag.today = true;
                                 if (cloned === true) {
                                     node
                                         .child("git submodule init", function biddle_test_moduleInstall_editions_init(erc, stdoutc, stdouterc) {
@@ -2708,7 +2684,7 @@
                                 } else {
                                     node
                                         .child("git submodule foreach git pull origin master", function biddle_test_moduleInstall_editions_pull(errpull, stdoutpull, stdouterpull) {
-                                            if (errpull !== null) {
+                                            if (errpull !== null) {console.log(errpull);
                                                 if (errpull.toString().indexOf("fatal: no submodule mapping found in .gitmodules for path ") > 0) {
                                                     console.log("No access to GitHub. Proceeding assuming submodules were previously installed.");
                                                     flag.apps = true;
@@ -3194,6 +3170,7 @@
                     });
             };
         if (data.command === "publish" || data.command === "zip") {
+            cmd = cmds.zip(apps.relToAbs(zipfile, false));
             if (data.address.target.indexOf(node.path.sep + "publications") + 1 === data.address.target.length - 13) {
                 data.address.target = data.address.target + data.packjson.name + node.path.sep;
             }
@@ -3204,12 +3181,6 @@
                     .packjson
                     .name
                     .toLowerCase() + variantName + "_" + data.packjson.version + ".zip";
-            }
-            if (data.platform === "win32") {
-                cmd = "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compress" +
-                        "ion.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('.', '" + apps.relToAbs(zipfile, false) + "'); }\"";
-            } else {
-                cmd = "zip -r9yq " + apps.relToAbs(zipfile, false) + " ." + node.path.sep + " *.[!.]";
             }
             if (data.command === "publish") {
                 apps
@@ -3273,12 +3244,7 @@
             }
         }
         if (data.command === "install" || data.command === "unzip") {
-            if (data.platform === "win32") {
-                cmd = "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compress" +
-                        "ion.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('" + data.input[2] + "', '" + data.address.target + "'); }\"";
-            } else {
-                cmd = "unzip -oq " + data.input[2] + " -d " + data.address.target;
-            }
+            cmd = cmds.unzip;
             apps
                 .makedir(data.address.target, function biddle_zip_unzip() {
                     childfunc(data.input[2], cmd, false);
@@ -3447,6 +3413,55 @@
             return addy;
         }());
         data.fileName = apps.getFileName();
+        cmds          = (function biddle_init_registerOS() {
+            data.platform    = process
+                .platform
+                .replace(/\s+/g, "")
+                .toLowerCase();
+            return {
+                copy      : function biddle_init_registerOS_copy(variant) {
+                    if (data.platform === "win32") {
+                        return "xcopy /E /Q /G /H /Y /J /I " + data.input[2] + " " + data.abspath + "temp" + node.path.sep + variant;
+                    }
+                    return "cp -R " + data.input[2] + " " + data.abspath + "temp" + node.path.sep + variant;
+                },
+                hash      : function biddle_init_registerOS_hash(file) {
+                    if (data.platform === "darwin") {
+                        return "shasum -a 512 " + file;
+                    }
+                    if (data.platform === "win32") {
+                        return "certUtil -hashfile " + file + " SHA512";
+                    }
+                    return "sha512sum " + file;
+                },
+                pathRead  : (data.platform === "win32")
+                    ? "powershell.exe -nologo -noprofile -command \"[Environment]::GetEnvironmentVariab" +
+                            "le('PATH','Machine');\""
+                    : "/etc/paths",
+                pathRemove: function biddle_init_registerOS_pathRemove(cmdFile) {
+                    return "powershell.exe -nologo -noprofile -command \"$PATH='" + cmdFile + "';[Environment]::SetEnvironmentVariable('PATH',$PATH,'Machine');\"";
+                },
+                pathSet   : "powershell.exe -nologo -noprofile -command \"$PATH=[Environment]::GetEnvironment" +
+                        "Variable('PATH');[Environment]::SetEnvironmentVariable('PATH',$PATH';" + data.abspath + "cmd','Machine');\"",
+                remove    : function biddle_init_registerOS_remove(dir) {
+                    if (data.platform === "win32") {
+                        return "powershell.exe -nologo -noprofile -command \"rm " + dir + " -r -force\"";
+                    }
+                    return "rm -rf " + dir;
+                },
+                unzip     : (data.platform === "win32")
+                    ? "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compress" +
+                            "ion.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('" + data.input[2] + "', '" + data.address.target + "'); }\""
+                    : "unzip -oq " + data.input[2] + " -d " + data.address.target,
+                zip       : function biddle_init_registerOS_zip(filename) {
+                    if (data.platform === "win32") {
+                        return "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compress" +
+                                "ion.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('.', '" + filename + "'); }\"";
+                    }
+                    return "zip -r9yq " + filename + " ." + node.path.sep + " *.[!.]"
+                }
+            };
+        }());
         node
             .fs
             .readFile(data.abspath + "installed.json", "utf8", function biddle_init_installed(err, fileData) {
