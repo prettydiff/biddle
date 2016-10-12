@@ -2637,7 +2637,7 @@
                         if (ind === keys.length) {
                             if (today !== date) {
                                 ind = 0;
-                                /*node
+                                node
                                     .fs
                                     .writeFile("today.js", "/\u002aglobal module\u002a/(function () {\"use strict\";var today=" + date + ";module.exports=today;}());", function biddle_test_moduleInstall_editions_writeToday(werr) {
                                         if (werr !== null && werr !== undefined) {
@@ -2654,8 +2654,7 @@
                                             console.log("Checked for new versions of submodules.");
                                             flag.today = true;
                                         }
-                                    });*/
-                                    flag.today = true;
+                                    });
                                 if (cloned === true) {
                                     node
                                         .child("git submodule init", function biddle_test_moduleInstall_editions_init(erc, stdoutc, stdouterc) {
@@ -3170,7 +3169,6 @@
                     });
             };
         if (data.command === "publish" || data.command === "zip") {
-            cmd = cmds.zip(apps.relToAbs(zipfile, false));
             if (data.address.target.indexOf(node.path.sep + "publications") + 1 === data.address.target.length - 13) {
                 data.address.target = data.address.target + data.packjson.name + node.path.sep;
             }
@@ -3182,6 +3180,7 @@
                     .name
                     .toLowerCase() + variantName + "_" + data.packjson.version + ".zip";
             }
+            cmd = cmds.zip(apps.relToAbs(zipfile, false));
             if (data.command === "publish") {
                 apps
                     .makedir(data.address.target, function biddle_zip_publish() {
