@@ -9,23 +9,42 @@
             https: require("https"),
             path : require("path")
         },
-        data = {},
+        comlist   = { // The list of supported biddle commands.
+            get      : true, // Get something via http/https.
+            global   : true, // Make biddle a global command in the terminal.
+            hash     : true, // Generate a hash sequence against a file.
+            help     : true, // Output the readme.md to the terminal.
+            install  : true, // Install a published application.
+            list     : true, // List installed and/or published applications.
+            markdown : true, // Parse any markdown and output to terminal.
+            publish  : true, // Publish an application/version.
+            status   : true, // Determine if version on installed applications are behind the latest published version.
+            test     : true, // Test automation.
+            uninstall: true, // Uninstall an application installed by biddle.
+            unpublish: true, // Unpublish an application published by biddle.
+            unzip    : true, // Unzip a zip file.
+            zip      : true // Zip a file or directory.
+        },
+        data = {
+            abspath  : "", // Local absolute path to biddle.
+            address  : {
+                downloads: "", // Local absolute path to biddle download directory.
+                target   : "" // Location where files will be written to.
+            },
+            childtest: false, // If the current biddle instance is a child of another biddle instance (occurs due to test automation)
+            command  : "", // Executed biddle command.
+            cwd      : process.cwd(), // Current working directory before running biddle.
+            filename : "", // Stores an inferred file name when files need to be written and a package.json is not used, such as the get command.
+            hashFile : "", // Stores hash value from reading a downloaded hash file.  Used for hash comparison with the install command.
+            hashZip  : "", // Stores locally computed hash value for a downloaded zip file.  Used for hash comparison with the install command.
+            ignore   : [], // List of relative locations to ignore from the .biddleignore file.
+            input    : [], // Normalized process.argv list.
+            installed: {}, // Parsed data of the installed.json file.  Data about applications installed with biddle.
+            packjson : {}, // Parsed data of a directory's package.json file.  Used with the publish command.
+            published: {} // Parsed data of the published.json file.  Data about applications published by biddle.
+        },
         cmds = {},
         apps = {};
-    data.abspath     = "";
-    data.address     = {};
-    data.abspath     = "";
-    data.childtest   = false;
-    data.command     = "";
-    data.cwd         = process.cwd();
-    data.filename    = "";
-    data.hashFile    = "";
-    data.hashZip     = "";
-    data.ignore      = [];
-    data.input       = [];
-    data.installed   = {};
-    data.packjson    = {};
-    data.published   = {};
     apps.commas      = function biddle_commas(number) {
         var str = String(number),
             arr = [],
@@ -1888,6 +1907,9 @@
                         }
                     });
                 },
+                //install      : function biddle_test_install() {
+                    //asdf
+                //},
                 lint         : function biddle_test_lint() {
                     var ignoreDirectory = [
                             ".git",
@@ -3254,22 +3276,6 @@
         var status    = {
                 installed: false,
                 published: false
-            },
-            comlist   = {
-                get      : true,
-                global   : true,
-                hash     : true,
-                help     : true,
-                install  : true,
-                list     : true,
-                markdown : true,
-                publish  : true,
-                status   : true,
-                test     : true,
-                uninstall: true,
-                unpublish: true,
-                unzip    : true,
-                zip      : true
             },
             valuetype = "",
             start     = function biddle_init_start() {
