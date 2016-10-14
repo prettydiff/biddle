@@ -24,38 +24,29 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
 * command **global** is complete
 * command **hash** is complete
 * command **help** is complete
-* command **list** is complete
+* command **install** is complete
 * command **markdown** is complete
+* command **publish** is complete
+* command **uninstall** is complete
 * command **unpublish** is complete
-* command **zip** is complete
 * command **unzip** is complete
+* command **zip** is complete
 
 
-* although **list** is marked as complete for thorough testing is required
-* command **publish** is removed from complete status. Variant publications by exclusion lists need to be worked out.
-* need to add a **global** command to allow users to promote biddle to global shell execution
-* add support for a *.biddleignore* file, this file contain a list of items to not include in the published zip
-  - File is read
-  - Support and processing is not added yet
-  - Will not include support for comments or wildcards in initial launch
-* add support for *variants* in package.json, which allows named variants where each has a custom ignore list
-* Work on **install** is *blocked* pending configuration work
-  - Hash files must now become JSON storing hash, name, and version
-  - ZIP approach needs to be reevaluated... details in next point
-* need to work out *global* install switch
-* Advanced configuration work is *underway now*.  Configuration details will go into the app's package.json file.
-  - I need to revise the approach to creating ZIP files.  I cannot simply point to a directory and zip it for security reasons.  Instead I will need to index the child items of the target directory for addition to a ZIP file.  The reason has to do with potential (malicious) naming collisions uniformity violations.
-  - Allow restriction of named directories when creating a zip so that production only packages don't have dev dependencies, build systems, unit tests, systems files, and so forth
-  - Allow definition of custom default locations.
-* Work on **status** is not started.  This command will compare an installed application's version against a published version to determine if out of date.
-  - Must allow an app name as an argument to manually check that application or *all* to check all installed applications
-  - Status automation or intervals would be nice... such as checking app versions once a week and providing a message when out of date
-* Work on **uninstall** command is *blocked* pending completion of **install**.
-  - Must delete the application
-  - Must remove the application from the **list**
+* command **test** will be the last thing to be marked as complete
+* command **list** requires testing
+* command **status** is not started
+* need to work out *global* switch for **install** command
+* OS specific commands need to be moved to the top of the file for clearer visibility
+* there is a minor bug in the *lint* phase of the **test** command where the program occasionally exit early
+* documentation is required for
+   - package.json
+   - directory structure and file requirements
+   - installed.json and published.json structures
+
 
 ## Supported commands
-Commands are the third command line argument, or second if the optional *node* argument is absent.  Commands are case insensitive, but values and local paths are case sensitive.  All local address are either absolute from the root or relative from the current working directory.
+Commands are the third command line argument, or second if the *node* argument is absent.  Commands are case insensitive, but values and local paths are case sensitive.  All local address are either absolute from the root or relative from the current working directory.
 
 ### get
 Merely downloads the requested resource and saves it as a file with the same filename. If the filename is not provided in the URI the final directory up to the domain name will become the filename, and if for some reason that doesn't work the default filename is *download.xxx*.
@@ -108,8 +99,9 @@ Set a custom word wrap limit.
     node biddle help 80
 
 ### install
-(not written yet)
-Downloads the requested resource, but decompresses and unpackages the zip before writing files to disk.
+Downloads the requested zip file, but performs a hash comparison before unzipping the file.
+
+    node biddle install http://example.com/downloads/application_latest.zip
 
 ### list
 Will list all installed and/or published applications with their locations and latest versions.  It can take the optional argument *installed* or *published* to output a specific list or both lists are produced.
@@ -153,17 +145,19 @@ Use quotes if any argument contains spaces:
 Will check whether an installed application is behind the latest published version.  Automation is planned but still under consideration.
 
 ### test
-(not written yet)
-Run the unit tests.
+Run the user acceptance tests.
+
+    node biddle test
 
 ### uninstall
-(not written yet)
 Will delete an installed application by name and remove the application from the installed list.
+
+    node biddle uninstall myApplicationName
 
 ### unpublish
 Will delete a published application by name and remove the application from the published list.  An application name is required and not the address to the application.
 
-    node biddle unpublish myApplication
+    node biddle unpublish myApplicationName
 
 ### unzip
 Unzips a local zipped file.
