@@ -667,21 +667,51 @@
                 published: Object.keys(data.published)
             },
             dolist   = function biddle_list_dolist(type) {
-                var len = 0,
-                    a   = 0;
+                var len    = 0,
+                    a      = 0,
+                    proper = (type === "published")
+                        ? "Published"
+                        : "Installed",
+                    pads   = {},
+                    pad    = function biddle_list_dolist_pad(item, col) {
+                        var b = item.length;
+                        if (b === pads[col]) {
+                            return item;
+                        }
+                        do {
+                            item = item + " ";
+                            b += 1;
+                        } while (b < pads[col]);
+                        return item;
+                    };
+                listtype[type].sort();
                 if (listtype[type].length === 0) {
-                    console.log("\u001b[4mInstalled applications:\u001b[0m");
+                    console.log("\u001b[4m" + proper + " applications:\u001b[0m");
                     console.log("");
                     console.log("No applications are installed by biddle.");
                     console.log("");
                 } else {
-                    console.log("\u001b[4mInstalled applications:\u001b[0m");
+                    console.log("\u001b[4m" + proper + " applications:\u001b[0m");
                     console.log("");
-                    len = listtype[type].length;
+                    len          = listtype[type].length;
+                    pads.name    = 0;
+                    pads.version = 0;
+                    a            = 0;
                     do {
-                        console.log(listtype[type][a] + " - " + data[type][listtype[type][a]].latest + " - " + data[type][listtype[type][a]].directory);
+                        if (listtype[type][a].length > pads.name) {
+                            pads.name = listtype[type][a].length;
+                        }
+                        if (data[type][listtype[type][a]].latest.length > pads.version) {
+                            pads.version = data[type][listtype[type][a]].latest.length;
+                        }
                         a += 1;
                     } while (a < len);
+                    a            = 0;
+                    do {
+                        console.log("* \u001b[36m" + pad(listtype[type][a], "name") + "\u001b[39m - " + pad(data[type][listtype[type][a]].latest, "version") + " - " + data[type][listtype[type][a]].directory);
+                        a += 1;
+                    } while (a < len);
+                    console.log("");
                 }
             };
         if (data.input[2] !== "installed" && data.input[2] !== "published" && data.input[2] !== undefined) {
@@ -873,7 +903,9 @@
             },
             execution = function biddle_publish_execution() {
                 var vflag    = 0,
-                    variants = Object.keys(data.packjson.publication_variants);
+                    variants = (typeof data.packjson.publication_variants === "object")
+                        ? Object.keys(data.packjson.publication_variants)
+                        : [];
                 variants.push("");
                 apps.makedir("temp", function biddle_publish_execution_variantDir() {
                     variants
