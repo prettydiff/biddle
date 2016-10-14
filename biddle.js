@@ -2,14 +2,14 @@
 /*jslint node: true, for: true*/
 (function biddle() {
     "use strict";
-    var node    = {
+    var node     = {
             child: require("child_process").exec,
             fs   : require("fs"),
             http : require("http"),
             https: require("https"),
             path : require("path")
         },
-        comlist = { // The list of supported biddle commands.
+        commands = { // The list of supported biddle commands.
             get      : true, // Get something via http/https.
             global   : true, // Make biddle a global command in the terminal.
             hash     : true, // Generate a hash sequence against a file.
@@ -25,7 +25,7 @@
             unzip    : true, // Unzip a zip file.
             zip      : true // Zip a file or directory.
         },
-        data    = {
+        data     = {
             abspath      : "", // Local absolute path to biddle.
             address      : {
                 downloads: "", // Local absolute path to biddle download directory.
@@ -44,8 +44,61 @@
             packjson     : {}, // Parsed data of a directory's package.json file.  Used with the publish command.
             published    : {} // Parsed data of the published.json file.  Data about applications published by biddle.
         },
-        cmds    = {}, // The OS specific commands executed outside Node.js
-        apps    = {};
+        cmds     = { // The OS specific commands executed outside Node.js
+            cmdFile   : function biddle_cmds_cmdFile() { // Used in command global to write a cmd (batch/bin) file for windows
+                return "@IF EXIST \"%~dp0\\node.exe\" (\r\n  \"%~dp0\\node.exe\" \"" + data.abspath + "bin\\biddle\" %*\r\n) ELSE (\r\n  node \"" + data.abspath + "bin\\biddle\" %*\r\n)";
+            },
+            copy      : function biddle_cmds_copy(variant) { // Copy file system components from one location into a different location
+                if (data.platform === "win32") {
+                    return "xcopy /E /Q /G /H /Y /J /I " + data.input[2] + " " + data.abspath + "temp" + node.path.sep + variant;
+                }
+                return "cp -R " + data.input[2] + " " + data.abspath + "temp" + node.path.sep + variant;
+            },
+            hash      : function biddle_cmds_hash(file) { // Generates a hash sequence against a file
+                if (data.platform === "darwin") {
+                    return "shasum -a 512 " + file;
+                }
+                if (data.platform === "win32") {
+                    return "certUtil -hashfile " + file + " SHA512";
+                }
+                return "sha512sum " + file;
+            },
+            pathRead  : function biddle_cmds_pathRead() { // Used in command global to read the OS's stored paths
+                if (data.platform === "win32") {
+                    return "powershell.exe -nologo -noprofile -command \"[Environment]::GetEnvironmentVariab" +
+                        "le('PATH','Machine');\"";
+                }
+                return "/etc/paths";
+            },
+            pathRemove: function biddle_cmds_pathRemove(cmdFile) { // Used in command global to remove the biddle path from the Windows path list
+                return "powershell.exe -nologo -noprofile -command \"$PATH='" + cmdFile + "';[Environment]::SetEnvironmentVariable('PATH',$PATH,'Machine');\"";
+            },
+            pathSet   : function biddle_cmds_pathSet() { // Used in command global to add the biddle path to the Windows path list
+                return "powershell.exe -nologo -noprofile -command \"$PATH=[Environment]::GetEnvironment" +
+                           "Variable('PATH');[Environment]::SetEnvironmentVariable('PATH',$PATH';" + data.abspath + "cmd','Machine');\"";
+            },
+            remove    : function biddle_cmds_remove(dir) { // Recursively and forcefully removes a directory tree or file from the file system
+                if (data.platform === "win32") {
+                    return "powershell.exe -nologo -noprofile -command \"rm " + dir + " -r -force\"";
+                }
+                return "rm -rf " + dir;
+            },
+            unzip     : function biddle_cmds_unzip () { // Unzips a zip archive into a collection
+                if (data.platform === "win32") {
+                    return "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compress" +
+                        "ion.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('" + data.input[2] + "', '" + data.address.target + "'); }\"";
+                }
+                return "unzip -oq " + data.input[2] + " -d " + data.address.target;
+            },
+            zip       : function biddle_cmds_zip(filename) { // Stores all items of the given directory into a zip archive directly without creating a new directory. Locations resolved by a symlink are stored, but the actual symlink is not stored.
+                if (data.platform === "win32") {
+                    return "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compress" +
+                            "ion.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('.', '" + filename + "'); }\"";
+                }
+                return "zip -r9yq " + filename + " ." + node.path.sep + " *.[!.]";
+            }
+        },
+        apps     = {};
     apps.commas      = function biddle_commas(number) {
         var str = String(number),
             arr = [],
@@ -82,13 +135,13 @@
         if (data.command === "test") {
             process.chdir(data.cwd);
             if (errData.name.indexOf("biddle_test") === 0) {
-                data.input[2]              = "biddletesta";
                 data.published.biddletesta = {
                     directory: data.abspath + "publications" + node.path.sep + "biddletesta"
                 };
                 data.installed.biddletesta = {
                     location: data.abspath + "applications" + node.path.sep + "biddletesta"
                 };
+                data.input[2]              = "biddletesta";
                 apps.unpublish(true);
                 apps.uninstall(true);
             }
@@ -672,6 +725,12 @@
                     proper = (type === "published")
                         ? "Published"
                         : "Installed",
+                    vert   = (type === "published")
+                        ? "latest"
+                        : "version",
+                    loct   = (type === "published")
+                        ? "directory"
+                        : "location",
                     pads   = {},
                     pad    = function biddle_list_dolist_pad(item, col) {
                         var b = item.length;
@@ -688,7 +747,7 @@
                 if (listtype[type].length === 0) {
                     console.log("\u001b[4m" + proper + " applications:\u001b[0m");
                     console.log("");
-                    console.log("No applications are installed by biddle.");
+                    console.log("No applications are " + type + " by biddle.");
                     console.log("");
                 } else {
                     console.log("\u001b[4m" + proper + " applications:\u001b[0m");
@@ -701,14 +760,14 @@
                         if (listtype[type][a].length > pads.name) {
                             pads.name = listtype[type][a].length;
                         }
-                        if (data[type][listtype[type][a]].latest.length > pads.version) {
-                            pads.version = data[type][listtype[type][a]].latest.length;
+                        if (data[type][listtype[type][a]][vert].length > pads.version) {
+                            pads.version = data[type][listtype[type][a]][vert].length;
                         }
                         a += 1;
                     } while (a < len);
                     a            = 0;
                     do {
-                        console.log("* \u001b[36m" + pad(listtype[type][a], "name") + "\u001b[39m - " + pad(data[type][listtype[type][a]].latest, "version") + " - " + data[type][listtype[type][a]].directory);
+                        console.log("* \u001b[36m" + pad(listtype[type][a], "name") + "\u001b[39m - " + pad(data[type][listtype[type][a]][vert], "version") + " - " + data[type][listtype[type][a]][loct]);
                         a += 1;
                     } while (a < len);
                     console.log("");
@@ -788,7 +847,7 @@
     };
     apps.makeGlobal  = function biddle_makeGlobal() {
         if (data.platform === "win32") {
-            return node.child(cmds.pathRead, function biddle_makeGlobal_winRead(er, stdout, stder) {
+            return node.child(cmds.pathRead(), function biddle_makeGlobal_winRead(er, stdout, stder) {
                 var remove = "";
                 if (er !== null) {
                     return apps.errout({error: er, name: "biddle_makeGlobal_winRead"});
@@ -827,7 +886,7 @@
                     });
                 }
                 node
-                    .child(cmds.pathSet, function biddle_makeGlobal_winRead_winWritePath(erw, stdoutw, stderw) {
+                    .child(cmds.pathSet(), function biddle_makeGlobal_winRead_winWritePath(erw, stdoutw, stderw) {
                         if (erw !== null) {
                             return apps.errout({error: erw, name: "biddle_makeGlobal_winRead_winWritePath"});
                         }
@@ -836,8 +895,7 @@
                         }
                         console.log(data.abspath + "cmd added to %PATH% and immediately avialable.");
                         apps.makedir(data.abspath + "cmd", function biddle_makeGlobal_winRead_winWritePath_winMakeDir() {
-                            var cmd = "@IF EXIST \"%~dp0\\node.exe\" (\r\n  \"%~dp0\\node.exe\" \"" + data.abspath + "bin\\biddle\" %*\r\n) ELSE (\r\n  node \"" + data.abspath + "bin\\biddle\" %*\r\n)";
-                            apps.writeFile(cmd, data.abspath + "cmd\\biddle.cmd", function biddle_makeGlobal_winRead_winWritePath_winMakeDir_winWriteCmd() {
+                            apps.writeFile(cmds.cmdFile(), data.abspath + "cmd\\biddle.cmd", function biddle_makeGlobal_winRead_winWritePath_winMakeDir_winWriteCmd() {
                                 console.log(data.abspath + "cmd\\biddle.cmd written. Please restart your terminal.");
                             });
                         });
@@ -847,7 +905,7 @@
         }
         node
             .fs
-            .readFile(cmds.pathRead, "utf8", function biddle_makeGlobal_nixRead(err, filedata) {
+            .readFile(cmds.pathRead(), "utf8", function biddle_makeGlobal_nixRead(err, filedata) {
                 if (err !== null && err !== undefined) {
                     return apps.errout({error: err, name: "biddle_makeGlobal_nixRead"});
                 }
@@ -1019,7 +1077,7 @@
                 data.published[data.packjson.name]           = {};
                 data.published[data.packjson.name].versions  = [];
                 data.published[data.packjson.name].latest    = "";
-                data.published[data.packjson.name].directory = data.address.target + apps.sanitizef(data.packjson.name);
+                data.published[data.packjson.name].directory = data.address.target + apps.sanitizef(data.packjson.name) + node.path.sep;
             }
             data
                 .published[data.packjson.name]
@@ -1266,9 +1324,10 @@
                 "unzip",
                 "publish",
                 "install",
+                "list",
+                //"status",
                 "uninstall",
                 "unpublish"
-                // "list", "status"
             ],
             options   = {
                 correct     : false,
@@ -1892,6 +1951,41 @@
                             };
                         readDir(data.abspath);
                     }());
+                },
+                list         : function biddle_test_list() {
+                    var listcmds = [
+                            childcmd + "publish " + data.abspath + "test" + node.path.sep + "biddletestb",
+                            childcmd + "install " + data.abspath + "publications" + node.path.sep + "biddletestb" + node.path.sep + "biddletestb_latest.zip",
+                            childcmd + "list",
+                            childcmd + "uninstall biddletestb",
+                            childcmd + "unpublish biddletestb"
+                        ],
+                        listChild = function biddle_test_childWrapper() {
+                            node.child(listcmds[0], function biddle_test_childWrapper_child(er, stdout, stder) {
+                                var listout = "\u001b[4mInstalled applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[39m - 99.99.1234 - /users/echeney/biddle/applications/biddletesta/\n* \u001b[36mbiddletestb\u001b[39m - 98.98.1234 - /users/echeney/biddle/applications/biddletestb/\n\n\u001b[4mPublished applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[39m - 99.99.1234 - /users/echeney/biddle/publications/biddletesta/\n* \u001b[36mbiddletestb\u001b[39m - 98.98.1234 - /users/echeney/biddle/publications/biddletestb/";
+                                if (er !== null) {
+                                    return apps.errout({error: er, name: "biddle_test_childWrapper_child", stdout: stdout, time: humantime(true)});
+                                }
+                                if (stder !== null && stder !== "") {
+                                    return apps.errout({error: stder, name: "biddle_test_childWrapper_child", stdout: stdout, time: humantime(true)});
+                                }
+                                if (listcmds[0] === childcmd + "list") {
+                                    stdout = stdout.replace(/(\s+)$/, "").replace(/\r\n/g, "\n");
+                                    if (stdout !== listout) {
+                                        return diffFiles("biddle_test_childWrapper_child", stdout, listout);
+                                    }
+                                    console.log(humantime(false) + " \u001b[32mlist output passed.\u001b[39m");
+                                }
+                                listcmds.splice(0, 1);
+                                if (listcmds.length > 0) {
+                                    biddle_test_childWrapper();
+                                } else {
+                                    console.log(humantime(false) + " \u001b[32mlist test passed.\u001b[39m");
+                                    next();
+                                }
+                            });
+                        };
+                    listChild();
                 },
                 markdown     : function biddle_test_markdown() {
                     var flag = {
@@ -3038,6 +3132,13 @@
                     "f installed applications. Try using the command \u001b[32mbiddle list installed" +
                     "\u001b[39m.");
         }
+        if (fromTest === true) {
+            delete data.installed.biddletestb;
+            apps
+                .rmrecurse(data.abspath + "applications" + node.path.sep + "biddletestb", function biddle_uninstall_removeTest() {
+                    return true;
+                });
+        }
         apps
             .rmrecurse(app.location, function biddle_uninstall_rmrecurse() {
                 delete data.installed[data.input[2]];
@@ -3054,6 +3155,13 @@
             return console.log("Attempted to unpublish \u001b[36m" + data.input[2] + "\u001b[39m which is \u001b[1m\u001b[31mabsent\u001b[39m\u001b[0m from the list o" +
                     "f published applications. Try using the command \u001b[32mbiddle list published" +
                     "\u001b[39m.");
+        }
+        if (fromTest === true) {
+            delete data.published.biddletestb;
+            apps
+                .rmrecurse(data.abspath + "publications" + node.path.sep + "biddletestb", function biddle_unpublish_removeTest() {
+                    return true;
+                });
         }
         apps
             .rmrecurse(app.directory, function biddle_unpublish_rmrecurse() {
@@ -3169,7 +3277,7 @@
             }
         }
         if (data.command === "install" || data.command === "unzip") {
-            cmd = cmds.unzip;
+            cmd = cmds.unzip();
             apps.makedir(data.address.target, function biddle_zip_unzip() {
                 childfunc(data.input[2], cmd, false);
             });
@@ -3189,10 +3297,10 @@
                     data.input[2] = data.command;
                     data.command  = "help";
                     apps.help();
-                } else if (comlist[data.command] === undefined) {
+                } else if (commands[data.command] === undefined) {
                     apps.errout({
                         error: "Unrecognized command: \u001b[31m" + data.command + "\u001b[39m.  Currently these commands are recognized:\r\n\r\n" + Object
-                            .keys(comlist)
+                            .keys(commands)
                             .join("\r\n") + "\r\n",
                         name : "biddle_init_start"
                     });
@@ -3329,55 +3437,10 @@
             return addy;
         }());
         data.fileName = apps.getFileName();
-        cmds          = (function biddle_init_registerOS() {
-            data.platform = process
-                .platform
-                .replace(/\s+/g, "")
-                .toLowerCase();
-            return {
-                copy      : function biddle_init_registerOS_copy(variant) {
-                    if (data.platform === "win32") {
-                        return "xcopy /E /Q /G /H /Y /J /I " + data.input[2] + " " + data.abspath + "temp" + node.path.sep + variant;
-                    }
-                    return "cp -R " + data.input[2] + " " + data.abspath + "temp" + node.path.sep + variant;
-                },
-                hash      : function biddle_init_registerOS_hash(file) {
-                    if (data.platform === "darwin") {
-                        return "shasum -a 512 " + file;
-                    }
-                    if (data.platform === "win32") {
-                        return "certUtil -hashfile " + file + " SHA512";
-                    }
-                    return "sha512sum " + file;
-                },
-                pathRead  : (data.platform === "win32")
-                    ? "powershell.exe -nologo -noprofile -command \"[Environment]::GetEnvironmentVariab" +
-                            "le('PATH','Machine');\""
-                    : "/etc/paths",
-                pathRemove: function biddle_init_registerOS_pathRemove(cmdFile) {
-                    return "powershell.exe -nologo -noprofile -command \"$PATH='" + cmdFile + "';[Environment]::SetEnvironmentVariable('PATH',$PATH,'Machine');\"";
-                },
-                pathSet   : "powershell.exe -nologo -noprofile -command \"$PATH=[Environment]::GetEnvironment" +
-                               "Variable('PATH');[Environment]::SetEnvironmentVariable('PATH',$PATH';" + data.abspath + "cmd','Machine');\"",
-                remove    : function biddle_init_registerOS_remove(dir) {
-                    if (data.platform === "win32") {
-                        return "powershell.exe -nologo -noprofile -command \"rm " + dir + " -r -force\"";
-                    }
-                    return "rm -rf " + dir;
-                },
-                unzip     : (data.platform === "win32")
-                    ? "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compress" +
-                            "ion.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('" + data.input[2] + "', '" + data.address.target + "'); }\""
-                    : "unzip -oq " + data.input[2] + " -d " + data.address.target,
-                zip       : function biddle_init_registerOS_zip(filename) {
-                    if (data.platform === "win32") {
-                        return "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compress" +
-                                "ion.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('.', '" + filename + "'); }\"";
-                    }
-                    return "zip -r9yq " + filename + " ." + node.path.sep + " *.[!.]";
-                }
-            };
-        }());
+        data.platform = process
+            .platform
+            .replace(/\s+/g, "")
+            .toLowerCase();
         node
             .fs
             .readFile(data.abspath + "installed.json", "utf8", function biddle_init_installed(err, fileData) {
