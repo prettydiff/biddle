@@ -170,6 +170,8 @@
                     if (data.childtest === false) {
                         console.log("");
                         console.log(stack);
+                        console.log("");
+                        console.log("Please report defects to https://github.com/prettydiff/biddle/issues");
                     }
                     process.exit(1);
                 });
@@ -214,6 +216,11 @@
                 apps.makedir(addy, function biddle_get_localZip() {
                     apps.readBinary(url, callback);
                 });
+            } else if (data.command === "status") {
+                apps
+                    .readBinary(url, function biddle_get_readLocal(filedata, filepath) {
+                        callback(filedata, filepath);
+                    });
             } else {
                 apps
                     .readBinary(url, function biddle_get_readLocal(filedata) {
@@ -275,10 +282,10 @@
                     return apps.errout({error: err, name: "biddle_getpjson_readFile"});
                 }
                 data.packjson = JSON.parse(fileData);
-                if (data.packjson.name === undefined) {
+                if (typeof data.packjson.name !== "string" || data.packjson.name.length < 1) {
                     return apps.errout({error: "The package.json file is missing the required \u001b[31mname\u001b[39m property.", name: "biddle_getpjson_readfile"});
                 }
-                if (data.packjson.version === undefined) {
+                if (typeof data.packjson.version !== "string" || data.packjson.version.length < 1) {
                     return apps.errout({
                         error: "The package.json file is missing the required \u001b[31mversion\u001b[39m proper" +
                                   "ty.",
@@ -654,7 +661,9 @@
                                     data.installed[data.packjson.name]           = {};
                                     data.installed[data.packjson.name].location  = data.address.target;
                                     data.installed[data.packjson.name].version   = data.packjson.version;
-                                    data.installed[data.packjson.name].published = data.input[2];
+                                    data.installed[data.packjson.name].published = ((/^(https?:\/\/)/i).test(data.input[2]) === true)
+                                        ? data.input[2]
+                                        : apps.relToAbs(data.input[2]);
                                     apps.writeFile(JSON.stringify(data.installed), data.abspath + "installed.json", function biddle_install_compareHash_hashCmd_installedJSON() {
                                         status.packjson = true;
                                         if (status.remove === true) {
@@ -700,7 +709,6 @@
                 dirs.pop();
             }
             name = dirs[dirs.length - 1];
-            console.log(data.installed);
             if (typeof data.installed[name] === "object" && data.installed[name].version === fileData) {
                 return apps.errout({
                     error: "This application is already installed at version \u001b[36m" + fileData + "\u001b[39m. To continue uninstall the application and try again: \u001b[32mbiddl" +
@@ -1232,6 +1240,8 @@
                                             if (data.command === "install" && (/(\.hash)$/).test(filePath) === true) {
                                                 data.hashFile = fileData;
                                                 callback(fileData);
+                                            } else if (data.command === "status") {
+                                                callback(fileData, filePath);
                                             } else if (data.command === "install" && (/(latest\.txt)$/).test(filePath) === true) {
                                                 callback(fileData);
                                             } else {
@@ -1310,6 +1320,100 @@
             fileName = paths.pop();
         paths.push(fileName.replace(/\+|<|>|:|"|\/|\\|\||\?|\*|%|\s/g, ""));
         return paths.join("");
+    };
+    apps.status      = function biddle_status() {
+        var list = [],
+            versions = {},
+            verlen = 0,
+            a    = 0,
+            b    = 0,
+            len  = 0,
+            name = function biddle_status_name(pub, name) {
+                var dirs = [];
+                if ((/^(https?:\/\/)/i).test(pub) === true) {
+                    dirs = pub.split("/");
+                    dirs.pop();
+                    if (name === true) {
+                        return dirs.pop();
+                    }
+                    return dirs.join("/") + "/latest.txt";
+                }
+                dirs = pub.split(node.path.sep);
+                dirs.pop();
+                if (name === true) {
+                    return dirs.pop();
+                }
+                return dirs.join(node.path.sep) + node.path.sep + "latest.txt";
+            },
+            compare = function biddle_status_compare() {
+                var keys = Object.keys(versions),
+                    klen = keys.length,
+                    k    = 0,
+                    currents = [],
+                    outs = [];
+                keys.sort();
+                do {
+                    if (data.installed[keys[k]].version === versions[keys[k]]) {
+                        currents.push("* " + keys[k] + " matches published version \u001b[36m" + versions[keys[k]] + "\u001b[39m");
+                    } else {
+                        outs.push("* " + keys[k] + " is installed at version \u001b[1m\u001b[31m" + data.installed[keys[k]].version + "\u001b[39m\u001b[0m but published version is \u001b[36m" + versions[keys[k]] + "\u001b[39m");
+                    }
+                    k += 1;
+                } while (k < klen);
+                klen = outs.length;
+                if (klen > 0) {
+                    console.log("");
+                    if (currents.length < 1) {
+                        console.log("\u001b[4m\u001b[31mAll Applications Outdated:\u001b[39m\u001b[0m");
+                    } else {
+                        console.log("\u001b[4mOutdated Applications:\u001b[0m");
+                    }
+                    console.log("");
+                    k = 0;
+                    do {
+                        console.log(outs[k]);
+                        k += 1;
+                    } while (k < klen);
+                }
+                klen = currents.length;
+                if (klen > 0) {
+                    console.log("");
+                    if (outs.length < 1) {
+                        console.log("\u001b[4m\u001b[32mAll Applications Are Current:\u001b[39m\u001b[0m");
+                    } else {
+                        console.log("\u001b[4mCurrent Applications:\u001b[0m");
+                    }
+                    console.log("");
+                    k = 0;
+                    do {
+                        console.log(currents[k]);
+                        k += 1;
+                    } while (k < klen);
+                }
+            };
+        if (data.input[3] !== undefined) {
+            if (data.installed[data.input[3]] !== undefined) {
+                list = data.input[3];
+            } else {
+                return apps.errout({error: data.input[3] + " is not a biddle installed application.", name: "biddle_status"});
+            }
+        } else {
+            list = Object.keys(data.installed);
+            if (list.length < 1) {
+                return apps.errout({error: "No applications installed by biddle.", name: "biddle_status"});
+            }
+        }
+        len = list.length;
+        do {
+            apps.get(name(data.installed[list[a]].published, false), function biddle_status_get(filedata, filepath) {
+                versions[name(filepath, true)] = filedata;
+                b += 1;
+                if (b === len) {
+                    compare();
+                }
+            });
+            a += 1;
+        } while (a < len);
     };
     apps.test        = function biddle_test() {
         var startTime = Date.now(),
@@ -3341,6 +3445,8 @@
                         apps.help();
                     } else if (data.command === "publish") {
                         apps.publish();
+                    } else if (data.command === "status") {
+                        apps.status();
                     } else if (data.command === "test") {
                         apps.test();
                     } else if (data.command === "uninstall") {
@@ -3433,6 +3539,8 @@
                     .split(node.path.sep);
                 app         = dirs[dirs.length - 1];
                 addy.target = data.abspath + "applications" + node.path.sep + apps.sanitizef(app.slice(0, app.indexOf("_"))) + node.path.sep;
+            } else {
+                addy.target = addy.downloads
             }
             return addy;
         }());
