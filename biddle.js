@@ -19,6 +19,7 @@
             list     : true, // List installed and/or published applications.
             markdown : true, // Parse any markdown and output to terminal.
             publish  : true, // Publish an application/version.
+            remove   : true, // Remove a file or directory from the local file system.
             status   : true, // Determine if version on installed applications are behind the latest published version.
             test     : true, // Test automation.
             uninstall: true, // Uninstall an application installed by biddle.
@@ -51,7 +52,7 @@
             },
             copy      : function biddle_cmds_copy(location) { // Copy file system components from one location into a different location
                 if (data.platform === "win32") {
-                    return "xcopy /E /Q /G /H /Y /J /I " + data.input[2] + " " + location;
+                    return "xcopy \"" + data.input[2] + "\" \"" + location + "\" /E /Q /G /H /Y /J /I";
                 }
                 return "cp -R " + data.input[2] + " " + location;
             },
@@ -60,7 +61,7 @@
                     return "shasum -a 512 " + file;
                 }
                 if (data.platform === "win32") {
-                    return "certUtil -hashfile " + file + " SHA512";
+                    return "certUtil -hashfile \"" + file + "\" SHA512";
                 }
                 return "sha512sum " + file;
             },
@@ -227,7 +228,7 @@
             if ((/(\.zip)$/).test(url) === true) {
                 console.log("Address " + url + " is missing the \u001b[36mhttp(s)\u001b[39m scheme, treating as a local path...");
                 apps.makedir(addy, function biddle_get_localZip() {
-                    apps.readBinary(url, callback);
+                    node.child(cmds.copy("downloads"), callback);
                 });
             } else if (data.command === "status") {
                 apps
@@ -324,7 +325,6 @@
             });
     };
     apps.hashCmd     = function biddle_hashCmd(filepath, store, callback) {
-        var cmd = cmds.hash(filepath);
         node
             .fs
             .stat(filepath, function biddle_hashCmd_stat(er, stat) {
@@ -358,12 +358,12 @@
                     });
                 }
                 node
-                    .child(cmd, function biddle_hashCmd_stat_exec(err, stdout, stderr) {
+                    .child(cmds.hash(filepath), function biddle_hashCmd_stat_child(err, stdout, stderr) {
                         if (err !== null) {
-                            return apps.errout({error: err, name: "biddle_hashCmd_stat_exec"});
+                            return apps.errout({error: err, name: "biddle_hashCmd_stat_child"});
                         }
                         if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
-                            return apps.errout({error: stderr, name: "biddle_hashCmd_stat_exec"});
+                            return apps.errout({error: stderr, name: "biddle_hashCmd_stat_child"});
                         }
                         stdout      = stdout.replace(/\s+/g, "");
                         stdout      = stdout.replace(filepath, "");
@@ -1441,6 +1441,7 @@
                 "lint",
                 "hash",
                 "copy",
+                "remove",
                 "help",
                 "markdown",
                 "get",
@@ -1501,9 +1502,13 @@
                 }
             },
             keys      = Object.keys(modules),
-            childcmd  = (data.abspath === process.cwd() + node.path.sep)
-                ? "node biddle "
-                : "biddle ",
+            childcmd  = (data.platform === "win32")
+                ? (data.abspath === process.cwd().toLowerCase() + node.path.sep)
+                    ? "node biddle "
+                    : "biddle "
+                : (data.abspath === process.cwd() + node.path.sep)
+                    ? "node biddle "
+                    : "biddle ",
             testpath  = data.abspath + "unittest",
             humantime = function biddle_test_humantime(finished) {
                 var minuteString = "",
@@ -1746,9 +1751,9 @@
             },
             phases    = {
                 copy         : function biddle_test_copy() {
-                    node.child(childcmd + "copy " + data.abspath + "test " + testpath + " childtest", function biddle_test_copy_child(er, stdout, stder) {
-                        var copytest = "Copied " + data.abspath + "test to " + data.abspath + "unittest",
-                            copyfile = data.abspath + "unittest" + node.path.sep + "test" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta.js";
+                    node.child(childcmd + "copy " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta.js " + testpath + " childtest", function biddle_test_copy_child(er, stdout, stder) {
+                        var copytest = "Copied " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta.js to " + data.abspath + "unittest",
+                            copyfile = data.abspath + "unittest" + node.path.sep + "biddletesta.js";
                         if (er !== null) {
                             return apps.errout({error: er, name: "biddle_test_copy_child", stdout: stdout, time: humantime(true)});
                         }
@@ -1763,7 +1768,7 @@
                             if (ers !== null) {
                                 return apps.errout({error: ers, name: "biddle_test_copy_child_stat", stdout: stdout, time: humantime(true)});
                             }
-                            if (stats === undefined || stats === null || stats.isFile() === false) {
+                            if (stats === undefined || stats.isFile() === false) {
                                 return apps.errout({error: "copy failed as " + copyfile + " is not present", name: "biddle_test_copy_child_stat", stdout: stdout, time: humantime(true)});
                             }
                             console.log(humantime(false) + " \u001b[32mcopy test passed.\u001b[39m");
@@ -2118,9 +2123,9 @@
                         changed = false,
                         listChild = function biddle_test_listStatus_childWrapper() {
                             node.child(childcmd + listcmds[0] + " childtest", function biddle_test_listStatus_childWrapper_child(er, stdout, stder) {
-                                var listout = "\u001b[4mInstalled applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[39m - 99.99.1234 - /users/echeney/biddle/applications/biddletesta/\n* \u001b[36mbiddletestb\u001b[39m - 98.98.1234 - /users/echeney/biddle/applications/biddletestb/\n\n\u001b[4mPublished applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[39m - 99.99.1234 - /users/echeney/biddle/publications/biddletesta/\n* \u001b[36mbiddletestb\u001b[39m - 98.98.1234 - /users/echeney/biddle/publications/biddletestb/",
-                                    listpub = "\u001b[4mPublished applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[39m - 99.99.1234 - /users/echeney/biddle/publications/biddletesta/\n* \u001b[36mbiddletestb\u001b[39m - 98.98.1234 - /users/echeney/biddle/publications/biddletestb/",
-                                    listist = "\u001b[4mInstalled applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[39m - 99.99.1234 - /users/echeney/biddle/applications/biddletesta/\n* \u001b[36mbiddletestb\u001b[39m - 98.98.1234 - /users/echeney/biddle/applications/biddletestb/",
+                                var listout = "\u001b[4mInstalled applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[39m - 99.99.1234 - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* \u001b[36mbiddletestb\u001b[39m - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep + "\n\n\u001b[4mPublished applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[39m - 99.99.1234 - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* \u001b[36mbiddletestb\u001b[39m - 98.98.1234 - " + data.abspath + "publications" + node.path.sep + "biddletestb" + node.path.sep,
+                                    listpub = "\u001b[4mPublished applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[39m - 99.99.1234 - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* \u001b[36mbiddletestb\u001b[39m - 98.98.1234 - " + data.abspath + "publications" + node.path.sep + "biddletestb" + node.path.sep,
+                                    listist = "\u001b[4mInstalled applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[39m - 99.99.1234 - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* \u001b[36mbiddletestb\u001b[39m - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep,
                                     statout = "\n\u001b[4m\u001b[32mAll Applications Are Current:\u001b[39m\u001b[0m\n\n* biddletesta matches published version \u001b[36m99.99.1234\u001b[39m\n* biddletestb matches published version \u001b[36m98.98.1234\u001b[39m",
                                     statpba = "\n* biddletesta matches published version \u001b[36m99.99.1234\u001b[39m",
                                     statpbb = "\n\u001b[4mOutdated Applications:\u001b[0m\n\n* biddletesta is installed at version \u001b[1m\u001b[31m99.99.1234\u001b[39m\u001b[0m but published version is \u001b[36m11.22.6789\u001b[39m\n\n\u001b[4mCurrent Applications:\u001b[0m\n\n* biddletestb matches published version \u001b[36m98.98.1234\u001b[39m",
@@ -3085,6 +3090,29 @@
                                 });
                         });
                 },
+                remove       : function biddle_test_remove() {
+                    node.child(childcmd + "remove " + testpath + node.path.sep + "biddletesta.js childtest", function biddle_test_remove_child(er, stdout, stder) {
+                        var removefile = testpath + node.path.sep + "biddletesta.js",
+                            removetest = "Removed " + removefile;
+                        if (er !== null) {
+                            return apps.errout({error: er, name: "biddle_test_remove_child", stdout: stdout, time: humantime(true)});
+                        }
+                        if (stder !== null && stder !== "") {
+                            return apps.errout({error: stder, name: "biddle_test_remove_child", stdout: stdout, time: humantime(true)});
+                        }
+                        stdout = stdout.replace(/(\s+)$/, "");
+                        if (stdout !== removetest) {
+                            return diffFiles("biddle_test_remove_child", stdout, removetest);
+                        }
+                        node.fs.stat(removefile, function biddle_test_remove_child_stat(ers) {
+                            if (ers === null || ers.toString().indexOf("no such file for directory") > 0) {
+                                return apps.errout({error: "remove test failed as file is still present", name: "biddle_test_remove_child_stat", stdout: stdout, time: humantime(true)});
+                            }
+                            console.log(humantime(false) + " \u001b[32mremove test passed.\u001b[39m");
+                            next();
+                        });
+                    });
+                },
                 uninstall    : function biddle_test_uninstall() {
                     node
                         .child(childcmd + "uninstall biddletesta childtest", function biddle_test_uninstall_child(er, stdout, stder) {
@@ -3526,8 +3554,8 @@
                     });
                 } else {
                     if (data.input[2] === undefined && data.command !== "status" && data.command !== "list" && data.command !== "test" && data.command !== "global") {
-                        if (data.command === "copy" || data.command === "hash" || data.command === "markdown" || data.command === "unzip" || data.command === "zip") {
-                            valuetype = "path to a local file";
+                        if (data.command === "copy" || data.command === "hash" || data.command === "markdown" || data.command === "remove" || data.command === "unzip" || data.command === "zip") {
+                            valuetype = "path to a local file or directory";
                         } else if (data.command === "get" || data.command === "install" || data.command === "publish") {
                             valuetype = "URL address for a remote resource or path to a local file";
                         } else if (data.command === "uninstall" || data.command === "unpublish") {
@@ -3535,6 +3563,12 @@
                         }
                         return apps.errout({
                             error: "Command \u001b[32m" + data.command + "\u001b[39m requires a " + valuetype + ".",
+                            name : "biddle_init_start"
+                        });
+                    }
+                    if (data.input[3] === undefined && data.command === "copy") {
+                        return apps.errout({
+                            error: "Command \u001b[32m" + data.command + "\u001b[39m requires a destination directory.",
                             name : "biddle_init_start"
                         });
                     }
@@ -3563,6 +3597,10 @@
                         apps.help();
                     } else if (data.command === "publish") {
                         apps.publish();
+                    } else if (data.command === "remove") {
+                        apps.rmrecurse(data.input[2], function biddle_init_stat_remove() {
+                            console.log("Removed " + apps.relToAbs(data.input[2]));
+                        });
                     } else if (data.command === "status") {
                         apps.status();
                     } else if (data.command === "test") {
