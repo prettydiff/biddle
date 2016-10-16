@@ -25,6 +25,9 @@ Project is in **beta** status.  This project is stable and ready for examination
 * need to work out *global* switch for **install** command
 * there is a minor bug in the *lint* phase of the **test** command where the program occasionally exits early
 
+## Documentation
+* Please read about the required *package.json* file at [package.md](package.md)
+* Technical documentation is avialable at [documentation.md](documentation.md)
 
 ## Supported commands
 Commands are the third command line argument, or second if the *node* argument is absent.  Commands are case insensitive, but values and local paths are case sensitive.  All local address are either absolute from the root or relative from the current working directory.
@@ -130,6 +133,12 @@ Publish to a custom location: ./myAlternateDirectory/myApplicationDirectory
 Use quotes if any argument contains spaces:
 
     node biddle publish "c:\program files\myApplicationDirectory"
+
+### remove
+Removes a file or a directory tree
+
+    node biddle remove myDirectory
+    node biddle remove myFile
 
 ### status
 Will check whether an installed application is behind the latest published version.
