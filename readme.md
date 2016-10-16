@@ -5,7 +5,7 @@
 [MIT](https://opensource.org/licenses/MIT)
 
 ## Version
-0.0.3
+0.1.0
 
 ## About
 This application is a cross-OS solution to creating zip files for distribution and fetching files via HTTP(S).  The project's goal is to provide a universal application distribution utility that is language agnostic, operating system independent, and platform independent.  The only additional requirement for distributing application packages is online storage on a web server.  This application provides all the utilities to retrieve, bundle, and unpackage applications.
@@ -18,35 +18,22 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
 * *freedom* - biddle will work everywhere Node.js runs.  It can be used with any application written in any language whether binary or text.
 
 ## Project Status
-**Unstable and in early developement.**
 
-* command **get** is complete
-* command **global** is complete
-* command **hash** is complete
-* command **help** is complete
-* command **install** is complete
-* command **markdown** is complete
-* command **publish** is complete
-* command **uninstall** is complete
-* command **unpublish** is complete
-* command **unzip** is complete
-* command **zip** is complete
+Project is in **beta** status.  This project is stable and ready for examination, but not ready for production or commercial use.
 
-
-* command **test** will be the last thing to be marked as complete
-* command **list** requires testing
-* command **status** is not started
+### Todo list
 * need to work out *global* switch for **install** command
-* OS specific commands need to be moved to the top of the file for clearer visibility
-* there is a minor bug in the *lint* phase of the **test** command where the program occasionally exit early
-* documentation is required for
-   - package.json
-   - directory structure and file requirements
-   - installed.json and published.json structures
+* there is a minor bug in the *lint* phase of the **test** command where the program occasionally exits early
 
 
 ## Supported commands
 Commands are the third command line argument, or second if the *node* argument is absent.  Commands are case insensitive, but values and local paths are case sensitive.  All local address are either absolute from the root or relative from the current working directory.
+
+### copy
+Copy files or directories to a different directory.
+
+    node biddle copy myFile myOtherDirectory
+    node biddle copy myDirectory myOtherDirectory
 
 ### get
 Merely downloads the requested resource and saves it as a file with the same filename. If the filename is not provided in the URI the final directory up to the domain name will become the filename, and if for some reason that doesn't work the default filename is *download.xxx*.
@@ -74,12 +61,12 @@ Allowing global availability to biddle in Windows. This command requires an admi
 
     node biddle global
 
-Removing global availability to biddle in non-Windows environments. This command requires an administrative console.
+Removing global availability to biddle in Windows environments. This command requires an administrative console.
 
     biddle global remove
 
 ### hash
-Prints to console a SHA512 hash against a local resource.
+Prints to console a SHA512 hash against a local file.
 
     node biddle hash downloads/myfile.zip
 
@@ -110,6 +97,10 @@ Only output the installed list.
 
     node biddle list installed
 
+Only output the published list.
+
+    node biddle list published
+
 Output both lists
 
     node biddle list
@@ -121,28 +112,35 @@ The first argument after the command is the address of the file to read.
 
     node biddle markdown applications/example/readme.md
 
-You can also specify a custom word wrap limit.  The default is still 100.
+You can also specify a custom word wrap limit.  The default is 100.
 
     node biddle markdown applications/example/readme.md 80
 
 ### publish
 Writes a hash file and a zip file with a version number to the publications directory or some other specified location.  Applications are required to have a file in their root directory named *package.json* with properties: *name* and *version*.
 
-Create a zip in the default location: ./publications/myapplication
+Create a zip in the default location: ./publications/myApplicationDirectory
 
-    node biddle publish ../myapplication
+    node biddle publish ../myApplicationDirectory
 
-Publish to a custom location: ./myAlternateDirectory/myapplication
+Publish to a custom location: ./myAlternateDirectory/myApplicationDirectory
 
-    node biddle publish ../myapplication myAlternateDirectory
+    node biddle publish ../myApplicationDirectory myAlternateDirectory
 
 Use quotes if any argument contains spaces:
 
-    node biddle publish "c:\program files\myApplication"
+    node biddle publish "c:\program files\myApplicationDirectory"
 
 ### status
-(not written yet)
-Will check whether an installed application is behind the latest published version.  Automation is planned but still under consideration.
+Will check whether an installed application is behind the latest published version.
+
+Check the status of all installed applications
+
+    node biddle status
+
+Check the status of an application by name
+
+    noe biddle status myApplicationName
 
 ### test
 Run the user acceptance tests.
@@ -155,7 +153,7 @@ Will delete an installed application by name and remove the application from the
     node biddle uninstall myApplicationName
 
 ### unpublish
-Will delete a published application by name and remove the application from the published list.  An application name is required and not the address to the application.
+Will delete a published application by name and remove the application from the published list.
 
     node biddle unpublish myApplicationName
 
@@ -184,5 +182,6 @@ Zip to a specified location.
 ## Dependencies
 
 * This application is written in JavaScript and requires [Node.js](https://nodejs.org/en/) to run.
-* This application makes use of zip and hash utilities provided by the operating system.
+* This application makes use of zip and hash utilities provided by operating systems.
+* This application requires use of Windows's PowerShell to operate most native Windows commands.
 * The *test* command requires [Pretty Diff](https://github.com/prettydiff/prettydiff.git) and [JSLint](https://github.com/douglascrockford/JSLint.git) as git submodules from Github.
