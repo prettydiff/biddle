@@ -2,13 +2,11 @@
 
 ## Getting set up
 1. First thing is to get a copy of biddle, so let's download from Github
-
-    git clone git@github.com:prettydiff/biddle.git
-    cd biddle
+    `git clone git@github.com:prettydiff/biddle.git`
+    `cd biddle`
 
 2. Let's add biddle to the system path so that we can run it from any directory on the file system.
-
-    node biddle global
+    `node biddle global`
 
 ## Publish an application
 1. We need to publish an application to have something to play with. Biddle comes with two mock applications for running tests, so will use one of those.
