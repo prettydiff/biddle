@@ -13,7 +13,8 @@ This application is a cross-OS solution to creating zip files for distribution a
 biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but seeks to accomplish a few additional goals:
 
 * *integrity* - Downloaded packages will perform a hash comparison before they are unpackaged.  If the hashes don't match the zip file will be saved in the downloads directory awaiting a human touch.
-* *autonomy* - There is no central authority here.  Host your own publications and manage them as you please with any name you choose.
+* *autonomy* - Be freed from censorship.  There is no central authority here.  Host your own publications and manage them as you please from any location and with any name or content you choose.
+* *privacy* - Put biddle behind your firewall or an isolated environment to prevent public access to your applications and data.
 * *management* - There is no dependency hell here.  Dependency management will not be automated, but a means to manage and review the status of all installed/published packages is provided.
 * *freedom* - biddle will work everywhere Node.js runs.  It can be used with any application written in any language whether binary or text.
 
@@ -26,8 +27,9 @@ Project is in **beta** status.  This project is stable and ready for examination
 * there is a minor bug in the *lint* phase of the **test** command where the program occasionally exits early
 
 ## Documentation
-* Please read about the required *package.json* file at [package.md](package.md)
-* Technical documentation is avialable at [documentation.md](documentation.md)
+* [Getting Started](gettingstarted.md)
+* [package.json](package.md)
+* [Technical documentation](documentation.md)
 
 ## Supported commands
 Commands are the third command line argument, or second if the *node* argument is absent.  Commands are case insensitive, but values and local paths are case sensitive.  All local address are either absolute from the root or relative from the current working directory.
