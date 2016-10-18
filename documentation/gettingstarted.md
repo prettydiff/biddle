@@ -48,6 +48,15 @@ Install will to see if the provided path starts with *http* or *https* and if so
 
 Between getting the zip file and unzipping its contents biddle will run a hash of the file and compare it to the hash sequence provided in the requested hash file.  If the hashes are a match the application is unzipped and installed.  If the hashes don't match the zip file is stored in biddle's *downloads* directory so that the user can decide the next course of action.
 
+By default applications will be installed to biddle's *applications* directory.  The installation location can be customized by specifying a parent directory location as the next argument.
+
+    biddle install publications/biddletesta/biddletesta_latest.zip /myApps
+
+## Read the markdown
+It would be handy if we could read about the application without leaving the terminal.  Fortunately, biddle includes a markdown parser and formatter for the command line interface.
+
+    biddle markdown applications/biddletesta/READMEa.md
+
 ## List applications
 It is handy to know what applications are present, so let's generate a list of installed applications.
 

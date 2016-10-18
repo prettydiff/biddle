@@ -402,10 +402,77 @@
                     tan    = "\u001b[33m", //color - tan
                     cyn    = "\u001b[36m", //color - cyan
                     enc    = "\u001b[39m", //end - color
+                    table  = function biddle_help_readme_table() {
+                        var rows = [lines[b].replace(/^\|/, "").replace(/\|$/, "").split("|")],
+                            lens = rows[0].length,
+                            cols = [],
+                            c    = 0,
+                            d    = 0,
+                            e    = 0,
+                            lend = 0,
+                            line = "";
+                        do {
+                            cols.push(rows[0][c].length);
+                            c += 1;
+                        } while (c < lens);
+                        c = b + 2;
+                        line = lines[c].replace(/^\|/, "").replace(/\|$/, "");
+                        if (line.indexOf("|") > -1) {
+                            do {
+                                rows.push(line.split("|").slice(0, lens));
+                                d = 0;
+                                do {
+                                    if (rows[rows.length - 1][d].length > cols[d]) {
+                                        cols[d] = rows[rows.length - 1][d].length;
+                                    }
+                                    d += 1;
+                                } while (d < lens);
+                                c += 1;
+                                if (c === len) {
+                                    break;
+                                }
+                                line = lines[c].replace(/^\|/, "").replace(/\|$/, "");
+                            } while (line.indexOf("|") > -1);
+                        }
+                        c = 0;
+                        lend = rows.length;
+                        do {
+                            d = 0;
+                            do {
+                                e = rows[c][d].length;
+                                if (d === lens - 1 && rows[c][d].length < cols[d]) {
+                                    do {
+                                        e += 1;
+                                        rows[c][d] = rows[c][d] + " ";
+                                    } while (e < cols[d]);
+                                } else {
+                                    do {
+                                        e += 1;
+                                        rows[c][d] = rows[c][d] + " ";
+                                    } while (e < cols[d] + 1);
+                                }
+                                if (c === 0) {
+                                    if (d > 0) {
+                                        rows[c][d] = "\u001b[4m  " + rows[c][d] + "\u001b[0m";
+                                    } else {
+                                        rows[c][d] = "\u001b[4m" + rows[c][d] + "\u001b[0m";
+                                    }
+                                } else {
+                                    if (d > 0) {
+                                        rows[c][d] = "| " + rows[c][d];
+                                    }
+                                }
+                                d += 1;
+                            } while (d < lens);
+                            output.push(rows[c].join(""));
+                            c += 1;
+                            b += 1;
+                        } while (c < lend);
+                        b += 1;
+                    },
                     parse  = function biddle_help_readme_parse(listitem) {
-                        var chars = lines[b]
-                                .replace(/`/g, "bix~")
-                                .split(""),
+                        var block = false,
+                            chars = [],
                             final = chars.length,
                             s     = (/\s/),
                             x     = 0,
@@ -415,7 +482,7 @@
                             math  = 0,
                             endln = 0,
                             quote = "",
-                            wrap  = function biddle_help_readme_parse_wrap() {
+                            wrap  = function biddle_help_readme_parse_wrap(tick) {
                                 var z      = x,
                                     format = function biddle_help_readme_parse_wrap_format(eol) {
                                         chars[eol] = "\n" + ind;
@@ -427,7 +494,14 @@
                                             final -= 1;
                                         }
                                     };
-                                if (s.test(chars[x]) === true) {
+                                if (tick === true) {
+                                    do {
+                                        z -= 1;
+                                    } while (chars[z + 1].indexOf("\u001b[32m") < 0 && z > index);
+                                    if (z > index) {
+                                        format(z);
+                                    }
+                                } else if (s.test(chars[x]) === true) {
                                     format(x);
                                 } else {
                                     do {
@@ -438,6 +512,9 @@
                                     }
                                 }
                             };
+                        chars = lines[b]
+                            .replace(/`/g, "bix~")
+                            .split("");
                         if ((/\u0020{4}\S/).test(lines[b]) === true && listitem === false) {
                             lines[b] = grn + lines[b] + enc;
                             return;
@@ -463,8 +540,18 @@
                                     chars.splice(x, 2);
                                     chars[x] = bld + chars[x];
                                     final    -= 2;
+                                } else if (chars[x] === "_" && chars[x + 1] === "_") {
+                                    quote = "__";
+                                    chars.splice(x, 2);
+                                    chars[x] = bld + chars[x];
+                                    final    -= 2;
                                 } else if (chars[x] === "*" && ((x === start && chars[x + 1] !== " ") || x > start)) {
                                     quote = "*";
+                                    chars.splice(x, 1);
+                                    chars[x] = itl + tan + chars[x];
+                                    final    -= 1;
+                                } else if (chars[x] === "_" && ((x === start && chars[x + 1] !== " ") || x > start)) {
+                                    quote = "_";
                                     chars.splice(x, 1);
                                     chars[x] = itl + tan + chars[x];
                                     final    -= 1;
@@ -484,14 +571,14 @@
                                 final    -= 4;
                                 if (math > 1 && chars[x + 1] === " ") {
                                     x += 1;
-                                    wrap();
+                                    wrap(false);
                                 }
                             } else if (chars[x] === ")" && quote === ")") {
                                 quote    = "";
                                 chars[x] = enc + chars[x];
                                 if (math > 1 && chars[x + 1] === " ") {
                                     x += 1;
-                                    wrap();
+                                    wrap(false);
                                 }
                             } else if (chars[x] === "*" && chars[x + 1] === "*" && quote === "**") {
                                 quote = "";
@@ -503,9 +590,23 @@
                                 chars.splice(x, 1);
                                 chars[x - 1] = chars[x - 1] + enc + ens;
                                 final        -= 1;
+                            } else if (chars[x] === "_" && chars[x + 1] === "_" && quote === "__") {
+                                quote = "";
+                                chars.splice(x, 2);
+                                chars[x - 1] = chars[x - 1] + ens;
+                                final        -= 2;
+                            } else if (chars[x] === "_" && quote === "_") {
+                                quote = "";
+                                chars.splice(x, 1);
+                                chars[x - 1] = chars[x - 1] + enc + ens;
+                                final        -= 1;
                             }
-                            if (math > 1 && quote !== "`") {
-                                wrap();
+                            if (math > 1) {
+                                if (quote === "`") {
+                                    wrap(true);
+                                } else {
+                                    wrap(false);
+                                }
                             }
                         }
                         if (quote === "**") {
@@ -577,8 +678,9 @@
                         } else if (brace === j[i]) {
                             if (brace = "`") {
                                 code = false;
+                            } else {
+                                j[i] = "";
                             }
-                            j[i] = "";
                             if (brace === "]" && j[i + 1] === "(") {
                                 brace = ")";
                             } else {
@@ -595,7 +697,9 @@
                 len    = lines.length;
                 output.push("");
                 for (b = 0; b < len; b += 1) {
-                    if (lines[b].indexOf("#### ") === 0) {
+                    if (lines[b].slice(1).indexOf("|") > -1 && (/---+\|---+/).test(lines[b + 1]) === true) {
+                        table();
+                    } else if (lines[b].indexOf("#### ") === 0) {
                         listly   = [];
                         ind      = "    ";
                         lines[b] = ind + und + bld + tan + lines[b].slice(5) + enc + ens + enu;
@@ -635,6 +739,9 @@
                         }
                         parse(true);
                         lines[b] = lines[b].replace("-", bld + red + "-" + enc + ens);
+                    } else if ((/^>/).test(lines[b]) === true) {
+                        listly = [];
+                        parse(true);
                     } else {
                         listly = [];
                         if (lines[b].length > 0) {

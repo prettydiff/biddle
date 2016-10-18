@@ -27,9 +27,10 @@ Project is in **beta** status.  This project is stable and ready for examination
 * there is a minor bug in the *lint* phase of the **test** command where the program occasionally exits early
 
 ## Documentation
-* [Getting Started](gettingstarted.md)
-* [package.json](package.md)
-* [Technical documentation](documentation.md)
+* [Getting Started](documentation/gettingstarted.md)
+* [package.json](documentation/package.md)
+* [Documentation](documentation/documentation.md)
+* [Developer Information](documentation/developer.md)
 
 ## Supported commands
 Commands are the third command line argument, or second if the *node* argument is absent.  Commands are case insensitive, but values and local paths are case sensitive.  All local address are either absolute from the root or relative from the current working directory.
