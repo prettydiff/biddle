@@ -578,6 +578,9 @@
                             } else if (chars[x] === "b" && chars[x + 1] === "i" && chars[x + 2] === "x" && chars[x + 3] === "~" && quote === "`") {
                                 quote = "";
                                 chars.splice(x, 4);
+                                if (chars[x] === undefined) {
+                                    x = chars.length - 1;
+                                }
                                 chars[x] = chars[x] + enc;
                                 final    -= 4;
                                 if (math > 1 && chars[x + 1] === " ") {
