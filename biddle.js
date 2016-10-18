@@ -455,11 +455,13 @@
                                     if (d > 0) {
                                         rows[c][d] = "\u001b[4m  " + rows[c][d] + "\u001b[0m";
                                     } else {
-                                        rows[c][d] = "\u001b[4m" + rows[c][d] + "\u001b[0m";
+                                        rows[c][d] = ind + "\u001b[4m" + rows[c][d] + "\u001b[0m";
                                     }
                                 } else {
                                     if (d > 0) {
-                                        rows[c][d] = "| " + rows[c][d];
+                                        rows[c][d] = "  " + rows[c][d];
+                                    } else {
+                                        rows[c][d] = ind + rows[c][d];
                                     }
                                 }
                                 d += 1;
@@ -473,7 +475,7 @@
                     parse  = function biddle_help_readme_parse(listitem) {
                         var block = false,
                             chars = [],
-                            final = chars.length,
+                            final = 0,
                             s     = (/\s/),
                             x     = 0,
                             y     = ind.length,
@@ -485,7 +487,11 @@
                             wrap  = function biddle_help_readme_parse_wrap(tick) {
                                 var z      = x,
                                     format = function biddle_help_readme_parse_wrap_format(eol) {
-                                        chars[eol] = "\n" + ind;
+                                        if (block === true) {
+                                            chars[eol] = "\n" + ind + "| ";
+                                        } else {
+                                            chars[eol] = "\n" + ind;
+                                        }
                                         index      = 1 + y + eol;
                                         if (chars[eol - 1] === " ") {
                                             chars[eol - 1] = "";
@@ -512,15 +518,20 @@
                                     }
                                 }
                             };
-                        chars = lines[b]
-                            .replace(/`/g, "bix~")
-                            .split("");
                         if ((/\u0020{4}\S/).test(lines[b]) === true && listitem === false) {
                             lines[b] = grn + lines[b] + enc;
                             return;
                         }
+                        if (lines[b].charAt(0) === ">") {
+                            block = true;
+                        }
+                        chars = lines[b]
+                            .replace(/^(\s*>\s*)/, ind + "| ")
+                            .replace(/`/g, "bix~")
+                            .split("");
+                        final = chars.length;
                         chars.splice(0, 0, ind);
-                        if (listitem === true) {
+                        if (listitem === true || block === true) {
                             x = listly.length;
                             do {
                                 x   -= 1;
@@ -626,7 +637,9 @@
                             chars[x]     = "";
                         }
                         lines[b] = chars.join("");
-                        if (listitem === true) {
+                        if (block === true) {
+                            ind = ind.slice(2);
+                        } else if (listitem === true) {
                             ind = ind.slice(listly.length * 2);
                         }
                     };
@@ -739,9 +752,12 @@
                         }
                         parse(true);
                         lines[b] = lines[b].replace("-", bld + red + "-" + enc + ens);
-                    } else if ((/^>/).test(lines[b]) === true) {
+                    } else if ((/^\s*>/).test(lines[b]) === true) {
                         listly = [];
                         parse(true);
+                        if (b < len - 1 && (/^(\s*)$/).test(lines[b + 1]) === false) {
+                            lines[b + 1] = ">" + lines[b + 1];
+                        }
                     } else {
                         listly = [];
                         if (lines[b].length > 0) {

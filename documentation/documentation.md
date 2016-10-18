@@ -1,7 +1,6 @@
 # biddle, documentation
 
 ## Commands
-> quote with some really long string that should wrap and go on forever like never before and such and be really long with a bunch of gibberish boo and stuff
 
 biddle operates strictly by command.  These commands are supported:
 
