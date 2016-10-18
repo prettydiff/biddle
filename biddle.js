@@ -607,7 +607,7 @@
                                 rows.push(line.split("|").slice(0, lens));
                                 d = 0;
                                 do {
-                                    rows[rows.length - 1][d] = parse(rows[rows.length - 1][d], false, true);
+                                    rows[rows.length - 1][d] = parse(rows[rows.length - 1][d].replace(/\s+/g, " ").replace(/^\s/, "").replace(/\s$/, ""), false, true);
                                     lend = rows[rows.length - 1][d].replace(/\u001b\[\d+m/g, "").length;
                                     if (lend > cols[d]) {
                                         cols[d] = lend;
@@ -833,8 +833,8 @@
                                     data.installed[data.packjson.name].location  = data.address.target;
                                     data.installed[data.packjson.name].version   = data.packjson.version;
                                     data.installed[data.packjson.name].published = ((/^(https?:\/\/)/i).test(data.input[2]) === true)
-                                        ? data.input[2]
-                                        : apps.relToAbs(data.input[2]);
+                                        ? data.input[2].slice(0, data.input[2].lastIndexOf("/") + 1);
+                                        : apps.relToAbs(data.input[2], data.input[2].lastIndexOf(node.path.sep) + 1);
                                     apps.writeFile(JSON.stringify(data.installed), data.abspath + "installed.json", function biddle_install_compareHash_hashCmd_installedJSON() {
                                         status.packjson = true;
                                         if (status.remove === true) {
@@ -1251,8 +1251,8 @@
                     name : "biddle_publish_execution"
                 });
             }
-            if (data.input[3] !== undefined && data.published[data.packjson.name] !== undefined) {
-                data.published[data.packjson.name].directory = data.address.target + apps.sanitizef(data.packjson.name);
+            if (data.published[data.packjson.name] !== undefined && data.input[3] !== undefined) {
+                data.input = data.input.slice(0, 3);
             } else if (data.published[data.packjson.name] === undefined) {
                 data.published[data.packjson.name]           = {};
                 data.published[data.packjson.name].versions  = [];
