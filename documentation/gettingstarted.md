@@ -20,19 +20,20 @@ When we publish a new application a directory reflective of the application's na
     cd publications/biddletesta
 
 You should see the following list of files:
-  * biddletesta_99.99.1234.hash
-  * biddletesta_99.99.1234.zip
-  * biddletesta_latest.hash
-  * biddletesta_latest.zip
-  * biddletesta_min_99.99.1234.hash
-  * biddletesta_min_99.99.1234.zip
-  * biddletesta_min_latest.hash
-  * biddletesta_min_latest.zip
-  * biddletesta_prod_99.99.1234.hash
-  * biddletesta_prod_99.99.1234.zip
-  * biddletesta_prod_latest.hash
-  * biddletesta_prod_latest.zip
-  * latest.txt
+
+* biddletesta_99.99.1234.hash
+* biddletesta_99.99.1234.zip
+* biddletesta_latest.hash
+* biddletesta_latest.zip
+* biddletesta_min_99.99.1234.hash
+* biddletesta_min_99.99.1234.zip
+* biddletesta_min_latest.hash
+* biddletesta_min_latest.zip
+* biddletesta_prod_99.99.1234.hash
+* biddletesta_prod_99.99.1234.zip
+* biddletesta_prod_latest.hash
+* biddletesta_prod_latest.zip
+* latest.txt
 
 ## A brief explanation of publish
 By default the **publish** command will generate five files with the convention myAppName_version.zip, myAppName_version.hash, myAppName_latest.zip, myAppName_latest.hash, and latest.txt.  For every zip file created a hash file is created with the same file name.  If the version is the first publication or later than prior publications the files with *latest* (intead of *version*) are written.  The latest named files are created as a convenience for users who want access to the newest updates without having to keep track of version details.  Finally, the file *latest.txt* is written if the version is the latest version, which contains the version string.  The *latest.txt* file is necessary for the **status** command.

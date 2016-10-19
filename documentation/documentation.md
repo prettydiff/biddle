@@ -8,26 +8,27 @@ For definitions and usage examples please see the [readme.md](../readme.md) file
 ### Command Overview
 biddle operates with the convention: `biddle command argument1 argument2`
 
-The following table describes which commands require arguments and which commands run locally without a network connection.  A second argument is required for the **copy** command and either optional or unused for all other commands.
+The following table describes which commands require arguments and which commands run locally without a network connection.  Commands with a "?" in the *Local* column are commands that will access the internet if provided a web address as an argument.  A second argument is required for the **copy** command and either optional or unused for all other commands.
 
-Command|Local Only|Argument Type|Second Argument
+Command|Local|Argument Type|Second Argument
 ---|---|---|---
-copy|yes|file path or directory path|directory path
-get|optional|file path|none
-global|yes|none|none
-hash|yes|file path|none
-help|yes|number|none
-install|optional|zip file|directory path
-list|yes|"*installed*" or "*published*"|none
-markdown|yes|path to markdown file|number
-publish|yes|directory path|directory path
-remove|yes|file path or directory path|none
-status|yes|none or application name|none
-test|no|none|none
-uninstall|yes|application name|none
-unpublish|yes|application name|none
-unzip|yes|path to zip file|directory path
-zip|yes|file path or directory path|directory path
+commands|✓|none|none
+copy|✓|file path or directory path|directory path
+get|?|file path|none
+global|✓|none|none
+hash|✓|file path|none
+help|✓|number|none
+install|?|zip file|directory path
+list|✓|"*installed*" or "*published*"|none
+markdown|✓|path to markdown file|number
+publish|✓|directory path|directory path
+remove|✓|file path or directory path|none
+status|?|none or application name|none
+test|X|none|none
+uninstall|✓|application name|none
+unpublish|✓|application name|none
+unzip|✓|path to zip file|directory path
+zip|✓|file path or directory path|directory path
 
 ### cmds Object
 Some biddle commands require OS specific actions.  For instance the commands to recursively delete a directory tree, copy a directory tree, or zip a file differ by operating system.  Many of these simple operations are required for the primary publication and installation tasks and are provided directly as a convenience.
@@ -61,8 +62,8 @@ Versions in biddle are completely free form.  [SemVer](http://semver.org/) is st
 ### Latest Version
 In addition to publishing a specified version of an application biddle will also create a *latest* version in the following criteria is met:
 
- * The current version is the first publication
- * larger than the immediately preceding version where larger means sorts higher after a JavaScript string sort.
+* The current version is the first publication
+* larger than the immediately preceding version where larger means sorts higher after a JavaScript string sort.
 
 ## Installation and the installed.json File
 The published.json file stores data on applications published by biddle with the following schema:
@@ -75,5 +76,28 @@ The published.json file stores data on applications published by biddle with the
         }
     }
 
+The data is similar to the data stored in published.json, but more simple.  This data only associates a single version to an application and provides an address to retrieved zip file's directory in the *published* property.  The published property is always an absolute path whether a web address or path on the local file system.
+
 ### Naming Conflicts
 Naming conflicts may occur in exactly the same way as described for publications for the same reasons.
+
+## Managing Applications
+biddle provides two commands to help manage applications: **list** and **status**.
+
+### list Command
+The **list** command will indicate locally available applications by either publication, installation, or both.  These lists include the application name, its latest published version or currently installed version, and the directory where the application is installed or published to.  Although biddle can unpublish or uninstall applications from any location on the local file system printing the applications address is informative from a system management perspective.
+
+### status Command
+The **status** command determines if installed applications are outdated compared to the published version.  This command reaches out to the publication point indicated by the *published* property in the installed.json file, which could result in a network call if the publication point is a point on the web.
+
+## File Conventions
+The **publish** command writes files in addition to the necessary zip archive files.  For every zip file written by the publish command a hash file of the same file name is also written.  These file names, excluding the zip and hash file extensions, must remain the same or the **install** command will not unzip the zip file.
+
+If the *publication_variants* property is properly populated in an application's package.json file additional zip and hash files will also be written.  Please see the [package.md](package.md) file for comprehensive information of *publication_variants*.
+
+If a the application qualifies as a latest publication copies of the zip and hash files from this published version will be written, or overwritten if already present, containing the word *latest* in the filename in place of the version.  A text file will also be written, or overwritten if already present, named *latest.txt* containing only the version string.  The latest.txt file is required for successful operation of the **status** command.  For examples and more details please see [gettingstarted.md](gettingstarted.md).
+
+An application qualifies for latest status under the following conditions:
+
+* The application is published for the first time.
+* The version string is greater than the prior version string, based upon JavaScript string comparison logic, and does not contain the words *alpha* or *beta*.
