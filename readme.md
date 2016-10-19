@@ -18,8 +18,7 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
 * *management* - There is no dependency hell here.  Dependency management will not be automated, but a means to manage and review the status of all installed/published packages is provided.
 * *freedom* - biddle will work everywhere Node.js runs.  It can be used with any application written in any language whether binary or text.
 
-## Project Status
-
+## Beta Release
 Project is in **beta** status.  This project is stable and ready for examination, but not ready for production or commercial use.
 
 ### Todo list
