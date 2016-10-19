@@ -36,3 +36,11 @@ A package.json file is required for publication and installation support by bidd
             "exclusions": ["testb"]
         }
     }
+
+## Recommended Fields
+Although additional data fields are not currently consumed by biddle some additional data is recommended.  Support for this data may be added to biddle at a later time.
+
+* *date* - A date field indicating the date of latest publication is recommended.  I prefer the format yyyymmdd as it increments from the largest and least precise unit to the most precise unit to form a single number unique to a given day.  Version data is often hard for users to keep track of, but dates tend to be much easier.  More so if the dates the follow a single format.
+* *description* - A verbose and descriptive explanation is helpful once many applications are installed.  Forgetting the purpose of a given application is easy when there are many application's installed.
+* *repository* - When applications are working to encourage open source participation announcing the application's code repository is helpful.
+* *contact* - A contact point allows users to engage with application maintainers.  This could be anything from an email address to the address of a bug tracking system.
