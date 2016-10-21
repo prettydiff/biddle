@@ -1138,19 +1138,19 @@
                 return apps.errout({error: stderh, name: "biddle_makeGlobal_findHome"});
             }
             stdouth = stdouth.replace(/\s+/g, "") + "/.";
-            node.fs.stat(stdouth + "bash_profile", function biddle_cmds_makeGlobal_findHome_nixStat(er, stat) {
+            node.fs.stat(stdouth + "profile", function biddle_cmds_makeGlobal_findHome_nixStat(er, stat) {
                 var path = "";
                 if (er !== null) {
                     if (er.toString().indexOf("no such file or directory") > 1) {
-                        path = stdouth + "profile";
+                        path = stdouth + "bash_profile";
                     } else {
                         return apps.errout({error:er, name:"biddle_cmds_makeGlobal_findHome_nixStat"});
                     }
                 }
                 if (stat !== undefined && stat.isFile !== undefined && stat.isFile() === true) {
-                    path = stdouth + "bash_profile";
-                } else {
                     path = stdouth + "profile";
+                } else {
+                    path = stdouth + "bash_profile";
                 }
                 node
                     .fs
@@ -1162,19 +1162,16 @@
                         if (filedata.indexOf(data.abspath + "bin") > -1) {
                             if (data.input[2] === "remove") {
                                 return apps.writeFile(filedata.replace(pathStatement, ""), path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove() {
-                                    if (path === stdouth + "bash_profile") {
-                                        node.child("source " + path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource(ers, stdouts, stders) {
-                                            if (ers !== null) {
-                                                return apps.errout({error:ers, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
-                                            }
-                                            if (stdouts !== null && stdouts !== "") {
-                                                return apps.errout({error:stdouts, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
-                                            }
-                                            console.log(data.abspath + "bin removed from $PATH and " + path + " sourced to terminal.");
-                                        });
-                                    } else {
-                                        console.log("Updated " + path + " and the changes will take effect once the terminal is restarted.");
-                                    }
+                                    console.log("Sourcing " + path);
+                                    node.child("eval \"`" + path + "`\"", function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource(ers, stdouts, stders) {
+                                        if (ers !== null) {
+                                            return apps.errout({error:ers, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
+                                        }
+                                        if (stdouts !== null && stdouts !== "") {
+                                            return apps.errout({error:stdouts, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
+                                        }
+                                        console.log(data.abspath + "bin removed from $PATH and " + path + " sourced to terminal.");
+                                    });
                                 });
                             }
                             return apps.errout({
@@ -1190,19 +1187,16 @@
                         }
                         apps
                             .writeFile(filedata + pathStatement, path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove() {
-                                if (path === stdouth + "bash_profile") {
-                                    node.child("source " + path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource(ers, stdouts, stders) {
-                                        if (ers !== null) {
-                                            return apps.errout({error:ers, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
-                                        }
-                                        if (stdouts !== null && stdouts !== "") {
-                                            return apps.errout({error:stdouts, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
-                                        }
-                                        console.log(data.abspath + "bin added to $PATH and " + path + " sourced to terminal.");
-                                    });
-                                } else {
-                                    console.log("Updated " + path + " and the changes will take effect once the terminal is restarted.");
-                                }
+                                console.log("Sourcing " + path);
+                                node.child("eval \"`" + path + "`\"", function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource(ers, stdouts, stders) {
+                                    if (ers !== null) {
+                                        return apps.errout({error:ers, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
+                                    }
+                                    if (stdouts !== null && stdouts !== "") {
+                                        return apps.errout({error:stdouts, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
+                                    }
+                                    console.log(data.abspath + "bin added to $PATH and " + path + " sourced to terminal.");
+                                });
                             });
                     });
             });
