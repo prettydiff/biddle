@@ -1155,7 +1155,7 @@
                 node
                     .fs
                     .readFile(path, "utf8", function biddle_makeGlobal_findHome_nixStat_nixRead(err, filedata) {
-                        var pathStatement = "\nexport PATH=" + data.abspath + "bin:$PATH\n";
+                        var pathStatement = "\nexport PATH=\"" + data.abspath + "bin:$PATH\"\n";
                         if (err !== null && err !== undefined) {
                             return apps.errout({error: err, name: "biddle_makeGlobal_findHome_nixStat_nixRead"});
                         }
