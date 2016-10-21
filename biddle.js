@@ -1155,20 +1155,22 @@
                 node
                     .fs
                     .readFile(path, "utf8", function biddle_makeGlobal_findHome_nixStat_nixRead(err, filedata) {
+                        var pathStatement = "\nexport PATH=" + data.abspath + "bin:$PATH\n";
                         if (err !== null && err !== undefined) {
                             return apps.errout({error: err, name: "biddle_makeGlobal_findHome_nixStat_nixRead"});
                         }
                         if (filedata.indexOf(data.abspath + "bin") > -1) {
                             if (data.input[2] === "remove") {
-                                return apps.writeFile(filedata.replace("\nPATH=" + data.abspath + "bin:$PATH\n", ""), path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove() {
-                                    node.child(". " + path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource(ers, stdouts, stders) {
+                                return apps.writeFile(filedata.replace(pathStatement, ""), path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove() {
+                                    console.log("Sourcing " + path);
+                                    node.child("hash -r", function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource(ers, stdouts, stders) {
                                         if (ers !== null) {
                                             return apps.errout({error:ers, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
                                         }
                                         if (stdouts !== null && stdouts !== "") {
                                             return apps.errout({error:stdouts, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
                                         }
-                                        console.log(data.abspath + "bin removed from $PATH.");
+                                        console.log(data.abspath + "bin removed from $PATH and " + path + " sourced to terminal.");
                                     });
                                 });
                             }
@@ -1184,15 +1186,16 @@
                             });
                         }
                         apps
-                            .writeFile(filedata + "\nPATH=" + data.abspath + "bin:$PATH\n", path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove() {
-                                node.child(". " + path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource(ers, stdouts, stders) {
+                            .writeFile(pathStatement, path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove() {
+                                console.log("Sourcing " + path);
+                                node.child("hash -r", function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource(ers, stdouts, stders) {
                                     if (ers !== null) {
                                         return apps.errout({error:ers, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
                                     }
                                     if (stdouts !== null && stdouts !== "") {
                                         return apps.errout({error:stdouts, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
                                     }
-                                    console.log(data.abspath + "bin added to $PATH.");
+                                    console.log(data.abspath + "bin added to $PATH and " + path + " sourced to terminal.");
                                 });
                             });
                     });
