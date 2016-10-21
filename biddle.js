@@ -67,11 +67,8 @@
                 return "sha512sum " + file;
             },
             pathRead  : function biddle_cmds_pathRead() { // Used in command global to read the OS's stored paths
-                if (data.platform === "win32") {
-                    return "powershell.exe -nologo -noprofile -command \"[Environment]::GetEnvironmentVariab" +
-                            "le('PATH','Machine');\"";
-                }
-                return "/etc/paths";
+                return "powershell.exe -nologo -noprofile -command \"[Environment]::GetEnvironmentVariab" +
+                        "le('PATH','Machine');\"";
             },
             pathRemove: function biddle_cmds_pathRemove(cmdFile) { // Used in command global to remove the biddle path from the Windows path list
                 return "powershell.exe -nologo -noprofile -command \"$PATH='" + cmdFile + "';[Environment]::SetEnvironmentVariable('PATH',$PATH,'Machine');\"";
@@ -1133,34 +1130,74 @@
                     });
             });
         }
-        node
-            .fs
-            .readFile(cmds.pathRead(), "utf8", function biddle_makeGlobal_nixRead(err, filedata) {
-                if (err !== null && err !== undefined) {
-                    return apps.errout({error: err, name: "biddle_makeGlobal_nixRead"});
-                }
-                if (filedata.indexOf(data.abspath + "bin") > -1) {
-                    if (data.input[2] === "remove") {
-                        return apps.writeFile(filedata.replace("\n" + data.abspath + "bin", ""), "/etc/paths", function biddle_makeGlobal_nixRead_nixRemove() {
-                            console.log(data.abspath + "bin removed from $PATH.  Please restart your terminal.");
-                        });
+        node.child("echo ~", function biddle_makeGlobal_findHome(erh, stdouth, stderh) {
+            if (erh !== null) {
+                return apps.errout({error: erh, name: "biddle_makeGlobal_findHome"});
+            }
+            if (stderh !== null && stderh !== "") {
+                return apps.errout({error: stderh, name: "biddle_makeGlobal_findHome"});
+            }
+            stdouth = stdouth.replace(/\s+/g, "") + "/.";
+            node.fs.stat(stdouth + "profile", function biddle_cmds_makeGlobal_findHome_nixStat(er, stat) {
+                var path = "";
+                if (er !== null) {
+                    if (er.toString().indexOf("no such file or directory") > 1) {
+                        path = stdouth + "bash_profile";
+                    } else {
+                        return apps.errout({error:er, name:"biddle_cmds_makeGlobal_findHome_nixStat"});
                     }
-                    return apps.errout({
-                        error: data.abspath + "bin is already in $PATH",
-                        name : "biddle_makeGlobal_nixRead"
-                    });
                 }
-                if (data.input[2] === "remove") {
-                    return apps.errout({
-                        error: data.abspath + "bin is not present in $PATH",
-                        name : "biddle_makeGlobal_nixRead"
-                    });
+                if (stat !== undefined && stat.isFile !== undefined && stat.isFile() === true) {
+                    path = stdouth + "profile";
+                } else {
+                    path = stdouth + "bash_profile";
                 }
-                apps
-                    .writeFile(filedata + data.abspath + "bin\n", "/etc/paths", function biddle_makeGlobal_nixRead_nixWrite() {
-                        console.log(data.abspath + "bin added to $PATH.  Please restart your terminal");
+                node
+                    .fs
+                    .readFile(path, "utf8", function biddle_makeGlobal_findHome_nixStat_nixRead(err, filedata) {
+                        if (err !== null && err !== undefined) {
+                            return apps.errout({error: err, name: "biddle_makeGlobal_findHome_nixStat_nixRead"});
+                        }
+                        if (filedata.indexOf(data.abspath + "bin") > -1) {
+                            if (data.input[2] === "remove") {
+                                return apps.writeFile(filedata.replace("\nPATH=" + data.abspath + "bin:$PATH\n", ""), path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove() {
+                                    node.child("source " + path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource(ers, stdouts, stders) {
+                                        if (ers !== null) {
+                                            return apps.errout({error:ers, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
+                                        }
+                                        if (stdouts !== null && stdouts !== "") {
+                                            return apps.errout({error:stdouts, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
+                                        }
+                                        console.log(data.abspath + "bin removed from $PATH.");
+                                    });
+                                });
+                            }
+                            return apps.errout({
+                                error: data.abspath + "bin is already in $PATH",
+                                name : "biddle_makeGlobal_findHome_nixStat_nixRead"
+                            });
+                        }
+                        if (data.input[2] === "remove") {
+                            return apps.errout({
+                                error: data.abspath + "bin is not present in $PATH",
+                                name : "biddle_makeGlobal_findHome_nixStat_nixRead"
+                            });
+                        }
+                        apps
+                            .writeFile(filedata.replace("\nPATH=" + data.abspath + "bin:$PATH\n", ""), path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove() {
+                                node.child("source " + path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource(ers, stdouts, stders) {
+                                    if (ers !== null) {
+                                        return apps.errout({error:ers, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
+                                    }
+                                    if (stdouts !== null && stdouts !== "") {
+                                        return apps.errout({error:stdouts, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
+                                    }
+                                    console.log(data.abspath + "bin added to $PATH.");
+                                });
+                            });
                     });
             });
+        });
     };
     apps.publish     = function biddle_publish() {
         var flag      = {
