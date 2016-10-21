@@ -1162,8 +1162,7 @@
                         if (filedata.indexOf(data.abspath + "bin") > -1) {
                             if (data.input[2] === "remove") {
                                 return apps.writeFile(filedata.replace(pathStatement, ""), path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove() {
-                                    console.log("Sourcing " + path);
-                                    node.child("eval \"`" + path + "`\"", function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource(ers, stdouts, stders) {
+                                    node.child("sh " + path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource(ers, stdouts, stders) {
                                         if (ers !== null) {
                                             return apps.errout({error:ers, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
                                         }
@@ -1187,8 +1186,7 @@
                         }
                         apps
                             .writeFile(filedata + pathStatement, path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove() {
-                                console.log("Sourcing " + path);
-                                node.child("eval \"`" + path + "`\"", function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource(ers, stdouts, stders) {
+                                node.child("sh " + path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource(ers, stdouts, stders) {
                                     if (ers !== null) {
                                         return apps.errout({error:ers, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
                                     }
