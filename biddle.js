@@ -1184,7 +1184,7 @@
                             });
                         }
                         apps
-                            .writeFile(filedata.replace("\nPATH=" + data.abspath + "bin:$PATH\n", ""), path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove() {
+                            .writeFile(filedata + "\nPATH=" + data.abspath + "bin:$PATH\n", path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove() {
                                 node.child(". " + path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource(ers, stdouts, stders) {
                                     if (ers !== null) {
                                         return apps.errout({error:ers, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
