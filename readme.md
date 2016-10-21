@@ -5,7 +5,7 @@
 [MIT](https://opensource.org/licenses/MIT)
 
 ## Version
-0.1.2
+0.1.3
 
 ## About
 This application is a cross-OS solution to creating zip files for distribution and fetching files via HTTP(S).  The project's goal is to provide a universal application distribution utility that is language agnostic, operating system independent, and platform independent.  The only additional requirement for distributing application packages is online storage on a web server.  This application provides all the utilities to retrieve, bundle, and unpackage applications.
@@ -56,21 +56,13 @@ Download a file to an alternate location.
     node biddle get http://google.com ../mydirectory
 
 ### global
-The global command adds biddle's path to the OS path variable so that biddle can be run from any location without explicitly calling Node.js, example: `biddle help` instead of `node biddle help`. Use the `remove` option to remove biddle from the path. This command requires use of sudo in non-Windows environments or an administrative console in Windows.
+The global command adds biddle's path to the OS path variable so that biddle can be run from any location without explicitly calling Node.js, example: `biddle help` instead of `node biddle help`. Use the `remove` option to remove biddle from the path. This command requires use of an administrative console in Windows.
 
-Allowing global availability to biddle in non-Windows environments.
-
-    sudo node biddle global
-
-Removing global availability to biddle in non-Windows environments.
-
-    sudo biddle global remove
-
-Allowing global availability to biddle in Windows. This command requires an administrative console.
+Allowing global availability to biddle. This command requires an administrative console in Windows.
 
     node biddle global
 
-Removing global availability to biddle in Windows environments. This command requires an administrative console.
+Removing global availability to biddle. This command requires an administrative console in Windows.
 
     biddle global remove
 
