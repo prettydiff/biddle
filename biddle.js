@@ -175,7 +175,6 @@
             .toString()
             .replace(/(\s+)$/, "");
         if (data.command === "test") {
-            process.chdir(data.cwd);
             if (errData.name.indexOf("biddle_test") === 0) {
                 data.published.biddletesta = {
                     directory: data.abspath + "publications" + node.path.sep + "biddletesta"
@@ -1170,6 +1169,7 @@
                                             return apps.errout({error:stdouts, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
                                         }
                                         console.log(data.abspath + "bin removed from $PATH and " + path + " sourced to terminal.");
+                                        return stders;
                                     });
                                 });
                             }
@@ -1194,6 +1194,7 @@
                                         return apps.errout({error:stdouts, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
                                     }
                                     console.log(data.abspath + "bin added to $PATH and " + path + " sourced to terminal.");
+                                    return stders;
                                 });
                             });
                     });
@@ -1745,13 +1746,14 @@
                 }
             },
             keys      = Object.keys(modules),
-            childcmd  = (data.platform === "win32")
+            /*childcmd  = (data.platform === "win32")
                 ? (data.abspath === process.cwd().toLowerCase() + node.path.sep)
                     ? "node biddle "
                     : "biddle "
                 : (data.abspath === process.cwd() + node.path.sep)
                     ? "node biddle "
-                    : "biddle ",
+                    : "biddle ",*/
+            childcmd  = "node " + data.abspath + "biddle ",
             testpath  = data.abspath + "unittest",
             humantime = function biddle_test_humantime(finished) {
                 var minuteString = "",
@@ -2618,9 +2620,10 @@
                                 submod(false);
                             },
                             pull   = function biddle_test_moduleInstall_editions_pull() {
-                                process.chdir("JSLint");
                                 node
-                                    .child("git checkout jslint.js", function biddle_test_moduleInstall_editions_pull_checkoutJSLint(errchk, stdoutchk, stdouterchk) {
+                                    .child("git checkout jslint.js", {
+                                        cwd: data.abspath + "JSLint"
+                                    }, function biddle_test_moduleInstall_editions_pull_checkoutJSLint(errchk, stdoutchk, stdouterchk) {
                                         if (errchk !== null) {
                                             console.log(errchk);
                                             apps.errout({error: errchk, name: "biddle_test_moduleInstall_editions_pull_checkoutJSLint", stdout: stdoutchk, time: humantime(true)});
@@ -2697,15 +2700,15 @@
                                         });
                                 } else {
                                     if (appName === "jslint") {
-                                        process.chdir(data.abspath + "JSLint");
-                                        node.child("git checkout jslint.js", function biddle_test_moduleInstall_editions_lintCheckout(erjsl, stdoutjsl, stdouterjsl) {
+                                        node.child("git checkout jslint.js", {
+                                            cwd: data.abspath + "JSLint"
+                                        }, function biddle_test_moduleInstall_editions_lintCheckout(erjsl, stdoutjsl, stdouterjsl) {
                                             if (erjsl !== null) {
                                                 apps.errout({error: erjsl, name: "biddle_test_moduleInstall_editions_lintCheckout", stdout: stdoutjsl, time: humantime(true)});
                                             }
                                             if (stdouterjsl !== null && stdouterjsl !== "" && stdouterjsl.indexOf("Cloning into '") < 0 && stdouterjsl.indexOf("From ") !== 0) {
                                                 apps.errout({error: stdouterjsl, name: "biddle_test_moduleInstall_editions_lintCheckout", stdout: stdoutjsl, time: humantime(true)});
                                             }
-                                            process.chdir(data.cwd);
                                             pull();
                                         });
                                     } else {
@@ -2721,7 +2724,6 @@
                         }
                         submod(true);
                     };
-                    process.chdir(__dirname);
                     apps.rmrecurse(testpath, function biddle_test_moduleInstall_rmrecurse() {
                         apps
                             .makedir(testpath, function biddle_test_moduleInstall_makedir() {
@@ -3201,9 +3203,6 @@
                 }
             };
         next = function biddle_test_next() {
-            if (phases.active === "moduleInstall") {
-                process.chdir(data.cwd);
-            }
             console.log("");
             if (order.length < 1) {
                 return apps.rmrecurse(testpath, function biddle_test_next_rmdir() {
@@ -3317,20 +3316,20 @@
             latestfile  = "",
             cmd         = "",
             latestcmd   = "",
+            zipdir      = "",
             variantName = (zippack.name === "")
                 ? ""
                 : "_" + apps.sanitizef(zippack.name),
             childfunc   = function biddle_zip_childfunc(zipfilename, zipcmd, writejson) {
                 node
-                    .child(zipcmd, function biddle_zip_childfunc_child(err, stdout, stderr) {
+                    .child(zipcmd, {
+                        cwd: zipdir
+                    }, function biddle_zip_childfunc_child(err, stdout, stderr) {
                         if (err !== null && stderr.toString().indexOf("No such file or directory") < 0) {
                             return apps.errout({error: err, name: "biddle_zip_childfunc_child"});
                         }
                         if (stderr !== null && stderr.replace(/\s+/, "") !== "" && stderr.indexOf("No such file or directory") < 0) {
                             return apps.errout({error: stderr, name: "biddle_zip_childfunc_child"});
-                        }
-                        if (data.command === "zip" || data.command === "publish") {
-                            process.chdir(data.cwd);
                         }
                         if (data.command === "install") {
                             node
@@ -3356,7 +3355,7 @@
             }
             cmd = cmds.zip(apps.relToAbs(zipfile, false));
             if (data.command === "publish") {
-                process.chdir(zippack.location);
+                zipdir = zippack.location;
                 if (data.latestVersion === true) {
                     latestfile = zipfile.replace(data.packjson.version + ".zip", "latest.zip");
                     latestcmd  = cmd.replace(data.packjson.version + ".zip", "latest.zip");
@@ -3366,7 +3365,7 @@
             } else {
                 apps
                     .makedir(data.input[2], function biddle_zip_makedir() {
-                        process.chdir(data.input[2]);
+                        zipdir = data.input[2];
                         childfunc(zipfile, cmd, false);
                     });
             }
