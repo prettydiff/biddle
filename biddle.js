@@ -1130,6 +1130,76 @@
             });
         }
         node.child("echo ~", function biddle_makeGlobal_findHome(erh, stdouth, stderh) {
+            var path = stdouth + "profile",
+                flag = {
+                    bash_profile: false,
+                    profile     : false
+                },
+                terminal = function biddle_makeGlobal_findHome_terminal() {
+                    if (data.input[2] === "remove") {
+                        return console.log(data.abspath + "bin removed from $PATH but will remain available until the terminal is restarted.");
+                    }
+                    node.child("export PATH=$PATH:" + data.abspath + "bin", function biddle_makeGlobal_findHome_terminal_child(ert, stdoutt, stdert) {
+                        if (ert !== null) {
+                            return apps.errout({error: ert, name: "biddle_makeGlobal_findHome_terminal_child"});
+                        }
+                        if (stdert !== null && stdert !== "") {
+                            return apps.errout({error: stdert, name: "biddle_makeGlobal_findHome_terminal_child"});
+                        }
+                        console.log(data.abspath + "bin added to $PATH and " + path + " sourced to terminal.");
+                    });
+                },
+                readPath = function biddle_makeGlobal_findHome_readPath() {
+                    node
+                        .fs
+                        .readFile(path, "utf8", function biddle_makeGlobal_findHome_readPath_nixRead(err, filedata) {
+                            var pathStatement = "\nexport PATH=\"" + data.abspath + "bin:$PATH\"\n";
+                            if (err !== null && err !== undefined) {
+                                return apps.errout({error: err, name: "biddle_makeGlobal_findHome_nixStat_nixRead"});
+                            }
+                            if (filedata.indexOf(data.abspath + "bin") > -1) {
+                                if (data.input[2] === "remove") {
+                                    return apps.writeFile(filedata.replace(pathStatement, ""), path, function biddle_makeGlobal_findHome_readPath_nixRead_nixRemove() {
+                                        if (path.indexOf("bash_profile") > 0) {
+                                            flag.bash_profile = true;
+                                            if (flag.profile === true) {
+                                                terminal();
+                                            }
+                                        } else {
+                                            flag.profile = true;
+                                            if (flag.bash_profile === true) {
+                                                terminal();
+                                            }
+                                        }
+                                    });
+                                }
+                                return apps.errout({
+                                    error: data.abspath + "bin is already in $PATH",
+                                    name : "biddle_makeGlobal_findHome_readPath_nixRead"
+                                });
+                            }
+                            if (data.input[2] === "remove") {
+                                return apps.errout({
+                                    error: data.abspath + "bin is not present in $PATH",
+                                    name : "biddle_makeGlobal_findHome_readPath_nixRead"
+                                });
+                            }
+                            apps
+                                .writeFile(filedata + pathStatement, path, function biddle_makeGlobal_findHome_readPath_nixRead_nixRemove() {
+                                    if (path.indexOf("bash_profile") > 0) {
+                                        flag.bash_profile = true;
+                                        if (flag.profile === true) {
+                                            terminal();
+                                        }
+                                    } else {
+                                        flag.profile = true;
+                                        if (flag.bash_profile === true) {
+                                            terminal();
+                                        }
+                                    }
+                                });
+                        });
+                };
             if (erh !== null) {
                 return apps.errout({error: erh, name: "biddle_makeGlobal_findHome"});
             }
@@ -1137,67 +1207,34 @@
                 return apps.errout({error: stderh, name: "biddle_makeGlobal_findHome"});
             }
             stdouth = stdouth.replace(/\s+/g, "") + "/.";
-            node.fs.stat(stdouth + "profile", function biddle_cmds_makeGlobal_findHome_nixStat(er, stat) {
-                var path = "";
+            node.fs.stat(path, function biddle_cmds_makeGlobal_findHome_nixStatProfile(er, stat) {
                 if (er !== null) {
                     if (er.toString().indexOf("no such file or directory") > 1) {
-                        path = stdouth + "bash_profile";
+                        flag.profile = true;
+                        if (flag.bash_profile === true) {
+                            terminal();
+                        }
                     } else {
-                        return apps.errout({error:er, name:"biddle_cmds_makeGlobal_findHome_nixStat"});
+                        return apps.errout({error:er, name:"biddle_cmds_makeGlobal_findHome_nixStatProfile"});
                     }
-                }
-                if (stat !== undefined && stat.isFile !== undefined && stat.isFile() === true) {
-                    path = stdouth + "profile";
                 } else {
-                    path = stdouth + "bash_profile";
+                    readPath(path);
                 }
-                node
-                    .fs
-                    .readFile(path, "utf8", function biddle_makeGlobal_findHome_nixStat_nixRead(err, filedata) {
-                        var pathStatement = "\nexport PATH=\"" + data.abspath + "bin:$PATH\"\n";
-                        if (err !== null && err !== undefined) {
-                            return apps.errout({error: err, name: "biddle_makeGlobal_findHome_nixStat_nixRead"});
+            });
+            path = stdouth + "bash_profile"
+            node.fs.stat(path, function biddle_cmds_makeGlobal_findHome_nixStatBash(er, stat) {
+                if (er !== null) {
+                    if (er.toString().indexOf("no such file or directory") > 1) {
+                        flag.bash_profile = true;
+                        if (flag.profile === true) {
+                            terminal();
                         }
-                        if (filedata.indexOf(data.abspath + "bin") > -1) {
-                            if (data.input[2] === "remove") {
-                                return apps.writeFile(filedata.replace(pathStatement, ""), path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove() {
-                                    node.child("sh " + path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource(ers, stdouts, stders) {
-                                        if (ers !== null) {
-                                            return apps.errout({error:ers, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
-                                        }
-                                        if (stdouts !== null && stdouts !== "") {
-                                            return apps.errout({error:stdouts, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
-                                        }
-                                        console.log(data.abspath + "bin removed from $PATH and " + path + " sourced to terminal.");
-                                        return stders;
-                                    });
-                                });
-                            }
-                            return apps.errout({
-                                error: data.abspath + "bin is already in $PATH",
-                                name : "biddle_makeGlobal_findHome_nixStat_nixRead"
-                            });
-                        }
-                        if (data.input[2] === "remove") {
-                            return apps.errout({
-                                error: data.abspath + "bin is not present in $PATH",
-                                name : "biddle_makeGlobal_findHome_nixStat_nixRead"
-                            });
-                        }
-                        apps
-                            .writeFile(filedata + pathStatement, path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove() {
-                                node.child("source " + path, {shell: "/bin/bash"}, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource(ers, stdouts, stders) {
-                                    if (ers !== null) {
-                                        return apps.errout({error:ers, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
-                                    }
-                                    if (stdouts !== null && stdouts !== "") {
-                                        return apps.errout({error:stdouts, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
-                                    }
-                                    console.log(data.abspath + "bin added to $PATH and " + path + " sourced to terminal.");
-                                    return stders;
-                                });
-                            });
-                    });
+                    } else {
+                        return apps.errout({error:er, name:"biddle_cmds_makeGlobal_findHome_nixStatBash"});
+                    }
+                } else {
+                    readPath(path);
+                }
             });
         });
     };
@@ -2679,7 +2716,7 @@
                                             if (erc !== null) {
                                                 apps.errout({error: erc, name: "biddle_test_moduleInstall_editions_init", stdout: stdoutc, time: humantime(true)});
                                             }
-                                            if (stdouterc !== null && stdouterc !== "" && stdouterc.indexOf("Cloning into '") < 0 && stdouterc.indexOf("From ") < 0) {
+                                            if (stdouterc !== null && stdouterc !== "" && stdouterc.indexOf("Cloning into '") < 0 && stdouterc.indexOf("From ") < 0 && stdouterc.indexOf(" registered for path ") < 0) {
                                                 apps.errout({error: stdouterc, name: "biddle_test_moduleInstall_editions_init", stdout: stdoutc, time: humantime(true)});
                                             }
                                             node
