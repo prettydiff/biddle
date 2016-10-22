@@ -4,7 +4,6 @@
     "use strict";
     var node     = {
             child: require("child_process").exec,
-            spawn: require("child_process").spawn,
             fs   : require("fs"),
             http : require("http"),
             https: require("https"),
@@ -1187,7 +1186,7 @@
                         }
                         apps
                             .writeFile(filedata + pathStatement, path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove() {
-                                node.child("sh " + path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource(ers, stdouts, stders) {
+                                node.child("source " + path, {shell: "/bin/bash"}, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource(ers, stdouts, stders) {
                                     if (ers !== null) {
                                         return apps.errout({error:ers, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
                                     }
