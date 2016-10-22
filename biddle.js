@@ -4,6 +4,7 @@
     "use strict";
     var node     = {
             child: require("child_process").exec,
+            spawn: require("child_process").spawn,
             fs   : require("fs"),
             http : require("http"),
             https: require("https"),
