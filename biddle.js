@@ -2876,10 +2876,10 @@
                             return;
                         },
                         handler  = function biddle_test_moduleInstall_handler() {
-                            var mod = keys[ind];
-                            modules[keys[ind]].name = "\u001b[32m" + modules[keys[ind]].name + "\u001b[39m";
-                            if (modules[keys[ind]].name.length > longname) {
-                                longname = modules[keys[ind]].name.length;
+                            var mod = keys[ind];console.log(modules[mod].name);
+                            modules[mod].name = "\u001b[32m" + modules[mod].name + "\u001b[39m";
+                            if (modules[mod].name.length > longname) {
+                                longname = modules[mod].name.length;
                             }
                             node
                                 .fs
