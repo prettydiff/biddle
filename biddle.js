@@ -2996,6 +2996,19 @@
                                 ind     = idx + 1;
                                 submod(false);
                             },
+                            checkoutJSLint = function biddle_test_moduleInstall_editions_checkoutJSLint(callback) {
+                                node.child("git checkout jslint.js", {
+                                    cwd: data.abspath + "JSLint"
+                                }, function biddle_test_moduleInstall_editions_checkoutJSLint_child(erjsl, stdoutjsl, stdouterjsl) {
+                                     if (erjsl !== null) {
+                                         apps.errout({error: erjsl, name: "biddle_test_moduleInstall_editions_checkoutJSLint_child", stdout: stdoutjsl, time: humantime(true)});
+                                     }
+                                     if (stdouterjsl !== null && stdouterjsl !== "") {
+                                         apps.errout({error: stdouterjsl, name: "biddle_test_moduleInstall_editions_checkoutJSLint_child", stdout: stdoutjsl, time: humantime(true)});
+                                     }
+                                     callback();
+                                 });
+                             },
                             update         = function biddle_test_moduleInstall_editions_update() {
                                 node
                                     .child("git submodule update", function biddle_test_moduleInstall_editions_update_child(erd, stdoutd, stdouterd) {
@@ -3063,7 +3076,11 @@
                                             if (stdouterc !== null && stdouterc !== "" && stdouterc.indexOf("Cloning into '") < 0 && stdouterc.indexOf("From ") < 0 && stdouterc.indexOf(" registered for path ") < 0) {
                                                 apps.errout({error: stdouterc, name: "biddle_test_moduleInstall_editions_init", stdout: stdoutc, time: humantime(true)});
                                             }
-                                            update();
+                                            if (appName === "jslint") {
+                                                checkoutJSLint(update);
+                                            } else {
+                                                update();
+                                            }
                                         });
                                 } else {
                                     pull();
@@ -3080,27 +3097,7 @@
                     apps.rmrecurse(testpath, function biddle_test_moduleInstall_rmrecurse() {
                         apps
                             .makedir(testpath, function biddle_test_moduleInstall_rmrecurse_makedir() {
-                                node.fs.stat(data.abspath + "JSLint/jslint.js", function biddle_test_moduleInstall_rmrecurse_makedir_stat(erstat, stat) {
-                                    if (erstat !== null) {
-                                        if (erstat.toString().indexOf("no such file or directory") > 0) {
-                                            return handler(0);
-                                        }
-                                        return apps.errout({error: erstat, name: "biddle_test_moduleInstall_rmrecurse_makedir_stat"});
-                                    }
-                                    if (stat !== undefined && stat.isFile !== undefined && stat.isFile() === true) {
-                                        node.child("git checkout jslint.js", {cwd: "JSLint"}, function biddle_test_moduleInstall_rmrecurse_makedir_stat_checkout(erj, stdoutj, stdouterj) {
-                                            if (erj !== null) {
-                                                apps.errout({error: erj, name: "biddle_test_moduleInstall_editions_init", stdout: stdoutj, time: humantime(true)});
-                                            }
-                                            if (stdouterj !== null && stdouterj !== "") {
-                                                apps.errout({error: stdouterj, name: "biddle_test_moduleInstall_editions_init", stdout: stdoutj, time: humantime(true)});
-                                            }
-                                            handler(0);
-                                        });
-                                    } else {
-                                        handler(0);
-                                    }
-                                });
+                                handler(0);
                             });
                     });
                 },
