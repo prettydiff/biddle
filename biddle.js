@@ -1801,14 +1801,14 @@
                 }
             },
             keys      = Object.keys(modules),
-            /*childcmd  = (data.platform === "win32")
+            childcmd  = (data.platform === "win32")
                 ? (data.abspath === process.cwd().toLowerCase() + node.path.sep)
                     ? "node biddle "
                     : "biddle "
                 : (data.abspath === process.cwd() + node.path.sep)
                     ? "node biddle "
-                    : "biddle ",*/
-            childcmd = "node " + data.abspath + "biddle ",
+                    : "biddle ",
+            //childcmd = "node " + data.abspath + "biddle ",
             testpath  = data.abspath + "unittest",
             humantime = function biddle_test_humantime(finished) {
                 var minuteString = "",
@@ -3027,36 +3027,24 @@
                             },
                             pull           = function biddle_test_moduleInstall_editions_pull() {
                                 node
-                                    .child("git checkout jslint.js", {
-                                        cwd: data.abspath + "JSLint"
-                                    }, function biddle_test_moduleInstall_editions_pull_checkoutJSLint(errchk, stdoutchk, stdouterchk) {
-                                        if (errchk !== null) {
-                                            console.log(errchk);
-                                            apps.errout({error: errchk, name: "biddle_test_moduleInstall_editions_pull_checkoutJSLint", stdout: stdoutchk, time: humantime(true)});
+                                    .child("git submodule foreach git pull origin master", function biddle_test_moduleInstall_editions_pull_checkoutJSLint_child(errpull, stdoutpull, stdouterpull) {
+                                        if (errpull !== null) {
+                                            console.log(errpull);
+                                            if (errpull.toString().indexOf("fatal: no submodule mapping found in .gitmodules for path ") > 0) {
+                                                console.log("No access to GitHub or .gitmodules is corrupt. Proceeding assuming submodules we" +
+                                                        "re previously installed.");
+                                                flag.apps = true;
+                                                return keys.forEach(each);
+                                            }
+                                            apps.errout({error: errpull, name: "biddle_test_moduleInstall_editions_pull_checkoutJSLint_child", stdout: stdoutpull, time: humantime(true)});
                                         }
-                                        if (stdouterchk !== null && stdouterchk !== "") {
-                                            apps.errout({error: stdouterchk, name: "biddle_test_moduleInstall_editions_pull_checkoutJSLint", stdout: stdoutchk, time: humantime(true)});
+                                        if (stdouterpull !== null && stdouterpull !== "" && stdouterpull.indexOf("Cloning into '") < 0 && stdouterpull.indexOf("From ") < 0 && stdouterpull.indexOf("fatal: no submodule mapping found in .gitmodules for path ") < 0) {
+                                            apps.errout({error: stdouterpull, name: "biddle_test_moduleInstall_editions_pull_checkoutJSLint_child", stdout: stdoutpull, time: humantime(true)});
                                         }
-                                        node
-                                            .child("git submodule foreach git pull origin master", function biddle_test_moduleInstall_editions_pull_checkoutJSLint_child(errpull, stdoutpull, stdouterpull) {
-                                                if (errpull !== null) {
-                                                    console.log(errpull);
-                                                    if (errpull.toString().indexOf("fatal: no submodule mapping found in .gitmodules for path ") > 0) {
-                                                        console.log("No access to GitHub or .gitmodules is corrupt. Proceeding assuming submodules we" +
-                                                                "re previously installed.");
-                                                        flag.apps = true;
-                                                        return keys.forEach(each);
-                                                    }
-                                                    apps.errout({error: errpull, name: "biddle_test_moduleInstall_editions_pull_checkoutJSLint_child", stdout: stdoutpull, time: humantime(true)});
-                                                }
-                                                if (stdouterpull !== null && stdouterpull !== "" && stdouterpull.indexOf("Cloning into '") < 0 && stdouterpull.indexOf("From ") < 0 && stdouterpull.indexOf("fatal: no submodule mapping found in .gitmodules for path ") < 0) {
-                                                    apps.errout({error: stdouterpull, name: "biddle_test_moduleInstall_editions_pull_checkoutJSLint_child", stdout: stdoutpull, time: humantime(true)});
-                                                }
-                                                if (flag.today === false) {
-                                                    console.log("Submodules checked for updates.");
-                                                }
-                                                keys.forEach(each);
-                                            });
+                                        if (flag.today === false) {
+                                            console.log("Submodules checked for updates.");
+                                        }
+                                        keys.forEach(each);
                                     });
                             };
                         if (ind === keys.length) {
