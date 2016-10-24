@@ -3082,7 +3082,7 @@
                             .makedir(testpath, function biddle_test_moduleInstall_rmrecurse_makedir() {
                                 node.fs.stat(data.abspath + "JSLint/jslint.js", function biddle_test_moduleInstall_rmrecurse_makedir_stat(erstat, stat) {
                                     if (erstat !== null) {
-                                        if (erstat.toString().indexOf("no such file or directory") < 0) {
+                                        if (erstat.toString().indexOf("no such file or directory") > 0) {
                                             return handler(0);
                                         }
                                         return apps.errout({error: erstat, name: "biddle_test_moduleInstall_rmrecurse_makedir_stat"});
