@@ -307,7 +307,8 @@
             }
             output = paths[paths.length - 1].toLowerCase();
         }
-        return apps.sanitizef(output.replace(/\+|<|>|:|"|\/|\\|\||\?|\*|%/g, ""));
+        console.log(paths);console.log(output);
+        return apps.sanitizef(output);
     };
     apps.getpjson    = function biddle_getpjson(callback) {
         var file = data
