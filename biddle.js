@@ -1808,12 +1808,11 @@
             keys      = Object.keys(modules),
             childcmd  = (data.platform === "win32")
                 ? (data.abspath === process.cwd().toLowerCase() + node.path.sep)
-                    ? "node biddle "
+                    ? "node " + data.abspath + "biddle "
                     : "biddle "
                 : (data.abspath === process.cwd() + node.path.sep)
-                    ? "node biddle "
+                    ? "node " + data.abspath + "biddle "
                     : "biddle ",
-            //childcmd = "node " + data.abspath + "biddle ",
             testpath  = data.abspath + "unittest",
             humantime = function biddle_test_humantime(finished) {
                 var minuteString = "",
@@ -2100,7 +2099,7 @@
                                 return apps.errout({error: stder, name: "biddle_test_get_child", stdout: stdout, time: humantime(true)});
                             }
                             size = stdout.slice(stdout.indexOf("written at") + 10).replace(/(\s+)$/, "");
-                            if ((/^(File\u0020)/).test(stdout) === false || stdout.indexOf(" 0 bytes") > 0 || size.replace(" bytes.", "").length < 4) {
+                            if ((/^(((File)|(\d{3}))\u0020)/).test(stdout) === false || stdout.indexOf("File\u0020") < 0 || stdout.indexOf(" 0 bytes") > 0 || size.replace(" bytes.", "").length < 4) {
                                 return apps.errout({
                                     error: "Unexpected output for test 'get':\r\n\u001b[31m" + stdout + "\u001b[39m",
                                     name : "biddle_test_get_child",
