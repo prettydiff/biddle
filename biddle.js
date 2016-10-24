@@ -1130,8 +1130,7 @@
             });
         }
         node.child("echo ~", function biddle_makeGlobal_findHome(erh, stdouth, stderh) {
-            var path = stdouth + "profile",
-                flag = {
+            var flag = {
                     bash_profile: false,
                     profile     : false
                 },
@@ -1139,28 +1138,21 @@
                     if (data.input[2] === "remove") {
                         return console.log(data.abspath + "bin removed from $PATH but will remain available until the terminal is restarted.");
                     }
-                    node.child("export PATH=$PATH:" + data.abspath + "bin", function biddle_makeGlobal_findHome_terminal_child(ert, stdoutt, stdert) {
-                        if (ert !== null) {
-                            return apps.errout({error: ert, name: "biddle_makeGlobal_findHome_terminal_child"});
-                        }
-                        if (stdert !== null && stdert !== "") {
-                            return apps.errout({error: stdert, name: "biddle_makeGlobal_findHome_terminal_child"});
-                        }
-                        console.log(data.abspath + "bin added to $PATH and " + path + " sourced to terminal.");
-                    });
+                    console.log("Restart the terminal or execute:  export PATH=" + data.abspath + "bin:$PATH");
                 },
-                readPath = function biddle_makeGlobal_findHome_readPath() {
+                readPath = function biddle_makeGlobal_findHome_readPath(dotfile) {
                     node
                         .fs
-                        .readFile(path, "utf8", function biddle_makeGlobal_findHome_readPath_nixRead(err, filedata) {
+                        .readFile(dotfile, "utf8", function biddle_makeGlobal_findHome_readPath_nixRead(err, filedata) {
                             var pathStatement = "\nexport PATH=\"" + data.abspath + "bin:$PATH\"\n";
                             if (err !== null && err !== undefined) {
                                 return apps.errout({error: err, name: "biddle_makeGlobal_findHome_nixStat_nixRead"});
                             }
                             if (filedata.indexOf(data.abspath + "bin") > -1) {
                                 if (data.input[2] === "remove") {
-                                    return apps.writeFile(filedata.replace(pathStatement, ""), path, function biddle_makeGlobal_findHome_readPath_nixRead_nixRemove() {
-                                        if (path.indexOf("bash_profile") > 0) {
+                                    return apps.writeFile(filedata.replace(pathStatement, ""), dotfile, function biddle_makeGlobal_findHome_readPath_nixRead_nixRemove() {
+                                        console.log("Path updated in " + dotfile);
+                                        if (dotfile.indexOf("bash_profile") > 0) {
                                             flag.bash_profile = true;
                                             if (flag.profile === true) {
                                                 terminal();
@@ -1185,8 +1177,9 @@
                                 });
                             }
                             apps
-                                .writeFile(filedata + pathStatement, path, function biddle_makeGlobal_findHome_readPath_nixRead_nixRemove() {
-                                    if (path.indexOf("bash_profile") > 0) {
+                                .writeFile(filedata + pathStatement, dotfile, function biddle_makeGlobal_findHome_readPath_nixRead_nixRemove() {
+                                    console.log("Path updated in " + dotfile);
+                                    if (dotfile.indexOf("bash_profile") > 0) {
                                         flag.bash_profile = true;
                                         if (flag.profile === true) {
                                             terminal();
@@ -1207,7 +1200,7 @@
                 return apps.errout({error: stderh, name: "biddle_makeGlobal_findHome"});
             }
             stdouth = stdouth.replace(/\s+/g, "") + "/.";
-            node.fs.stat(path, function biddle_cmds_makeGlobal_findHome_nixStatProfile(er, stat) {
+            node.fs.stat(stdouth + "profile", function biddle_cmds_makeGlobal_findHome_nixStatProfile(er, stat) {
                 if (er !== null) {
                     if (er.toString().indexOf("no such file or directory") > 1) {
                         flag.profile = true;
@@ -1218,11 +1211,10 @@
                         return apps.errout({error:er, name:"biddle_cmds_makeGlobal_findHome_nixStatProfile"});
                     }
                 } else {
-                    readPath(path);
+                    readPath(stdouth + "profile");
                 }
             });
-            path = stdouth + "bash_profile"
-            node.fs.stat(path, function biddle_cmds_makeGlobal_findHome_nixStatBash(er, stat) {
+            node.fs.stat(stdouth + "bash_profile", function biddle_cmds_makeGlobal_findHome_nixStatBash(er, stat) {
                 if (er !== null) {
                     if (er.toString().indexOf("no such file or directory") > 1) {
                         flag.bash_profile = true;
@@ -1233,7 +1225,7 @@
                         return apps.errout({error:er, name:"biddle_cmds_makeGlobal_findHome_nixStatBash"});
                     }
                 } else {
-                    readPath(path);
+                    readPath(stdouth + "bash_profile");
                 }
             });
         });
@@ -2599,6 +2591,34 @@
                                 }
                                 next();
                             },
+                            checkoutJSLint = function biddle_test_moduleInstall_editions_checkoutJSLint(callback) {
+                                node.child("git checkout jslint.js", {
+                                    cwd: data.abspath + "JSLint"
+                                }, function biddle_test_moduleInstall_editions_checkoutJSLint_child(erjsl, stdoutjsl, stdouterjsl) {
+                                    if (erjsl !== null) {
+                                        apps.errout({error: erjsl, name: "biddle_test_moduleInstall_editions_checkoutJSLint_child", stdout: stdoutjsl, time: humantime(true)});
+                                    }
+                                    if (stdouterjsl !== null && stdouterjsl !== "" && stdouterjsl.indexOf("Cloning into '") < 0 && stdouterjsl.indexOf("From ") !== 0) {
+                                        apps.errout({error: stdouterjsl, name: "biddle_test_moduleInstall_editions_checkoutJSLint_child", stdout: stdoutjsl, time: humantime(true)});
+                                    }
+                                    callback();
+                                });
+                            },
+                            update = function biddle_test_moduleInstall_editions_update() {
+                                node
+                                    .child("git submodule update", function biddle_test_moduleInstall_editions_update_child(erd, stdoutd, stdouterd) {
+                                        if (erd !== null) {
+                                            apps.errout({error: erd, name: "biddle_test_moduleInstall_editions_update_child", stdout: stdoutd, time: humantime(true)});
+                                        }
+                                        if (stdouterd !== null && stdouterd !== "" && stdouterd.indexOf("Cloning into '") < 0 && stdouterd.indexOf("From ") !== 0) {
+                                            apps.errout({error: stdouterd, name: "biddle_test_moduleInstall_editions_update_child", stdout: stdoutd, time: humantime(true)});
+                                        }
+                                        if (flag.today === false) {
+                                            console.log("Submodules downloaded.");
+                                        }
+                                        keys.forEach(each);
+                                    });
+                            },
                             submod = function biddle_test_moduleInstall_editions_submod(output) {
                                 var appFile        = modules[appName].dir + node.path.sep + modules[appName].file,
                                     jslintcomplete = function biddle_test_moduleInstall_editions_submod_jslintcomplete() {
@@ -2719,35 +2739,16 @@
                                             if (stdouterc !== null && stdouterc !== "" && stdouterc.indexOf("Cloning into '") < 0 && stdouterc.indexOf("From ") < 0 && stdouterc.indexOf(" registered for path ") < 0) {
                                                 apps.errout({error: stdouterc, name: "biddle_test_moduleInstall_editions_init", stdout: stdoutc, time: humantime(true)});
                                             }
-                                            node
-                                                .child("git submodule update", function biddle_test_moduleInstall_editions_init_update(erd, stdoutd, stdouterd) {
-                                                    if (erd !== null) {
-                                                        apps.errout({error: erd, name: "biddle_test_moduleInstall_editions_init_update", stdout: stdoutd, time: humantime(true)});
-                                                    }
-                                                    if (stdouterd !== null && stdouterd !== "" && stdouterd.indexOf("Cloning into '") < 0 && stdouterd.indexOf("From ") !== 0) {
-                                                        apps.errout({error: stdouterd, name: "biddle_test_moduleInstall_editions_init_update", stdout: stdoutd, time: humantime(true)});
-                                                    }
-                                                    if (flag.today === false) {
-                                                        console.log("Submodules downloaded.");
-                                                    }
-                                                    keys.forEach(each);
-                                                    return stdoutd;
-                                                });
+                                            if (appName === "jslint") {
+                                                checkoutJSLint(update);
+                                            } else {
+                                                update();
+                                            }
                                             return stdoutc;
                                         });
                                 } else {
                                     if (appName === "jslint") {
-                                        node.child("git checkout jslint.js", {
-                                            cwd: data.abspath + "JSLint"
-                                        }, function biddle_test_moduleInstall_editions_lintCheckout(erjsl, stdoutjsl, stdouterjsl) {
-                                            if (erjsl !== null) {
-                                                apps.errout({error: erjsl, name: "biddle_test_moduleInstall_editions_lintCheckout", stdout: stdoutjsl, time: humantime(true)});
-                                            }
-                                            if (stdouterjsl !== null && stdouterjsl !== "" && stdouterjsl.indexOf("Cloning into '") < 0 && stdouterjsl.indexOf("From ") !== 0) {
-                                                apps.errout({error: stdouterjsl, name: "biddle_test_moduleInstall_editions_lintCheckout", stdout: stdoutjsl, time: humantime(true)});
-                                            }
-                                            pull();
-                                        });
+                                        checkoutJSLint(pull);
                                     } else {
                                         pull();
                                     }
