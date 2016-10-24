@@ -307,7 +307,7 @@
             }
             output = paths[paths.length - 1].toLowerCase();
         }
-        console.log(paths);console.log(output);
+        if (data.childtest === true && data.command === "get"){console.log(paths);console.log(output);}
         return apps.sanitizef(output);
     };
     apps.getpjson    = function biddle_getpjson(callback) {
