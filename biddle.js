@@ -285,13 +285,15 @@
         if (data.input[2] === undefined) {
             return "download.xxx";
         }
-        if (data.command === "get") {
+        if ((/^(https?:\/\/)/).test(data.input[2]) === true) {
             paths = data
                 .input[2]
+                .replace(/^(https?:\/\/)/, "")
                 .split("/");
         } else {
             paths = data
                 .input[2]
+                .replace(/^(\/|\\)+/, "")
                 .split(node.path.sep);
         }
         if (paths[paths.length - 1].length > 0) {
