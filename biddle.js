@@ -3086,10 +3086,10 @@
                                     }
                                     if (stat !== undefined && stat.isFile !== undefined && stat.isFile() === true) {
                                         node.child("git checkout jslint.js", {cwd: "JSLint"}, function biddle_test_moduleInstall_rmrecurse_makedir_stat_checkout(erj, stdoutj, stdouterj) {
-                                            if (erj !== null) {
+                                            if (erj !== null && erj.toString().indexOf("no such file or directory") < 0) {
                                                 apps.errout({error: erj, name: "biddle_test_moduleInstall_editions_init", stdout: stdoutj, time: humantime(true)});
                                             }
-                                            if (stdouterj !== null && stdouterj !== "" && stdouterj.indexOf("Cloning into '") < 0 && stdouterj.indexOf("From ") < 0 && stdouterj.indexOf(" registered for path ") < 0) {
+                                            if (stdouterj !== null && stdouterj !== "" && stdouterj.indexOf("no such file or directory") < 0) {
                                                 apps.errout({error: stdouterj, name: "biddle_test_moduleInstall_editions_init", stdout: stdoutj, time: humantime(true)});
                                             }
                                             handler(0);
