@@ -21,7 +21,8 @@
             markdown : "Parse any markdown and output to terminal.",
             publish  : "Publish an application/version.",
             remove   : "Remove a file or directory from the local file system.",
-            status   : "Determine if version on installed applications are behind the latest published version.",
+            status   : "Determine if version on installed applications are behind the latest published v" +
+                          "ersion.",
             test     : "Test automation.",
             uninstall: "Uninstall an application installed by biddle.",
             unpublish: "Unpublish an application published by biddle.",
@@ -121,7 +122,7 @@
             if (b < lens) {
                 do {
                     comm = comm + " ";
-                    b += 1;
+                    b    += 1;
                 } while (b < lens);
             }
             console.log("\u001b[36m" + comm + "\u001b[39m: " + commands[keys[a]]);
@@ -175,7 +176,6 @@
             .toString()
             .replace(/(\s+)$/, "");
         if (data.command === "test") {
-            process.chdir(data.cwd);
             if (errData.name.indexOf("biddle_test") === 0) {
                 data.published.biddletesta = {
                     directory: data.abspath + "publications" + node.path.sep + "biddletesta"
@@ -285,13 +285,18 @@
         if (data.input[2] === undefined) {
             return "download.xxx";
         }
-        if (data.command === "get") {
-            paths = data
+        if ((/^(https?:\/\/)/).test(data.input[2]) === true) {
+            output = data
                 .input[2]
-                .split("/");
+                .replace(/^(https?:\/\/)/, "");
+            if (output.indexOf("?") > 0) {
+                output = output.slice(0, output.indexOf("?"));
+            }
+            paths  = output.split("/");
         } else {
             paths = data
                 .input[2]
+                .replace(/^(\/|\\)+/, "")
                 .split(node.path.sep);
         }
         if (paths[paths.length - 1].length > 0) {
@@ -305,7 +310,7 @@
             }
             output = paths[paths.length - 1].toLowerCase();
         }
-        return apps.sanitizef(output.replace(/\+|<|>|:|"|\/|\\|\||\?|\*|%/g, ""));
+        return apps.sanitizef(output);
     };
     apps.getpjson    = function biddle_getpjson(callback) {
         var file = data
@@ -450,7 +455,7 @@
                                         } else {
                                             chars[eol] = "\n" + ind;
                                         }
-                                        index      = 1 + y + eol;
+                                        index = 1 + y + eol;
                                         if (chars[eol - 1] === " ") {
                                             chars[eol - 1] = "";
                                         } else if (chars[eol + 1] === " ") {
@@ -628,7 +633,12 @@
                         return item;
                     },
                     table  = function biddle_help_readme_table() {
-                        var rows = [lines[b].replace(/^\|/, "").replace(/\|$/, "").split("|")],
+                        var rows = [
+                                lines[b]
+                                    .replace(/^\|/, "")
+                                    .replace(/\|$/, "")
+                                    .split("|")
+                            ],
                             lens = rows[0].length,
                             cols = [],
                             c    = 0,
@@ -636,12 +646,16 @@
                             e    = 0,
                             lend = 0,
                             line = "";
-                        c = b + 2;
-                        line = lines[c].replace(/^\|/, "").replace(/\|$/, "");
-                        d = 0;
+                        c    = b + 2;
+                        line = lines[c]
+                            .replace(/^\|/, "")
+                            .replace(/\|$/, "");
+                        d    = 0;
                         do {
                             rows[0][d] = parse(rows[0][d].replace(/\s+/g, " ").replace(/^\s/, "").replace(/\s$/, ""), false, true);
-                            lend = rows[0][d].replace(/\u001b\[\d+m/g, "").length;
+                            lend         = rows[0][d]
+                                .replace(/\u001b\[\d+m/g, "")
+                                .length;
                             cols.push(lend);
                             d += 1;
                         } while (d < lens);
@@ -651,7 +665,9 @@
                                 d = 0;
                                 do {
                                     rows[rows.length - 1][d] = parse(rows[rows.length - 1][d].replace(/\s+/g, " ").replace(/^\s/, "").replace(/\s$/, ""), false, true);
-                                    lend = rows[rows.length - 1][d].replace(/\u001b\[\d+m/g, "").length;
+                                    lend                       = rows[rows.length - 1][d]
+                                        .replace(/\u001b\[\d+m/g, "")
+                                        .length;
                                     if (lend > cols[d]) {
                                         cols[d] = lend;
                                     }
@@ -668,23 +684,27 @@
                                 if (c === len) {
                                     break;
                                 }
-                                line = lines[c].replace(/^\|/, "").replace(/\|$/, "");
+                                line = lines[c]
+                                    .replace(/^\|/, "")
+                                    .replace(/\|$/, "");
                             } while (line.indexOf("|") > -1);
                         }
-                        c = 0;
+                        c    = 0;
                         lend = rows.length;
                         do {
                             d = 0;
                             do {
-                                e = rows[c][d].replace(/\u001b\[\d+m/g, "").length;
+                                e = rows[c][d]
+                                    .replace(/\u001b\[\d+m/g, "")
+                                    .length;
                                 if (d === lens - 1 && rows[c][d].length < cols[d]) {
                                     do {
-                                        e += 1;
+                                        e          += 1;
                                         rows[c][d] = rows[c][d] + " ";
                                     } while (e < cols[d]);
                                 } else {
                                     do {
-                                        e += 1;
+                                        e          += 1;
                                         rows[c][d] = rows[c][d] + " ";
                                     } while (e < cols[d] + 1);
                                 }
@@ -814,7 +834,7 @@
                         }
                         lines[b] = parse(lines[b], true, false).replace(/\*|-/, bld + red + bullet + enc + ens);
                     } else if ((/^\s*>/).test(lines[b]) === true) {
-                        listly = [];
+                        listly   = [];
                         lines[b] = parse(lines[b], false, false);
                         if (b < len - 1 && (/^(\s*)$/).test(lines[b + 1]) === false) {
                             lines[b + 1] = ">" + lines[b + 1];
@@ -880,7 +900,9 @@
                                     data.installed[data.packjson.name].location  = data.address.target;
                                     data.installed[data.packjson.name].version   = data.packjson.version;
                                     data.installed[data.packjson.name].published = ((/^(https?:\/\/)/i).test(data.input[2]) === true)
-                                        ? data.input[2].slice(0, data.input[2].lastIndexOf("/") + 1)
+                                        ? data
+                                            .input[2]
+                                            .slice(0, data.input[2].lastIndexOf("/") + 1)
                                         : apps.relToAbs(data.input[2].slice(0, data.input[2].lastIndexOf(node.path.sep) + 1));
                                     apps.writeFile(JSON.stringify(data.installed), data.abspath + "installed.json", function biddle_install_compareHash_hashCmd_installedJSON() {
                                         status.packjson = true;
@@ -1130,74 +1152,112 @@
                     });
             });
         }
-        node.child("echo ~", function biddle_makeGlobal_findHome(erh, stdouth, stderh) {
-            if (erh !== null) {
-                return apps.errout({error: erh, name: "biddle_makeGlobal_findHome"});
-            }
-            if (stderh !== null && stderh !== "") {
-                return apps.errout({error: stderh, name: "biddle_makeGlobal_findHome"});
-            }
-            stdouth = stdouth.replace(/\s+/g, "") + "/.";
-            node.fs.stat(stdouth + "profile", function biddle_cmds_makeGlobal_findHome_nixStat(er, stat) {
-                var path = "";
-                if (er !== null) {
-                    if (er.toString().indexOf("no such file or directory") > 1) {
-                        path = stdouth + "bash_profile";
-                    } else {
-                        return apps.errout({error:er, name:"biddle_cmds_makeGlobal_findHome_nixStat"});
-                    }
+        node
+            .child("echo ~", function biddle_makeGlobal_findHome(erh, stdouth, stderh) {
+                var flag     = {
+                        bash_profile: false,
+                        profile     : false
+                    },
+                    terminal = function biddle_makeGlobal_findHome_terminal() {
+                        if (data.input[2] === "remove") {
+                            return console.log(data.abspath + "bin removed from $PATH but will remain available until the terminal is restarted" +
+                                    ".");
+                        }
+                        console.log("Restart the terminal or execute:  export PATH=" + data.abspath + "bin:$PATH");
+                    },
+                    readPath = function biddle_makeGlobal_findHome_readPath(dotfile) {
+                        node
+                            .fs
+                            .readFile(dotfile, "utf8", function biddle_makeGlobal_findHome_readPath_nixRead(err, filedata) {
+                                var pathStatement = "\nexport PATH=\"" + data.abspath + "bin:$PATH\"\n";
+                                if (err !== null && err !== undefined) {
+                                    return apps.errout({error: err, name: "biddle_makeGlobal_findHome_nixStat_nixRead"});
+                                }
+                                if (filedata.indexOf(data.abspath + "bin") > -1) {
+                                    if (data.input[2] === "remove") {
+                                        return apps.writeFile(filedata.replace(pathStatement, ""), dotfile, function biddle_makeGlobal_findHome_readPath_nixRead_nixRemove() {
+                                            console.log("Path updated in " + dotfile);
+                                            if (dotfile.indexOf("bash_profile") > 0) {
+                                                flag.bash_profile = true;
+                                                if (flag.profile === true) {
+                                                    terminal();
+                                                }
+                                            } else {
+                                                flag.profile = true;
+                                                if (flag.bash_profile === true) {
+                                                    terminal();
+                                                }
+                                            }
+                                        });
+                                    }
+                                    return apps.errout({
+                                        error: data.abspath + "bin is already in $PATH",
+                                        name : "biddle_makeGlobal_findHome_readPath_nixRead"
+                                    });
+                                }
+                                if (data.input[2] === "remove") {
+                                    return apps.errout({
+                                        error: data.abspath + "bin is not present in $PATH",
+                                        name : "biddle_makeGlobal_findHome_readPath_nixRead"
+                                    });
+                                }
+                                apps
+                                    .writeFile(filedata + pathStatement, dotfile, function biddle_makeGlobal_findHome_readPath_nixRead_nixRemove() {
+                                        console.log("Path updated in " + dotfile);
+                                        if (dotfile.indexOf("bash_profile") > 0) {
+                                            flag.bash_profile = true;
+                                            if (flag.profile === true) {
+                                                terminal();
+                                            }
+                                        } else {
+                                            flag.profile = true;
+                                            if (flag.bash_profile === true) {
+                                                terminal();
+                                            }
+                                        }
+                                    });
+                            });
+                    };
+                if (erh !== null) {
+                    return apps.errout({error: erh, name: "biddle_makeGlobal_findHome"});
                 }
-                if (stat !== undefined && stat.isFile !== undefined && stat.isFile() === true) {
-                    path = stdouth + "profile";
-                } else {
-                    path = stdouth + "bash_profile";
+                if (stderh !== null && stderh !== "") {
+                    return apps.errout({error: stderh, name: "biddle_makeGlobal_findHome"});
                 }
+                stdouth = stdouth.replace(/\s+/g, "") + "/.";
                 node
                     .fs
-                    .readFile(path, "utf8", function biddle_makeGlobal_findHome_nixStat_nixRead(err, filedata) {
-                        if (err !== null && err !== undefined) {
-                            return apps.errout({error: err, name: "biddle_makeGlobal_findHome_nixStat_nixRead"});
-                        }
-                        if (filedata.indexOf(data.abspath + "bin") > -1) {
-                            if (data.input[2] === "remove") {
-                                return apps.writeFile(filedata.replace("\nPATH=" + data.abspath + "bin:$PATH\n", ""), path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove() {
-                                    node.child(". " + path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource(ers, stdouts, stders) {
-                                        if (ers !== null) {
-                                            return apps.errout({error:ers, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
-                                        }
-                                        if (stdouts !== null && stdouts !== "") {
-                                            return apps.errout({error:stdouts, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
-                                        }
-                                        console.log(data.abspath + "bin removed from $PATH.");
-                                    });
-                                });
+                    .stat(stdouth + "profile", function biddle_cmds_makeGlobal_findHome_nixStatProfile(er) {
+                        if (er !== null) {
+                            if (er.toString().indexOf("no such file or directory") > 1) {
+                                flag.profile = true;
+                                if (flag.bash_profile === true) {
+                                    terminal();
+                                }
+                            } else {
+                                return apps.errout({error: er, name: "biddle_cmds_makeGlobal_findHome_nixStatProfile"});
                             }
-                            return apps.errout({
-                                error: data.abspath + "bin is already in $PATH",
-                                name : "biddle_makeGlobal_findHome_nixStat_nixRead"
-                            });
+                        } else {
+                            readPath(stdouth + "profile");
                         }
-                        if (data.input[2] === "remove") {
-                            return apps.errout({
-                                error: data.abspath + "bin is not present in $PATH",
-                                name : "biddle_makeGlobal_findHome_nixStat_nixRead"
-                            });
+                    });
+                node
+                    .fs
+                    .stat(stdouth + "bash_profile", function biddle_cmds_makeGlobal_findHome_nixStatBash(er) {
+                        if (er !== null) {
+                            if (er.toString().indexOf("no such file or directory") > 1) {
+                                flag.bash_profile = true;
+                                if (flag.profile === true) {
+                                    terminal();
+                                }
+                            } else {
+                                return apps.errout({error: er, name: "biddle_cmds_makeGlobal_findHome_nixStatBash"});
+                            }
+                        } else {
+                            readPath(stdouth + "bash_profile");
                         }
-                        apps
-                            .writeFile(filedata + "\nPATH=" + data.abspath + "bin:$PATH\n", path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove() {
-                                node.child(". " + path, function biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource(ers, stdouts, stders) {
-                                    if (ers !== null) {
-                                        return apps.errout({error:ers, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
-                                    }
-                                    if (stdouts !== null && stdouts !== "") {
-                                        return apps.errout({error:stdouts, name:"biddle_makeGlobal_findHome_nixStat_nixRead_nixRemove_nixSource"});
-                                    }
-                                    console.log(data.abspath + "bin added to $PATH.");
-                                });
-                            });
                     });
             });
-        });
     };
     apps.publish     = function biddle_publish() {
         var flag      = {
@@ -1339,7 +1399,9 @@
                 });
             }
             if (data.published[data.packjson.name] !== undefined && data.input[3] !== undefined) {
-                data.input = data.input.slice(0, 3);
+                data.input = data
+                    .input
+                    .slice(0, 3);
             } else if (data.published[data.packjson.name] === undefined) {
                 data.published[data.packjson.name]           = {};
                 data.published[data.packjson.name].versions  = [];
@@ -1650,7 +1712,7 @@
             },
             getversion = function biddle_status_get(filedata, filepath) {
                 versions[name(filepath)] = filedata;
-                b                              += 1;
+                b                        += 1;
                 if (b === len) {
                     compare();
                 }
@@ -1746,10 +1808,10 @@
             keys      = Object.keys(modules),
             childcmd  = (data.platform === "win32")
                 ? (data.abspath === process.cwd().toLowerCase() + node.path.sep)
-                    ? "node biddle "
+                    ? "node " + data.abspath + "biddle "
                     : "biddle "
                 : (data.abspath === process.cwd() + node.path.sep)
-                    ? "node biddle "
+                    ? "node " + data.abspath + "biddle "
                     : "biddle ",
             testpath  = data.abspath + "unittest",
             humantime = function biddle_test_humantime(finished) {
@@ -2037,7 +2099,7 @@
                                 return apps.errout({error: stder, name: "biddle_test_get_child", stdout: stdout, time: humantime(true)});
                             }
                             size = stdout.slice(stdout.indexOf("written at") + 10).replace(/(\s+)$/, "");
-                            if ((/^(File\u0020)/).test(stdout) === false || stdout.indexOf(" 0 bytes") > 0 || size.replace(" bytes.", "").length < 4) {
+                            if ((/^(((File)|(\d{3}))\u0020)/).test(stdout) === false || stdout.indexOf("File\u0020") < 0 || stdout.indexOf(" 0 bytes") > 0 || size.replace(" bytes.", "").length < 4) {
                                 return apps.errout({
                                     error: "Unexpected output for test 'get':\r\n\u001b[31m" + stdout + "\u001b[39m",
                                     name : "biddle_test_get_child",
@@ -2402,7 +2464,117 @@
                         "80" : false
                     };
                     node.child(childcmd + "markdown " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "READMEa.md 60 childtest", function biddle_test_markdown_60(er, stdout, stder) {
-                        var markdowntest = "\n\u001b[4m\u001b[1m\u001b[31mtest README\u001b[39m\u001b[0m\u001b[24m\nsome dummy subtext\n\n\u001b[4m\u001b[1m\u001b[36mFirst Secondary Heading\u001b[39m\u001b[0m\u001b[24m\n    | a big block quote lives here. This is where I\n    | am going to experience with wrapping a block quote a bit\n    | differently from other content.  I need enough text in\n    | this quote to wrap a couple of times, so I will continue\n    | adding some nonsense and as long as it takes to ensure I\n    | have a fully qualified test.\n    | New line in a block quote\n    | More block\n\n  This is a regular paragraph that needs to be long\n  enough to wrap a couple times.  This text will be unique\n  from the text in the block quote because uniqueness saves\n  time when debugging test failures.  I am now writing a\n  bunch of wrapping paragraph gibberish, such as\n  f324fasdaowkefsdva.  That one isn't even a word.  It isn't\n  cool if it doesn't contain a hyperlink,\n  (\u001b[36mhttp://tonowhwere.nothing\u001b[39m), in some text.\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 1 these also need to wrap like a\n    paragraph. So blah blah wrapping some madness into a\n    list item right gosh darn here and let's see what shakes\n    out of the coolness.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 2 these also need to wrap like a\n    paragraph. So blah blah wrapping some madness into a\n    list item right gosh darn here and let's see what shakes\n    out of the coolness.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 1 these also need to wrap like a\n      paragraph. So blah blah wrapping some madness into a\n      list item right gosh darn here and let's see what\n      shakes out of the coolness.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 2 these also need to wrap like a\n      paragraph. So blah blah wrapping some madness into a\n      list item right gosh darn here and let's see what\n      shakes out of the coolness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 1 these also need to wrap\n        like a paragraph. So blah blah wrapping some madness\n        into a list item right gosh darn here and let's see\n        what shakes out of the coolness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 2 these also need to wrap\n        like a paragraph. So blah blah wrapping some madness\n        into a list item right gosh darn here and let's see\n        what shakes out of the coolness.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 3 these also need to wrap like a\n    paragraph. So blah blah wrapping some madness into a\n    list item right gosh darn here and let's see what shakes\n    out of the coolness.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m boo these also need to wrap like a paragraph.\n      So blah blah wrapping some madness into a list item\n      right gosh darn here and let's see what shakes out of\n      the coolness.\n\n  \u001b[4m\u001b[1m\u001b[32mFirst Tertiary Heading\u001b[39m\u001b[0m\u001b[24m\n    This text should be extra indented.\n\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 1\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 2\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 1\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 2\n        \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 1\n        \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 2\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 3\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m boo\n\n    \u001b[4m\u001b[1m\u001b[33mGettin Deep with the Headings\u001b[39m\u001b[0m\u001b[24m\n\n        | a big block quote lives here. This\n        | is where I am going to experience with wrapping a\n        | block quote a bit differently from other content.  I\n        | need enough text in this quote to wrap a couple of\n        | times, so I will continue adding some nonsense and\n        | as long as it takes to ensure I have a fully\n        | qualified test.\n        | New line in a block quote\n        | More block\n\n      Images get converted to their alt text\n      description.\n\n      This is a regular paragraph that needs to be\n      long enough to wrap a couple times.  This text will be\n      unique from the text in the block quote because\n      uniqueness saves time when debugging test failures.  I\n      am now writing a bunch of wrapping paragraph\n      gibberish, such as f324fasdaowkefsdva.  That one isn't\n      even a word.\n\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 1 these also need to wrap like\n        a paragraph. So blah blah wrapping some madness into\n        a list item right gosh darn here and let's see what\n        shakes out of the coolness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 2 these also need to wrap like\n        a paragraph. So blah blah wrapping some madness into\n        a list item right gosh darn here and let's see what\n        shakes out of the coolness.\n        \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 1 these also need to\n          wrap like a paragraph. So blah blah wrapping some\n          madness into a list item right gosh darn here and\n          let's see what shakes out of the coolness.\n        \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 2 these also need to\n          wrap like a paragraph. So blah blah wrapping some\n          madness into a list item right gosh darn here and\n          let's see what shakes out of the coolness.\n          \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 1 these also need\n            to wrap like a paragraph. So blah blah wrapping\n            some madness into a list item right gosh darn\n            here and let's see what shakes out of the\n            coolness.\n          \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 2 these also need\n            to wrap like a paragraph. So blah blah wrapping\n            some madness into a list item right gosh darn\n            here and let's see what shakes out of the\n            coolness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 3 these also need to wrap like\n        a paragraph. So blah blah wrapping some madness into\n        a list item right gosh darn here and let's see what\n        shakes out of the coolness.\n        \u001b[1m\u001b[31m-\u001b[39m\u001b[0m boo these also need to wrap like a\n          paragraph. So blah blah wrapping some madness into\n          a list item right gosh darn here and let's see\n          what shakes out of the coolness.\n\n      \u001b[4mCommand   \u001b[0m\u001b[4m Local \u001b[0m\u001b[4m Argument Type               \u001b[0m\u001b[4m Second Argument \u001b[0m\n      copy       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path or directory path  directory path \n      get        \u001b[1m\u001b[33m?\u001b[39m\u001b[0m      file path                    none           \n      global     \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      none                         none           \n      hash       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path                    none           \n      help       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      number                       none           \n      install    \u001b[1m\u001b[33m?\u001b[39m\u001b[0m      zip file                     directory path \n      list       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      \"\u001b[3m\u001b[33minstalled\u001b[39m\u001b[0m\" or \"\u001b[3m\u001b[33mpublished\u001b[39m\u001b[0m\"   none           \n      markdown   \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      path to markdown file        number         \n      publish    \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      directory path               directory path \n      remove     \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path or directory path  none           \n      status     \u001b[1m\u001b[33m?\u001b[39m\u001b[0m      none or application name     none           \n      test       \u001b[1m\u001b[31mX\u001b[39m\u001b[0m      none                         none           \n      uninstall  \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      application name             none           \n      unpublish  \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      application name             none           \n      unzip      \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      path to zip file             directory path \n      zip        \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path or directory path  directory path \n\n\u001b[4m\u001b[1m\u001b[36mNew big Heading\u001b[39m\u001b[0m\u001b[24m\n  paragraph here to see if indentation is largely reset\n  appropriate to the current heading that is bigger than the\n  previous headings",
+                        var markdowntest = "\n\u001b[4m\u001b[1m\u001b[31mtest README\u001b[39m\u001b[0m\u001b[24m\nsome dum" +
+                                         "my subtext\n\n\u001b[4m\u001b[1m\u001b[36mFirst Secondary Heading\u001b[39m" +
+                                         "\u001b[0m\u001b[24m\n    | a big block quote lives here. This is where I\n    | " +
+                                         "am going to experience with wrapping a block quote a bit\n    | differently from" +
+                                         " other content.  I need enough text in\n    | this quote to wrap a couple of tim" +
+                                         "es, so I will continue\n    | adding some nonsense and as long as it takes to en" +
+                                         "sure I\n    | have a fully qualified test.\n    | New line in a block quote\n   " +
+                                         " | More block\n\n  This is a regular paragraph that needs to be long\n  enough t" +
+                                         "o wrap a couple times.  This text will be unique\n  from the text in the block q" +
+                                         "uote because uniqueness saves\n  time when debugging test failures.  I am now wr" +
+                                         "iting a\n  bunch of wrapping paragraph gibberish, such as\n  f324fasdaowkefsdva." +
+                                         "  That one isn't even a word.  It isn't\n  cool if it doesn't contain a hyperlin" +
+                                         "k,\n  (\u001b[36mhttp://tonowhwere.nothing\u001b[39m), in some text.\n\n  \u001b" +
+                                         "[1m\u001b[31m*\u001b[39m\u001b[0m list item 1 these also need to wrap like a\n  " +
+                                         "  paragraph. So blah blah wrapping some madness into a\n    list item right gosh" +
+                                         " darn here and let's see what shakes\n    out of the coolness.\n  \u001b[1m" +
+                                         "\u001b[31m*\u001b[39m\u001b[0m list item 2 these also need to wrap like a\n    p" +
+                                         "aragraph. So blah blah wrapping some madness into a\n    list item right gosh da" +
+                                         "rn here and let's see what shakes\n    out of the coolness.\n    \u001b[1m\u001b" +
+                                         "[31m-\u001b[39m\u001b[0m sublist item 1 these also need to wrap like a\n      pa" +
+                                         "ragraph. So blah blah wrapping some madness into a\n      list item right gosh d" +
+                                         "arn here and let's see what\n      shakes out of the coolness.\n    \u001b[1m" +
+                                         "\u001b[31m-\u001b[39m\u001b[0m sublist item 2 these also need to wrap like a\n  " +
+                                         "    paragraph. So blah blah wrapping some madness into a\n      list item right " +
+                                         "gosh darn here and let's see what\n      shakes out of the coolness.\n      " +
+                                         "\u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 1 these also need to wra" +
+                                         "p\n        like a paragraph. So blah blah wrapping some madness\n        into a " +
+                                         "list item right gosh darn here and let's see\n        what shakes out of the coo" +
+                                         "lness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 2 these al" +
+                                         "so need to wrap\n        like a paragraph. So blah blah wrapping some madness\n " +
+                                         "       into a list item right gosh darn here and let's see\n        what shakes " +
+                                         "out of the coolness.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 3 thes" +
+                                         "e also need to wrap like a\n    paragraph. So blah blah wrapping some madness in" +
+                                         "to a\n    list item right gosh darn here and let's see what shakes\n    out of t" +
+                                         "he coolness.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m boo these also need to" +
+                                         " wrap like a paragraph.\n      So blah blah wrapping some madness into a list it" +
+                                         "em\n      right gosh darn here and let's see what shakes out of\n      the cooln" +
+                                         "ess.\n\n  \u001b[4m\u001b[1m\u001b[32mFirst Tertiary Heading\u001b[39m\u001b[0m" +
+                                         "\u001b[24m\n    This text should be extra indented.\n\n    \u001b[1m\u001b[31m*" +
+                                         "\u001b[39m\u001b[0m list item 1\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m lis" +
+                                         "t item 2\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 1\n      " +
+                                         "\u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 2\n        \u001b[1m\u001b[" +
+                                         "31m*\u001b[39m\u001b[0m subsublist item 1\n        \u001b[1m\u001b[31m*\u001b[39" +
+                                         "m\u001b[0m subsublist item 2\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list i" +
+                                         "tem 3\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m boo\n\n    \u001b[4m\u001b[" +
+                                         "1m\u001b[33mGettin Deep with the Headings\u001b[39m\u001b[0m\u001b[24m\n\n      " +
+                                         "  | a big block quote lives here. This\n        | is where I am going to experie" +
+                                         "nce with wrapping a\n        | block quote a bit differently from other content." +
+                                         "  I\n        | need enough text in this quote to wrap a couple of\n        | tim" +
+                                         "es, so I will continue adding some nonsense and\n        | as long as it takes t" +
+                                         "o ensure I have a fully\n        | qualified test.\n        | New line in a bloc" +
+                                         "k quote\n        | More block\n\n      Images get converted to their alt text\n " +
+                                         "     description.\n\n      This is a regular paragraph that needs to be\n      l" +
+                                         "ong enough to wrap a couple times.  This text will be\n      unique from the tex" +
+                                         "t in the block quote because\n      uniqueness saves time when debugging test fa" +
+                                         "ilures.  I\n      am now writing a bunch of wrapping paragraph\n      gibberish," +
+                                         " such as f324fasdaowkefsdva.  That one isn't\n      even a word.\n\n      \u001b" +
+                                         "[1m\u001b[31m*\u001b[39m\u001b[0m list item 1 these also need to wrap like\n    " +
+                                         "    a paragraph. So blah blah wrapping some madness into\n        a list item ri" +
+                                         "ght gosh darn here and let's see what\n        shakes out of the coolness.\n    " +
+                                         "  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 2 these also need to wrap li" +
+                                         "ke\n        a paragraph. So blah blah wrapping some madness into\n        a list" +
+                                         " item right gosh darn here and let's see what\n        shakes out of the coolnes" +
+                                         "s.\n        \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 1 these also ne" +
+                                         "ed to\n          wrap like a paragraph. So blah blah wrapping some\n          ma" +
+                                         "dness into a list item right gosh darn here and\n          let's see what shakes" +
+                                         " out of the coolness.\n        \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist i" +
+                                         "tem 2 these also need to\n          wrap like a paragraph. So blah blah wrapping" +
+                                         " some\n          madness into a list item right gosh darn here and\n          le" +
+                                         "t's see what shakes out of the coolness.\n          \u001b[1m\u001b[31m*\u001b[3" +
+                                         "9m\u001b[0m subsublist item 1 these also need\n            to wrap like a paragr" +
+                                         "aph. So blah blah wrapping\n            some madness into a list item right gosh" +
+                                         " darn\n            here and let's see what shakes out of the\n            coolne" +
+                                         "ss.\n          \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 2 these a" +
+                                         "lso need\n            to wrap like a paragraph. So blah blah wrapping\n         " +
+                                         "   some madness into a list item right gosh darn\n            here and let's see" +
+                                         " what shakes out of the\n            coolness.\n      \u001b[1m\u001b[31m*\u001b" +
+                                         "[39m\u001b[0m list item 3 these also need to wrap like\n        a paragraph. So " +
+                                         "blah blah wrapping some madness into\n        a list item right gosh darn here a" +
+                                         "nd let's see what\n        shakes out of the coolness.\n        \u001b[1m\u001b[" +
+                                         "31m-\u001b[39m\u001b[0m boo these also need to wrap like a\n          paragraph." +
+                                         " So blah blah wrapping some madness into\n          a list item right gosh darn " +
+                                         "here and let's see\n          what shakes out of the coolness.\n\n      \u001b[4" +
+                                         "mCommand   \u001b[0m\u001b[4m Local \u001b[0m\u001b[4m Argument Type            " +
+                                         "   \u001b[0m\u001b[4m Second Argument \u001b[0m\n      copy       \u001b[1m" +
+                                         "\u001b[32m✓\u001b[39m\u001b[0m      file path or directory path  directory path " +
+                                         "\n      get        \u001b[1m\u001b[33m?\u001b[39m\u001b[0m      file path       " +
+                                         "             none           \n      global     \u001b[1m\u001b[32m✓\u001b[39m" +
+                                         "\u001b[0m      none                         none           \n      hash       " +
+                                         "\u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path                    none  " +
+                                         "         \n      help       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      number " +
+                                         "                      none           \n      install    \u001b[1m\u001b[33m?" +
+                                         "\u001b[39m\u001b[0m      zip file                     directory path \n      lis" +
+                                         "t       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      \"\u001b[3m\u001b[33minstal" +
+                                         "led\u001b[39m\u001b[0m\" or \"\u001b[3m\u001b[33mpublished\u001b[39m\u001b[0m\" " +
+                                         "  none           \n      markdown   \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m     " +
+                                         " path to markdown file        number         \n      publish    \u001b[1m\u001b[" +
+                                         "32m✓\u001b[39m\u001b[0m      directory path               directory path \n     " +
+                                         " remove     \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path or directory " +
+                                         "path  none           \n      status     \u001b[1m\u001b[33m?\u001b[39m\u001b[0m " +
+                                         "     none or application name     none           \n      test       \u001b[1m" +
+                                         "\u001b[31mX\u001b[39m\u001b[0m      none                         none           " +
+                                         "\n      uninstall  \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      application name" +
+                                         "             none           \n      unpublish  \u001b[1m\u001b[32m✓\u001b[39m" +
+                                         "\u001b[0m      application name             none           \n      unzip      " +
+                                         "\u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      path to zip file             direct" +
+                                         "ory path \n      zip        \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file pa" +
+                                         "th or directory path  directory path \n\n\u001b[4m\u001b[1m\u001b[36mNew big Hea" +
+                                         "ding\u001b[39m\u001b[0m\u001b[24m\n  paragraph here to see if indentation is lar" +
+                                         "gely reset\n  appropriate to the current heading that is bigger than the\n  prev" +
+                                         "ious headings",
                             name         = "biddle_test_markdown_60";
                         if (er !== null) {
                             return apps.errout({error: er, name: name, stdout: stdout, time: humantime(true)});
@@ -2425,7 +2597,114 @@
                         }
                     });
                     node.child(childcmd + "markdown " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "READMEa.md 80 childtest", function biddle_test_markdown_80(er, stdout, stder) {
-                        var markdowntest = "\n\u001b[4m\u001b[1m\u001b[31mtest README\u001b[39m\u001b[0m\u001b[24m\nsome dummy subtext\n\n\u001b[4m\u001b[1m\u001b[36mFirst Secondary Heading\u001b[39m\u001b[0m\u001b[24m\n    | a big block quote lives here. This is where I am going to\n    | experience with wrapping a block quote a bit differently from other content.\n    | I need enough text in this quote to wrap a couple of times, so I will\n    | continue adding some nonsense and as long as it takes to ensure I have a\n    | fully qualified test.\n    | New line in a block quote\n    | More block\n\n  This is a regular paragraph that needs to be long enough to wrap a couple\n  times.  This text will be unique from the text in the block quote because\n  uniqueness saves time when debugging test failures.  I am now writing a bunch\n  of wrapping paragraph gibberish, such as f324fasdaowkefsdva.  That one isn't\n  even a word.  It isn't cool if it doesn't contain a hyperlink,\n  (\u001b[36mhttp://tonowhwere.nothing\u001b[39m), in some text.\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 1 these also need to wrap like a paragraph. So blah blah\n    wrapping some madness into a list item right gosh darn here and let's see\n    what shakes out of the coolness.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 2 these also need to wrap like a paragraph. So blah blah\n    wrapping some madness into a list item right gosh darn here and let's see\n    what shakes out of the coolness.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 1 these also need to wrap like a paragraph. So blah\n      blah wrapping some madness into a list item right gosh darn here and let's\n      see what shakes out of the coolness.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 2 these also need to wrap like a paragraph. So blah\n      blah wrapping some madness into a list item right gosh darn here and let's\n      see what shakes out of the coolness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 1 these also need to wrap like a paragraph.\n        So blah blah wrapping some madness into a list item right gosh darn here\n        and let's see what shakes out of the coolness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 2 these also need to wrap like a paragraph.\n        So blah blah wrapping some madness into a list item right gosh darn here\n        and let's see what shakes out of the coolness.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 3 these also need to wrap like a paragraph. So blah blah\n    wrapping some madness into a list item right gosh darn here and let's see\n    what shakes out of the coolness.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m boo these also need to wrap like a paragraph. So blah blah\n      wrapping some madness into a list item right gosh darn here and let's see\n      what shakes out of the coolness.\n\n  \u001b[4m\u001b[1m\u001b[32mFirst Tertiary Heading\u001b[39m\u001b[0m\u001b[24m\n    This text should be extra indented.\n\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 1\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 2\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 1\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 2\n        \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 1\n        \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 2\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 3\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m boo\n\n    \u001b[4m\u001b[1m\u001b[33mGettin Deep with the Headings\u001b[39m\u001b[0m\u001b[24m\n\n        | a big block quote lives here. This is where I am going\n        | to experience with wrapping a block quote a bit differently from other\n        | content.  I need enough text in this quote to wrap a couple of times, so\n        | I will continue adding some nonsense and as long as it takes to ensure I\n        | have a fully qualified test.\n        | New line in a block quote\n        | More block\n\n      Images get converted to their alt text description.\n\n      This is a regular paragraph that needs to be long enough to wrap a\n      couple times.  This text will be unique from the text in the block quote\n      because uniqueness saves time when debugging test failures.  I am now\n      writing a bunch of wrapping paragraph gibberish, such as\n      f324fasdaowkefsdva.  That one isn't even a word.\n\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 1 these also need to wrap like a paragraph. So blah\n        blah wrapping some madness into a list item right gosh darn here and\n        let's see what shakes out of the coolness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 2 these also need to wrap like a paragraph. So blah\n        blah wrapping some madness into a list item right gosh darn here and\n        let's see what shakes out of the coolness.\n        \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 1 these also need to wrap like a paragraph.\n          So blah blah wrapping some madness into a list item right gosh darn\n          here and let's see what shakes out of the coolness.\n        \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 2 these also need to wrap like a paragraph.\n          So blah blah wrapping some madness into a list item right gosh darn\n          here and let's see what shakes out of the coolness.\n          \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 1 these also need to wrap like a\n            paragraph. So blah blah wrapping some madness into a list item right\n            gosh darn here and let's see what shakes out of the coolness.\n          \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 2 these also need to wrap like a\n            paragraph. So blah blah wrapping some madness into a list item right\n            gosh darn here and let's see what shakes out of the coolness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 3 these also need to wrap like a paragraph. So blah\n        blah wrapping some madness into a list item right gosh darn here and\n        let's see what shakes out of the coolness.\n        \u001b[1m\u001b[31m-\u001b[39m\u001b[0m boo these also need to wrap like a paragraph. So blah\n          blah wrapping some madness into a list item right gosh darn here and\n          let's see what shakes out of the coolness.\n\n      \u001b[4mCommand   \u001b[0m\u001b[4m Local \u001b[0m\u001b[4m Argument Type               \u001b[0m\u001b[4m Second Argument \u001b[0m\n      copy       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path or directory path  directory path \n      get        \u001b[1m\u001b[33m?\u001b[39m\u001b[0m      file path                    none           \n      global     \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      none                         none           \n      hash       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path                    none           \n      help       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      number                       none           \n      install    \u001b[1m\u001b[33m?\u001b[39m\u001b[0m      zip file                     directory path \n      list       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      \"\u001b[3m\u001b[33minstalled\u001b[39m\u001b[0m\" or \"\u001b[3m\u001b[33mpublished\u001b[39m\u001b[0m\"   none           \n      markdown   \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      path to markdown file        number         \n      publish    \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      directory path               directory path \n      remove     \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path or directory path  none           \n      status     \u001b[1m\u001b[33m?\u001b[39m\u001b[0m      none or application name     none           \n      test       \u001b[1m\u001b[31mX\u001b[39m\u001b[0m      none                         none           \n      uninstall  \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      application name             none           \n      unpublish  \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      application name             none           \n      unzip      \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      path to zip file             directory path \n      zip        \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path or directory path  directory path \n\n\u001b[4m\u001b[1m\u001b[36mNew big Heading\u001b[39m\u001b[0m\u001b[24m\n  paragraph here to see if indentation is largely reset appropriate to the\n  current heading that is bigger than the previous headings",
+                        var markdowntest = "\n\u001b[4m\u001b[1m\u001b[31mtest README\u001b[39m\u001b[0m\u001b[24m\nsome dum" +
+                                         "my subtext\n\n\u001b[4m\u001b[1m\u001b[36mFirst Secondary Heading\u001b[39m" +
+                                         "\u001b[0m\u001b[24m\n    | a big block quote lives here. This is where I am goin" +
+                                         "g to\n    | experience with wrapping a block quote a bit differently from other " +
+                                         "content.\n    | I need enough text in this quote to wrap a couple of times, so I" +
+                                         " will\n    | continue adding some nonsense and as long as it takes to ensure I h" +
+                                         "ave a\n    | fully qualified test.\n    | New line in a block quote\n    | More " +
+                                         "block\n\n  This is a regular paragraph that needs to be long enough to wrap a co" +
+                                         "uple\n  times.  This text will be unique from the text in the block quote becaus" +
+                                         "e\n  uniqueness saves time when debugging test failures.  I am now writing a bun" +
+                                         "ch\n  of wrapping paragraph gibberish, such as f324fasdaowkefsdva.  That one isn" +
+                                         "'t\n  even a word.  It isn't cool if it doesn't contain a hyperlink,\n  (\u001b[" +
+                                         "36mhttp://tonowhwere.nothing\u001b[39m), in some text.\n\n  \u001b[1m\u001b[31m*" +
+                                         "\u001b[39m\u001b[0m list item 1 these also need to wrap like a paragraph. So bla" +
+                                         "h blah\n    wrapping some madness into a list item right gosh darn here and let'" +
+                                         "s see\n    what shakes out of the coolness.\n  \u001b[1m\u001b[31m*\u001b[39m" +
+                                         "\u001b[0m list item 2 these also need to wrap like a paragraph. So blah blah\n  " +
+                                         "  wrapping some madness into a list item right gosh darn here and let's see\n   " +
+                                         " what shakes out of the coolness.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m s" +
+                                         "ublist item 1 these also need to wrap like a paragraph. So blah\n      blah wrap" +
+                                         "ping some madness into a list item right gosh darn here and let's\n      see wha" +
+                                         "t shakes out of the coolness.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m subli" +
+                                         "st item 2 these also need to wrap like a paragraph. So blah\n      blah wrapping" +
+                                         " some madness into a list item right gosh darn here and let's\n      see what sh" +
+                                         "akes out of the coolness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsubl" +
+                                         "ist item 1 these also need to wrap like a paragraph.\n        So blah blah wrapp" +
+                                         "ing some madness into a list item right gosh darn here\n        and let's see wh" +
+                                         "at shakes out of the coolness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m su" +
+                                         "bsublist item 2 these also need to wrap like a paragraph.\n        So blah blah " +
+                                         "wrapping some madness into a list item right gosh darn here\n        and let's s" +
+                                         "ee what shakes out of the coolness.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m l" +
+                                         "ist item 3 these also need to wrap like a paragraph. So blah blah\n    wrapping " +
+                                         "some madness into a list item right gosh darn here and let's see\n    what shake" +
+                                         "s out of the coolness.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m boo these al" +
+                                         "so need to wrap like a paragraph. So blah blah\n      wrapping some madness into" +
+                                         " a list item right gosh darn here and let's see\n      what shakes out of the co" +
+                                         "olness.\n\n  \u001b[4m\u001b[1m\u001b[32mFirst Tertiary Heading\u001b[39m\u001b[" +
+                                         "0m\u001b[24m\n    This text should be extra indented.\n\n    \u001b[1m\u001b[31m" +
+                                         "*\u001b[39m\u001b[0m list item 1\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m li" +
+                                         "st item 2\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 1\n      " +
+                                         "\u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 2\n        \u001b[1m\u001b[" +
+                                         "31m*\u001b[39m\u001b[0m subsublist item 1\n        \u001b[1m\u001b[31m*\u001b[39" +
+                                         "m\u001b[0m subsublist item 2\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list i" +
+                                         "tem 3\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m boo\n\n    \u001b[4m\u001b[" +
+                                         "1m\u001b[33mGettin Deep with the Headings\u001b[39m\u001b[0m\u001b[24m\n\n      " +
+                                         "  | a big block quote lives here. This is where I am going\n        | to experie" +
+                                         "nce with wrapping a block quote a bit differently from other\n        | content." +
+                                         "  I need enough text in this quote to wrap a couple of times, so\n        | I wi" +
+                                         "ll continue adding some nonsense and as long as it takes to ensure I\n        | " +
+                                         "have a fully qualified test.\n        | New line in a block quote\n        | Mor" +
+                                         "e block\n\n      Images get converted to their alt text description.\n\n      Th" +
+                                         "is is a regular paragraph that needs to be long enough to wrap a\n      couple t" +
+                                         "imes.  This text will be unique from the text in the block quote\n      because " +
+                                         "uniqueness saves time when debugging test failures.  I am now\n      writing a b" +
+                                         "unch of wrapping paragraph gibberish, such as\n      f324fasdaowkefsdva.  That o" +
+                                         "ne isn't even a word.\n\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item" +
+                                         " 1 these also need to wrap like a paragraph. So blah\n        blah wrapping some" +
+                                         " madness into a list item right gosh darn here and\n        let's see what shake" +
+                                         "s out of the coolness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item " +
+                                         "2 these also need to wrap like a paragraph. So blah\n        blah wrapping some " +
+                                         "madness into a list item right gosh darn here and\n        let's see what shakes" +
+                                         " out of the coolness.\n        \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist i" +
+                                         "tem 1 these also need to wrap like a paragraph.\n          So blah blah wrapping" +
+                                         " some madness into a list item right gosh darn\n          here and let's see wha" +
+                                         "t shakes out of the coolness.\n        \u001b[1m\u001b[31m-\u001b[39m\u001b[0m s" +
+                                         "ublist item 2 these also need to wrap like a paragraph.\n          So blah blah " +
+                                         "wrapping some madness into a list item right gosh darn\n          here and let's" +
+                                         " see what shakes out of the coolness.\n          \u001b[1m\u001b[31m*\u001b[39m" +
+                                         "\u001b[0m subsublist item 1 these also need to wrap like a\n            paragrap" +
+                                         "h. So blah blah wrapping some madness into a list item right\n            gosh d" +
+                                         "arn here and let's see what shakes out of the coolness.\n          \u001b[1m" +
+                                         "\u001b[31m*\u001b[39m\u001b[0m subsublist item 2 these also need to wrap like a" +
+                                         "\n            paragraph. So blah blah wrapping some madness into a list item rig" +
+                                         "ht\n            gosh darn here and let's see what shakes out of the coolness.\n " +
+                                         "     \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 3 these also need to wrap" +
+                                         " like a paragraph. So blah\n        blah wrapping some madness into a list item " +
+                                         "right gosh darn here and\n        let's see what shakes out of the coolness.\n  " +
+                                         "      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m boo these also need to wrap like a" +
+                                         " paragraph. So blah\n          blah wrapping some madness into a list item right" +
+                                         " gosh darn here and\n          let's see what shakes out of the coolness.\n\n   " +
+                                         "   \u001b[4mCommand   \u001b[0m\u001b[4m Local \u001b[0m\u001b[4m Argument Type " +
+                                         "              \u001b[0m\u001b[4m Second Argument \u001b[0m\n      copy       " +
+                                         "\u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path or directory path  direct" +
+                                         "ory path \n      get        \u001b[1m\u001b[33m?\u001b[39m\u001b[0m      file pa" +
+                                         "th                    none           \n      global     \u001b[1m\u001b[32m✓" +
+                                         "\u001b[39m\u001b[0m      none                         none           \n      has" +
+                                         "h       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path                  " +
+                                         "  none           \n      help       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m     " +
+                                         " number                       none           \n      install    \u001b[1m\u001b[" +
+                                         "33m?\u001b[39m\u001b[0m      zip file                     directory path \n     " +
+                                         " list       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      \"\u001b[3m\u001b[33min" +
+                                         "stalled\u001b[39m\u001b[0m\" or \"\u001b[3m\u001b[33mpublished\u001b[39m\u001b[0" +
+                                         "m\"   none           \n      markdown   \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m " +
+                                         "     path to markdown file        number         \n      publish    \u001b[1m" +
+                                         "\u001b[32m✓\u001b[39m\u001b[0m      directory path               directory path " +
+                                         "\n      remove     \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path or dir" +
+                                         "ectory path  none           \n      status     \u001b[1m\u001b[33m?\u001b[39m" +
+                                         "\u001b[0m      none or application name     none           \n      test       " +
+                                         "\u001b[1m\u001b[31mX\u001b[39m\u001b[0m      none                         none  " +
+                                         "         \n      uninstall  \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      applica" +
+                                         "tion name             none           \n      unpublish  \u001b[1m\u001b[32m✓" +
+                                         "\u001b[39m\u001b[0m      application name             none           \n      unz" +
+                                         "ip      \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      path to zip file           " +
+                                         "  directory path \n      zip        \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m     " +
+                                         " file path or directory path  directory path \n\n\u001b[4m\u001b[1m\u001b[36mNew" +
+                                         " big Heading\u001b[39m\u001b[0m\u001b[24m\n  paragraph here to see if indentatio" +
+                                         "n is largely reset appropriate to the\n  current heading that is bigger than the" +
+                                         " previous headings",
                             name         = "biddle_test_markdown_80";
                         if (er !== null) {
                             return apps.errout({error: er, name: name, stdout: stdout, time: humantime(true)});
@@ -2448,7 +2727,112 @@
                         }
                     });
                     node.child(childcmd + "markdown " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "READMEa.md 120 childtest", function biddle_test_markdown_120(er, stdout, stder) {
-                        var markdowntest = "\n\u001b[4m\u001b[1m\u001b[31mtest README\u001b[39m\u001b[0m\u001b[24m\nsome dummy subtext\n\n\u001b[4m\u001b[1m\u001b[36mFirst Secondary Heading\u001b[39m\u001b[0m\u001b[24m\n    | a big block quote lives here. This is where I am going to experience with wrapping a block quote a bit\n    | differently from other content.  I need enough text in this quote to wrap a couple of times, so I will continue\n    | adding some nonsense and as long as it takes to ensure I have a fully qualified test.\n    | New line in a block quote\n    | More block\n\n  This is a regular paragraph that needs to be long enough to wrap a couple times.  This text will be unique from the\n  text in the block quote because uniqueness saves time when debugging test failures.  I am now writing a bunch of\n  wrapping paragraph gibberish, such as f324fasdaowkefsdva.  That one isn't even a word.  It isn't cool if it doesn't\n  contain a hyperlink, (\u001b[36mhttp://tonowhwere.nothing\u001b[39m), in some text.\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 1 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list item\n    right gosh darn here and let's see what shakes out of the coolness.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 2 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list item\n    right gosh darn here and let's see what shakes out of the coolness.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 1 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list\n      item right gosh darn here and let's see what shakes out of the coolness.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 2 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list\n      item right gosh darn here and let's see what shakes out of the coolness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 1 these also need to wrap like a paragraph. So blah blah wrapping some madness into a\n        list item right gosh darn here and let's see what shakes out of the coolness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 2 these also need to wrap like a paragraph. So blah blah wrapping some madness into a\n        list item right gosh darn here and let's see what shakes out of the coolness.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 3 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list item\n    right gosh darn here and let's see what shakes out of the coolness.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m boo these also need to wrap like a paragraph. So blah blah wrapping some madness into a list item right\n      gosh darn here and let's see what shakes out of the coolness.\n\n  \u001b[4m\u001b[1m\u001b[32mFirst Tertiary Heading\u001b[39m\u001b[0m\u001b[24m\n    This text should be extra indented.\n\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 1\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 2\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 1\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 2\n        \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 1\n        \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 2\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 3\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m boo\n\n    \u001b[4m\u001b[1m\u001b[33mGettin Deep with the Headings\u001b[39m\u001b[0m\u001b[24m\n\n        | a big block quote lives here. This is where I am going to experience with wrapping a block\n        | quote a bit differently from other content.  I need enough text in this quote to wrap a couple of times, so I\n        | will continue adding some nonsense and as long as it takes to ensure I have a fully qualified test.\n        | New line in a block quote\n        | More block\n\n      Images get converted to their alt text description.\n\n      This is a regular paragraph that needs to be long enough to wrap a couple times.  This text will be unique\n      from the text in the block quote because uniqueness saves time when debugging test failures.  I am now writing a\n      bunch of wrapping paragraph gibberish, such as f324fasdaowkefsdva.  That one isn't even a word.\n\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 1 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list\n        item right gosh darn here and let's see what shakes out of the coolness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 2 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list\n        item right gosh darn here and let's see what shakes out of the coolness.\n        \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 1 these also need to wrap like a paragraph. So blah blah wrapping some madness into\n          a list item right gosh darn here and let's see what shakes out of the coolness.\n        \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 2 these also need to wrap like a paragraph. So blah blah wrapping some madness into\n          a list item right gosh darn here and let's see what shakes out of the coolness.\n          \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 1 these also need to wrap like a paragraph. So blah blah wrapping some\n            madness into a list item right gosh darn here and let's see what shakes out of the coolness.\n          \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 2 these also need to wrap like a paragraph. So blah blah wrapping some\n            madness into a list item right gosh darn here and let's see what shakes out of the coolness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 3 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list\n        item right gosh darn here and let's see what shakes out of the coolness.\n        \u001b[1m\u001b[31m-\u001b[39m\u001b[0m boo these also need to wrap like a paragraph. So blah blah wrapping some madness into a list item\n          right gosh darn here and let's see what shakes out of the coolness.\n\n      \u001b[4mCommand   \u001b[0m\u001b[4m Local \u001b[0m\u001b[4m Argument Type               \u001b[0m\u001b[4m Second Argument \u001b[0m\n      copy       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path or directory path  directory path \n      get        \u001b[1m\u001b[33m?\u001b[39m\u001b[0m      file path                    none           \n      global     \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      none                         none           \n      hash       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path                    none           \n      help       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      number                       none           \n      install    \u001b[1m\u001b[33m?\u001b[39m\u001b[0m      zip file                     directory path \n      list       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      \"\u001b[3m\u001b[33minstalled\u001b[39m\u001b[0m\" or \"\u001b[3m\u001b[33mpublished\u001b[39m\u001b[0m\"   none           \n      markdown   \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      path to markdown file        number         \n      publish    \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      directory path               directory path \n      remove     \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path or directory path  none           \n      status     \u001b[1m\u001b[33m?\u001b[39m\u001b[0m      none or application name     none           \n      test       \u001b[1m\u001b[31mX\u001b[39m\u001b[0m      none                         none           \n      uninstall  \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      application name             none           \n      unpublish  \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      application name             none           \n      unzip      \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      path to zip file             directory path \n      zip        \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path or directory path  directory path \n\n\u001b[4m\u001b[1m\u001b[36mNew big Heading\u001b[39m\u001b[0m\u001b[24m\n  paragraph here to see if indentation is largely reset appropriate to the current heading that is bigger than the\n  previous headings",
+                        var markdowntest = "\n\u001b[4m\u001b[1m\u001b[31mtest README\u001b[39m\u001b[0m\u001b[24m\nsome dum" +
+                                         "my subtext\n\n\u001b[4m\u001b[1m\u001b[36mFirst Secondary Heading\u001b[39m" +
+                                         "\u001b[0m\u001b[24m\n    | a big block quote lives here. This is where I am goin" +
+                                         "g to experience with wrapping a block quote a bit\n    | differently from other " +
+                                         "content.  I need enough text in this quote to wrap a couple of times, so I will " +
+                                         "continue\n    | adding some nonsense and as long as it takes to ensure I have a " +
+                                         "fully qualified test.\n    | New line in a block quote\n    | More block\n\n  Th" +
+                                         "is is a regular paragraph that needs to be long enough to wrap a couple times.  " +
+                                         "This text will be unique from the\n  text in the block quote because uniqueness " +
+                                         "saves time when debugging test failures.  I am now writing a bunch of\n  wrappin" +
+                                         "g paragraph gibberish, such as f324fasdaowkefsdva.  That one isn't even a word. " +
+                                         " It isn't cool if it doesn't\n  contain a hyperlink, (\u001b[36mhttp://tonowhwer" +
+                                         "e.nothing\u001b[39m), in some text.\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m" +
+                                         " list item 1 these also need to wrap like a paragraph. So blah blah wrapping som" +
+                                         "e madness into a list item\n    right gosh darn here and let's see what shakes o" +
+                                         "ut of the coolness.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 2 these" +
+                                         " also need to wrap like a paragraph. So blah blah wrapping some madness into a l" +
+                                         "ist item\n    right gosh darn here and let's see what shakes out of the coolness" +
+                                         ".\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 1 these also need to" +
+                                         " wrap like a paragraph. So blah blah wrapping some madness into a list\n      it" +
+                                         "em right gosh darn here and let's see what shakes out of the coolness.\n    " +
+                                         "\u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 2 these also need to wrap l" +
+                                         "ike a paragraph. So blah blah wrapping some madness into a list\n      item righ" +
+                                         "t gosh darn here and let's see what shakes out of the coolness.\n      \u001b[1m" +
+                                         "\u001b[31m*\u001b[39m\u001b[0m subsublist item 1 these also need to wrap like a " +
+                                         "paragraph. So blah blah wrapping some madness into a\n        list item right go" +
+                                         "sh darn here and let's see what shakes out of the coolness.\n      \u001b[1m" +
+                                         "\u001b[31m*\u001b[39m\u001b[0m subsublist item 2 these also need to wrap like a " +
+                                         "paragraph. So blah blah wrapping some madness into a\n        list item right go" +
+                                         "sh darn here and let's see what shakes out of the coolness.\n  \u001b[1m\u001b[3" +
+                                         "1m*\u001b[39m\u001b[0m list item 3 these also need to wrap like a paragraph. So " +
+                                         "blah blah wrapping some madness into a list item\n    right gosh darn here and l" +
+                                         "et's see what shakes out of the coolness.\n    \u001b[1m\u001b[31m-\u001b[39m" +
+                                         "\u001b[0m boo these also need to wrap like a paragraph. So blah blah wrapping so" +
+                                         "me madness into a list item right\n      gosh darn here and let's see what shake" +
+                                         "s out of the coolness.\n\n  \u001b[4m\u001b[1m\u001b[32mFirst Tertiary Heading" +
+                                         "\u001b[39m\u001b[0m\u001b[24m\n    This text should be extra indented.\n\n    " +
+                                         "\u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 1\n    \u001b[1m\u001b[31m*" +
+                                         "\u001b[39m\u001b[0m list item 2\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m s" +
+                                         "ublist item 1\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 2\n   " +
+                                         "     \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 1\n        \u001b[1" +
+                                         "m\u001b[31m*\u001b[39m\u001b[0m subsublist item 2\n    \u001b[1m\u001b[31m*" +
+                                         "\u001b[39m\u001b[0m list item 3\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m b" +
+                                         "oo\n\n    \u001b[4m\u001b[1m\u001b[33mGettin Deep with the Headings\u001b[39m" +
+                                         "\u001b[0m\u001b[24m\n\n        | a big block quote lives here. This is where I a" +
+                                         "m going to experience with wrapping a block\n        | quote a bit differently f" +
+                                         "rom other content.  I need enough text in this quote to wrap a couple of times, " +
+                                         "so I\n        | will continue adding some nonsense and as long as it takes to en" +
+                                         "sure I have a fully qualified test.\n        | New line in a block quote\n      " +
+                                         "  | More block\n\n      Images get converted to their alt text description.\n\n " +
+                                         "     This is a regular paragraph that needs to be long enough to wrap a couple t" +
+                                         "imes.  This text will be unique\n      from the text in the block quote because " +
+                                         "uniqueness saves time when debugging test failures.  I am now writing a\n      b" +
+                                         "unch of wrapping paragraph gibberish, such as f324fasdaowkefsdva.  That one isn'" +
+                                         "t even a word.\n\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 1 thes" +
+                                         "e also need to wrap like a paragraph. So blah blah wrapping some madness into a " +
+                                         "list\n        item right gosh darn here and let's see what shakes out of the coo" +
+                                         "lness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 2 these also nee" +
+                                         "d to wrap like a paragraph. So blah blah wrapping some madness into a list\n    " +
+                                         "    item right gosh darn here and let's see what shakes out of the coolness.\n  " +
+                                         "      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 1 these also need to " +
+                                         "wrap like a paragraph. So blah blah wrapping some madness into\n          a list" +
+                                         " item right gosh darn here and let's see what shakes out of the coolness.\n     " +
+                                         "   \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 2 these also need to wra" +
+                                         "p like a paragraph. So blah blah wrapping some madness into\n          a list it" +
+                                         "em right gosh darn here and let's see what shakes out of the coolness.\n        " +
+                                         "  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 1 these also need to w" +
+                                         "rap like a paragraph. So blah blah wrapping some\n            madness into a lis" +
+                                         "t item right gosh darn here and let's see what shakes out of the coolness.\n    " +
+                                         "      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 2 these also need " +
+                                         "to wrap like a paragraph. So blah blah wrapping some\n            madness into a" +
+                                         " list item right gosh darn here and let's see what shakes out of the coolness.\n" +
+                                         "      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 3 these also need to wra" +
+                                         "p like a paragraph. So blah blah wrapping some madness into a list\n        item" +
+                                         " right gosh darn here and let's see what shakes out of the coolness.\n        " +
+                                         "\u001b[1m\u001b[31m-\u001b[39m\u001b[0m boo these also need to wrap like a parag" +
+                                         "raph. So blah blah wrapping some madness into a list item\n          right gosh " +
+                                         "darn here and let's see what shakes out of the coolness.\n\n      \u001b[4mComma" +
+                                         "nd   \u001b[0m\u001b[4m Local \u001b[0m\u001b[4m Argument Type               " +
+                                         "\u001b[0m\u001b[4m Second Argument \u001b[0m\n      copy       \u001b[1m\u001b[3" +
+                                         "2m✓\u001b[39m\u001b[0m      file path or directory path  directory path \n      " +
+                                         "get        \u001b[1m\u001b[33m?\u001b[39m\u001b[0m      file path               " +
+                                         "     none           \n      global     \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m  " +
+                                         "    none                         none           \n      hash       \u001b[1m" +
+                                         "\u001b[32m✓\u001b[39m\u001b[0m      file path                    none           " +
+                                         "\n      help       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      number          " +
+                                         "             none           \n      install    \u001b[1m\u001b[33m?\u001b[39m" +
+                                         "\u001b[0m      zip file                     directory path \n      list       " +
+                                         "\u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      \"\u001b[3m\u001b[33minstalled" +
+                                         "\u001b[39m\u001b[0m\" or \"\u001b[3m\u001b[33mpublished\u001b[39m\u001b[0m\"   n" +
+                                         "one           \n      markdown   \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      pa" +
+                                         "th to markdown file        number         \n      publish    \u001b[1m\u001b[32m" +
+                                         "✓\u001b[39m\u001b[0m      directory path               directory path \n      re" +
+                                         "move     \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path or directory pat" +
+                                         "h  none           \n      status     \u001b[1m\u001b[33m?\u001b[39m\u001b[0m    " +
+                                         "  none or application name     none           \n      test       \u001b[1m\u001b" +
+                                         "[31mX\u001b[39m\u001b[0m      none                         none           \n    " +
+                                         "  uninstall  \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      application name      " +
+                                         "       none           \n      unpublish  \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m" +
+                                         "      application name             none           \n      unzip      \u001b[1m" +
+                                         "\u001b[32m✓\u001b[39m\u001b[0m      path to zip file             directory path " +
+                                         "\n      zip        \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path or dir" +
+                                         "ectory path  directory path \n\n\u001b[4m\u001b[1m\u001b[36mNew big Heading" +
+                                         "\u001b[39m\u001b[0m\u001b[24m\n  paragraph here to see if indentation is largely" +
+                                         " reset appropriate to the current heading that is bigger than the\n  previous he" +
+                                         "adings",
                             name         = "biddle_test_markdown_120";
                         if (er !== null) {
                             return apps.errout({error: er, name: name, stdout: stdout, time: humantime(true)});
@@ -2493,9 +2877,9 @@
                         },
                         handler  = function biddle_test_moduleInstall_handler() {
                             var mod = keys[ind];
-                            modules[keys[ind]].name = "\u001b[32m" + modules[keys[ind]].name + "\u001b[39m";
-                            if (modules[keys[ind]].name.length > longname) {
-                                longname = modules[keys[ind]].name.length;
+                            modules[mod].name = "\u001b[32m" + modules[mod].name + "\u001b[39m";
+                            if (modules[mod].name.length > longname) {
+                                longname = modules[mod].name.length;
                             }
                             node
                                 .fs
@@ -2549,7 +2933,7 @@
                                 });
                         };
                     editions = function biddle_test_moduleInstall_editions(appName, cloned) {
-                        var modout = function biddle_test_moduleInstall_editions_modout() {
+                        var modout         = function biddle_test_moduleInstall_editions_modout() {
                                 var x   = 0,
                                     len = keys.length;
                                 console.log("Installed submodule versions");
@@ -2559,7 +2943,7 @@
                                 }
                                 next();
                             },
-                            submod = function biddle_test_moduleInstall_editions_submod(output) {
+                            submod         = function biddle_test_moduleInstall_editions_submod(output) {
                                 var appFile        = modules[appName].dir + node.path.sep + modules[appName].file,
                                     jslintcomplete = function biddle_test_moduleInstall_editions_submod_jslintcomplete() {
                                         modules.jslint.app = require(appFile);
@@ -2611,119 +2995,105 @@
                                     }
                                 }
                             },
-                            each   = function biddle_test_moduleInstall_editions_each(val, idx) {
+                            each           = function biddle_test_moduleInstall_editions_each(val, idx) {
                                 appName = val;
                                 ind     = idx + 1;
                                 submod(false);
                             },
-                            pull   = function biddle_test_moduleInstall_editions_pull() {
-                                process.chdir("JSLint");
+                            update         = function biddle_test_moduleInstall_editions_update() {
                                 node
-                                    .child("git checkout jslint.js", function biddle_test_moduleInstall_editions_pull_checkoutJSLint(errchk, stdoutchk, stdouterchk) {
-                                        if (errchk !== null) {
-                                            console.log(errchk);
-                                            apps.errout({error: errchk, name: "biddle_test_moduleInstall_editions_pull_checkoutJSLint", stdout: stdoutchk, time: humantime(true)});
+                                    .child("git submodule update", function biddle_test_moduleInstall_editions_update_child(erd, stdoutd, stdouterd) {
+                                        if (erd !== null) {
+                                            apps.errout({error: erd, name: "biddle_test_moduleInstall_editions_update_child", stdout: stdoutd, time: humantime(true)});
                                         }
-                                        if (stdouterchk !== null && stdouterchk !== "") {
-                                            apps.errout({error: stdouterchk, name: "biddle_test_moduleInstall_editions_pull_checkoutJSLint", stdout: stdoutchk, time: humantime(true)});
+                                        if (stdouterd !== null && stdouterd !== "" && stdouterd.indexOf("Cloning into '") < 0 && stdouterd.indexOf("From ") !== 0) {
+                                            apps.errout({error: stdouterd, name: "biddle_test_moduleInstall_editions_update_child", stdout: stdoutd, time: humantime(true)});
                                         }
-                                        node.child("git submodule foreach git pull origin master", function biddle_test_moduleInstall_editions_pull_checkoutJSLint_child(errpull, stdoutpull, stdouterpull) {
-                                            if (errpull !== null) {
-                                                console.log(errpull);
-                                                if (errpull.toString().indexOf("fatal: no submodule mapping found in .gitmodules for path ") > 0) {
-                                                    console.log("No access to GitHub or .gitmodules is corrupt. Proceeding assuming submodules we" +
-                                                            "re previously installed.");
-                                                    flag.apps = true;
-                                                    return keys.forEach(each);
-                                                }
-                                                apps.errout({error: errpull, name: "biddle_test_moduleInstall_editions_pull_checkoutJSLint_child", stdout: stdoutpull, time: humantime(true)});
+                                        if (flag.today === false) {
+                                            console.log("Submodules downloaded.");
+                                        }
+                                        keys.forEach(each);
+                                    });
+                            },
+                            pull           = function biddle_test_moduleInstall_editions_pull() {
+                                node
+                                    .child("git submodule foreach git pull origin master", function biddle_test_moduleInstall_editions_pull_child(errpull, stdoutpull, stdouterpull) {
+                                        if (errpull !== null) {
+                                            console.log(errpull);
+                                            if (errpull.toString().indexOf("fatal: no submodule mapping found in .gitmodules for path ") > 0) {
+                                                console.log("No access to GitHub or .gitmodules is corrupt. Proceeding assuming submodules we" +
+                                                        "re previously installed.");
+                                                flag.apps = true;
+                                                return keys.forEach(each);
                                             }
-                                            if (stdouterpull !== null && stdouterpull !== "" && stdouterpull.indexOf("Cloning into '") < 0 && stdouterpull.indexOf("From ") < 0 && stdouterpull.indexOf("fatal: no submodule mapping found in .gitmodules for path ") < 0) {
-                                                apps.errout({error: stdouterpull, name: "biddle_test_moduleInstall_editions_pull_checkoutJSLint_child", stdout: stdoutpull, time: humantime(true)});
-                                            }
-                                            if (flag.today === false) {
-                                                console.log("Submodules checked for updates.");
-                                            }
-                                            keys.forEach(each);
-                                        });
+                                            apps.errout({error: errpull, name: "biddle_test_moduleInstall_editions_pull_child", stdout: stdoutpull, time: humantime(true)});
+                                        }
+                                        if (stdouterpull !== null && stdouterpull !== "" && stdouterpull.indexOf("Cloning into '") < 0 && stdouterpull.indexOf("From ") < 0 && stdouterpull.indexOf("fatal: no submodule mapping found in .gitmodules for path ") < 0) {
+                                            apps.errout({error: stdouterpull, name: "biddle_test_moduleInstall_editions_pull_child", stdout: stdoutpull, time: humantime(true)});
+                                        }
+                                        if (flag.today === false) {
+                                            console.log("Submodules checked for updates.");
+                                        }
+                                        keys.forEach(each);
                                     });
                             };
                         if (ind === keys.length) {
                             if (today !== date) {
-                                ind = 0;
-                                node
-                                    .fs
-                                    .writeFile("today.js", "/\u002aglobal module\u002a/(function () {\"use strict\";var today=" + date + ";module.exports=today;}());", function biddle_test_moduleInstall_editions_writeToday(werr) {
-                                        if (werr !== null && werr !== undefined) {
-                                            apps.errout({error: werr, name: "biddle_test_moduleInstall_editions_writeToday", time: humantime(true)});
-                                        }
-                                        if (cloned === true) {
-                                            console.log("Submodules downloaded.");
-                                        } else {
-                                            console.log("Submodules checked for updates.");
-                                        }
-                                        if (flag.apps === true) {
-                                            modout();
-                                        } else {
-                                            console.log("Checked for new versions of submodules.");
-                                            flag.today = true;
-                                        }
-                                    });
-                                if (cloned === true) {
+                                node.child("git checkout jslint.js", {
+                                    cwd: data.abspath + "JSLint"
+                                }, function biddle_test_moduleInstall_editions_checkoutJSLint(erjsl, stdoutjsl, stdouterjsl) {
+                                    if (erjsl !== null) {
+                                        apps.errout({error: erjsl, name: "biddle_test_moduleInstall_editions_checkoutJSLint", stdout: stdoutjsl, time: humantime(true)});
+                                    }
+                                    if (stdouterjsl !== null && stdouterjsl !== "") {
+                                        apps.errout({error: stdouterjsl, name: "biddle_test_moduleInstall_editions_checkoutJSLint", stdout: stdoutjsl, time: humantime(true)});
+                                    }
+                                    ind = 0;
                                     node
-                                        .child("git submodule init", function biddle_test_moduleInstall_editions_init(erc, stdoutc, stdouterc) {
-                                            if (erc !== null) {
-                                                apps.errout({error: erc, name: "biddle_test_moduleInstall_editions_init", stdout: stdoutc, time: humantime(true)});
+                                        .fs
+                                        .writeFile("today.js", "/\u002aglobal module\u002a/(function () {\"use strict\";var today=" + date + ";module.exports=today;}());", function biddle_test_moduleInstall_editions_checkoutJSLint_writeToday(werr) {
+                                            if (werr !== null && werr !== undefined) {
+                                                apps.errout({error: werr, name: "biddle_test_moduleInstall_editions_checkoutJSLint_writeToday", time: humantime(true)});
                                             }
-                                            if (stdouterc !== null && stdouterc !== "" && stdouterc.indexOf("Cloning into '") < 0 && stdouterc.indexOf("From ") < 0) {
-                                                apps.errout({error: stdouterc, name: "biddle_test_moduleInstall_editions_init", stdout: stdoutc, time: humantime(true)});
+                                            if (cloned === true) {
+                                                console.log("Submodules downloaded.");
+                                            } else {
+                                                console.log("Submodules checked for updates.");
                                             }
-                                            node
-                                                .child("git submodule update", function biddle_test_moduleInstall_editions_init_update(erd, stdoutd, stdouterd) {
-                                                    if (erd !== null) {
-                                                        apps.errout({error: erd, name: "biddle_test_moduleInstall_editions_init_update", stdout: stdoutd, time: humantime(true)});
-                                                    }
-                                                    if (stdouterd !== null && stdouterd !== "" && stdouterd.indexOf("Cloning into '") < 0 && stdouterd.indexOf("From ") !== 0) {
-                                                        apps.errout({error: stdouterd, name: "biddle_test_moduleInstall_editions_init_update", stdout: stdoutd, time: humantime(true)});
-                                                    }
-                                                    if (flag.today === false) {
-                                                        console.log("Submodules downloaded.");
-                                                    }
-                                                    keys.forEach(each);
-                                                    return stdoutd;
-                                                });
-                                            return stdoutc;
+                                            if (flag.apps === true) {
+                                                modout();
+                                            } else {
+                                                console.log("Checked for new versions of submodules.");
+                                                flag.today = true;
+                                            }
                                         });
-                                } else {
-                                    if (appName === "jslint") {
-                                        process.chdir(data.abspath + "JSLint");
-                                        node.child("git checkout jslint.js", function biddle_test_moduleInstall_editions_lintCheckout(erjsl, stdoutjsl, stdouterjsl) {
-                                            if (erjsl !== null) {
-                                                apps.errout({error: erjsl, name: "biddle_test_moduleInstall_editions_lintCheckout", stdout: stdoutjsl, time: humantime(true)});
-                                            }
-                                            if (stdouterjsl !== null && stdouterjsl !== "" && stdouterjsl.indexOf("Cloning into '") < 0 && stdouterjsl.indexOf("From ") !== 0) {
-                                                apps.errout({error: stdouterjsl, name: "biddle_test_moduleInstall_editions_lintCheckout", stdout: stdoutjsl, time: humantime(true)});
-                                            }
-                                            process.chdir(data.cwd);
-                                            pull();
-                                        });
+                                    if (cloned === true) {
+                                        node
+                                            .child("git submodule init", function biddle_test_moduleInstall_editions_checkoutJSLint_init(erc, stdoutc, stdouterc) {
+                                                if (erc !== null) {
+                                                    apps.errout({error: erc, name: "biddle_test_moduleInstall_editions_checkoutJSLint_init", stdout: stdoutc, time: humantime(true)});
+                                                }
+                                                if (stdouterc !== null && stdouterc !== "" && stdouterc.indexOf("Cloning into '") < 0 && stdouterc.indexOf("From ") < 0 && stdouterc.indexOf(" registered for path ") < 0) {
+                                                    apps.errout({error: stdouterc, name: "biddle_test_moduleInstall_editions_checkoutJSLint_init", stdout: stdoutc, time: humantime(true)});
+                                                }
+                                                update();
+                                            });
                                     } else {
                                         pull();
                                     }
-                                }
+                                 });
                             } else {
                                 flag.today = true;
                                 console.log("Running prior installed modules.");
+                                keys.forEach(each);
                             }
                         } else {
                             handler(ind);
                         }
-                        submod(true);
                     };
-                    process.chdir(__dirname);
                     apps.rmrecurse(testpath, function biddle_test_moduleInstall_rmrecurse() {
                         apps
-                            .makedir(testpath, function biddle_test_moduleInstall_makedir() {
+                            .makedir(testpath, function biddle_test_moduleInstall_rmrecurse_makedir() {
                                 handler(0);
                             });
                     });
@@ -3200,9 +3570,6 @@
                 }
             };
         next = function biddle_test_next() {
-            if (phases.active === "moduleInstall") {
-                process.chdir(data.cwd);
-            }
             console.log("");
             if (order.length < 1) {
                 return apps.rmrecurse(testpath, function biddle_test_next_rmdir() {
@@ -3316,20 +3683,20 @@
             latestfile  = "",
             cmd         = "",
             latestcmd   = "",
+            zipdir      = "",
             variantName = (zippack.name === "")
                 ? ""
                 : "_" + apps.sanitizef(zippack.name),
             childfunc   = function biddle_zip_childfunc(zipfilename, zipcmd, writejson) {
                 node
-                    .child(zipcmd, function biddle_zip_childfunc_child(err, stdout, stderr) {
+                    .child(zipcmd, {
+                        cwd: zipdir
+                    }, function biddle_zip_childfunc_child(err, stdout, stderr) {
                         if (err !== null && stderr.toString().indexOf("No such file or directory") < 0) {
                             return apps.errout({error: err, name: "biddle_zip_childfunc_child"});
                         }
                         if (stderr !== null && stderr.replace(/\s+/, "") !== "" && stderr.indexOf("No such file or directory") < 0) {
                             return apps.errout({error: stderr, name: "biddle_zip_childfunc_child"});
-                        }
-                        if (data.command === "zip" || data.command === "publish") {
-                            process.chdir(data.cwd);
                         }
                         if (data.command === "install") {
                             node
@@ -3355,7 +3722,7 @@
             }
             cmd = cmds.zip(apps.relToAbs(zipfile, false));
             if (data.command === "publish") {
-                process.chdir(zippack.location);
+                zipdir = zippack.location;
                 if (data.latestVersion === true) {
                     latestfile = zipfile.replace(data.packjson.version + ".zip", "latest.zip");
                     latestcmd  = cmd.replace(data.packjson.version + ".zip", "latest.zip");
@@ -3365,7 +3732,7 @@
             } else {
                 apps
                     .makedir(data.input[2], function biddle_zip_makedir() {
-                        process.chdir(data.input[2]);
+                        zipdir = data.input[2];
                         childfunc(zipfile, cmd, false);
                     });
             }
