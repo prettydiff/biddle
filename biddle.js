@@ -3000,19 +3000,6 @@
                                 ind     = idx + 1;
                                 submod(false);
                             },
-                            checkoutJSLint = function biddle_test_moduleInstall_editions_checkoutJSLint(callback) {
-                                node.child("git checkout jslint.js", {
-                                    cwd: data.abspath + "JSLint"
-                                }, function biddle_test_moduleInstall_editions_checkoutJSLint_child(erjsl, stdoutjsl, stdouterjsl) {
-                                     if (erjsl !== null) {
-                                         apps.errout({error: erjsl, name: "biddle_test_moduleInstall_editions_checkoutJSLint_child", stdout: stdoutjsl, time: humantime(true)});
-                                     }
-                                     if (stdouterjsl !== null && stdouterjsl !== "") {
-                                         apps.errout({error: stdouterjsl, name: "biddle_test_moduleInstall_editions_checkoutJSLint_child", stdout: stdoutjsl, time: humantime(true)});
-                                     }
-                                     callback();
-                                 });
-                             },
                             update         = function biddle_test_moduleInstall_editions_update() {
                                 node
                                     .child("git submodule update", function biddle_test_moduleInstall_editions_update_child(erd, stdoutd, stdouterd) {
@@ -3052,55 +3039,57 @@
                             };
                         if (ind === keys.length) {
                             if (today !== date) {
-                                ind = 0;
-                                node
-                                    .fs
-                                    .writeFile("today.js", "/\u002aglobal module\u002a/(function () {\"use strict\";var today=" + date + ";module.exports=today;}());", function biddle_test_moduleInstall_editions_writeToday(werr) {
-                                        if (werr !== null && werr !== undefined) {
-                                            apps.errout({error: werr, name: "biddle_test_moduleInstall_editions_writeToday", time: humantime(true)});
-                                        }
-                                        if (cloned === true) {
-                                            console.log("Submodules downloaded.");
-                                        } else {
-                                            console.log("Submodules checked for updates.");
-                                        }
-                                        if (flag.apps === true) {
-                                            modout();
-                                        } else {
-                                            console.log("Checked for new versions of submodules.");
-                                            flag.today = true;
-                                        }
-                                    });
-                                if (cloned === true) {
+                                node.child("git checkout jslint.js", {
+                                    cwd: data.abspath + "JSLint"
+                                }, function biddle_test_moduleInstall_editions_checkoutJSLint(erjsl, stdoutjsl, stdouterjsl) {
+                                    if (erjsl !== null) {
+                                        apps.errout({error: erjsl, name: "biddle_test_moduleInstall_editions_checkoutJSLint", stdout: stdoutjsl, time: humantime(true)});
+                                    }
+                                    if (stdouterjsl !== null && stdouterjsl !== "") {
+                                        apps.errout({error: stdouterjsl, name: "biddle_test_moduleInstall_editions_checkoutJSLint", stdout: stdoutjsl, time: humantime(true)});
+                                    }
+                                    ind = 0;
                                     node
-                                        .child("git submodule init", function biddle_test_moduleInstall_editions_init(erc, stdoutc, stdouterc) {
-                                            if (erc !== null) {
-                                                apps.errout({error: erc, name: "biddle_test_moduleInstall_editions_init", stdout: stdoutc, time: humantime(true)});
+                                        .fs
+                                        .writeFile("today.js", "/\u002aglobal module\u002a/(function () {\"use strict\";var today=" + date + ";module.exports=today;}());", function biddle_test_moduleInstall_editions_checkoutJSLint_writeToday(werr) {
+                                            if (werr !== null && werr !== undefined) {
+                                                apps.errout({error: werr, name: "biddle_test_moduleInstall_editions_checkoutJSLint_writeToday", time: humantime(true)});
                                             }
-                                            if (stdouterc !== null && stdouterc !== "" && stdouterc.indexOf("Cloning into '") < 0 && stdouterc.indexOf("From ") < 0 && stdouterc.indexOf(" registered for path ") < 0) {
-                                                apps.errout({error: stdouterc, name: "biddle_test_moduleInstall_editions_init", stdout: stdoutc, time: humantime(true)});
-                                            }
-                                            if (appName === "jslint") {
-                                                checkoutJSLint(update);
+                                            if (cloned === true) {
+                                                console.log("Submodules downloaded.");
                                             } else {
-                                                update();
+                                                console.log("Submodules checked for updates.");
+                                            }
+                                            if (flag.apps === true) {
+                                                modout();
+                                            } else {
+                                                console.log("Checked for new versions of submodules.");
+                                                flag.today = true;
                                             }
                                         });
-                                } else {
-                                    if (appName === "jslint") {
-                                        checkoutJSLint(pull);
+                                    if (cloned === true) {
+                                        node
+                                            .child("git submodule init", function biddle_test_moduleInstall_editions_checkoutJSLint_init(erc, stdoutc, stdouterc) {
+                                                if (erc !== null) {
+                                                    apps.errout({error: erc, name: "biddle_test_moduleInstall_editions_checkoutJSLint_init", stdout: stdoutc, time: humantime(true)});
+                                                }
+                                                if (stdouterc !== null && stdouterc !== "" && stdouterc.indexOf("Cloning into '") < 0 && stdouterc.indexOf("From ") < 0 && stdouterc.indexOf(" registered for path ") < 0) {
+                                                    apps.errout({error: stdouterc, name: "biddle_test_moduleInstall_editions_checkoutJSLint_init", stdout: stdoutc, time: humantime(true)});
+                                                }
+                                                update();
+                                            });
                                     } else {
                                         pull();
                                     }
-                                }
+                                 });
                             } else {
                                 flag.today = true;
                                 console.log("Running prior installed modules.");
+                                keys.forEach(each);
                             }
                         } else {
                             handler(ind);
                         }
-                        submod(true);
                     };
                     apps.rmrecurse(testpath, function biddle_test_moduleInstall_rmrecurse() {
                         apps
