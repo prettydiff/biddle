@@ -3030,7 +3030,7 @@
                             },
                             pull           = function biddle_test_moduleInstall_editions_pull() {
                                 node
-                                    .child("git submodule foreach git pull origin master --force", function biddle_test_moduleInstall_editions_pull_child(errpull, stdoutpull, stdouterpull) {
+                                    .child("git submodule foreach git pull origin master", function biddle_test_moduleInstall_editions_pull_child(errpull, stdoutpull, stdouterpull) {
                                         if (errpull !== null) {
                                             console.log(errpull);
                                             if (errpull.toString().indexOf("fatal: no submodule mapping found in .gitmodules for path ") > 0) {
@@ -3087,7 +3087,11 @@
                                             }
                                         });
                                 } else {
-                                    pull();
+                                    if (appName === "jslint") {
+                                        checkoutJSLint(pull);
+                                    } else {
+                                        pull();
+                                    }
                                 }
                             } else {
                                 flag.today = true;
