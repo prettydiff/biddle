@@ -3082,14 +3082,17 @@
                             .makedir(testpath, function biddle_test_moduleInstall_rmrecurse_makedir() {
                                 node.fs.stat(data.abspath + "JSLint/jslint.js", function biddle_test_moduleInstall_rmrecurse_makedir_stat(erstat, stat) {
                                     if (erstat !== null) {
+                                        if (erstat.toString().indexOf("no such file or directory") < 0) {
+                                            return handler(0);
+                                        }
                                         return apps.errout({error: erstat, name: "biddle_test_moduleInstall_rmrecurse_makedir_stat"});
                                     }
                                     if (stat !== undefined && stat.isFile !== undefined && stat.isFile() === true) {
                                         node.child("git checkout jslint.js", {cwd: "JSLint"}, function biddle_test_moduleInstall_rmrecurse_makedir_stat_checkout(erj, stdoutj, stdouterj) {
-                                            if (erj !== null && erj.toString().indexOf("no such file or directory") < 0) {
+                                            if (erj !== null) {
                                                 apps.errout({error: erj, name: "biddle_test_moduleInstall_editions_init", stdout: stdoutj, time: humantime(true)});
                                             }
-                                            if (stdouterj !== null && stdouterj !== "" && stdouterj.indexOf("no such file or directory") < 0) {
+                                            if (stdouterj !== null && stdouterj !== "") {
                                                 apps.errout({error: stdouterj, name: "biddle_test_moduleInstall_editions_init", stdout: stdoutj, time: humantime(true)});
                                             }
                                             handler(0);
