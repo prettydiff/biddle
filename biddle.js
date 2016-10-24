@@ -286,10 +286,11 @@
             return "download.xxx";
         }
         if ((/^(https?:\/\/)/).test(data.input[2]) === true) {
-            paths = data
+            output = data
                 .input[2]
-                .replace(/^(https?:\/\/)/, "")
-                .split("/");
+                .replace(/^(https?:\/\/)/, "");
+            output = output.slice(0, output.indexOf("?"));
+            paths  = output.split("/");
         } else {
             paths = data
                 .input[2]
@@ -307,7 +308,6 @@
             }
             output = paths[paths.length - 1].toLowerCase();
         }
-        if (data.childtest === true && data.command === "get"){console.log(paths);console.log(output);}
         return apps.sanitizef(output);
     };
     apps.getpjson    = function biddle_getpjson(callback) {
