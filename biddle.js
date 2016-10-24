@@ -289,7 +289,9 @@
             output = data
                 .input[2]
                 .replace(/^(https?:\/\/)/, "");
-            output = output.slice(0, output.indexOf("?"));
+            if (output.indexOf("?") > 0) {
+                output = output.slice(0, output.indexOf("?"));
+            }
             paths  = output.split("/");
         } else {
             paths = data
