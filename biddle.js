@@ -2876,7 +2876,7 @@
                             return;
                         },
                         handler  = function biddle_test_moduleInstall_handler() {
-                            var mod = keys[ind];console.log(modules[mod].name);
+                            var mod = keys[ind];
                             modules[mod].name = "\u001b[32m" + modules[mod].name + "\u001b[39m";
                             if (modules[mod].name.length > longname) {
                                 longname = modules[mod].name.length;
@@ -3030,7 +3030,7 @@
                             },
                             pull           = function biddle_test_moduleInstall_editions_pull() {
                                 node
-                                    .child("git submodule foreach git pull origin master", function biddle_test_moduleInstall_editions_pull_checkoutJSLint_child(errpull, stdoutpull, stdouterpull) {
+                                    .child("git submodule foreach git pull origin master --force", function biddle_test_moduleInstall_editions_pull_child(errpull, stdoutpull, stdouterpull) {
                                         if (errpull !== null) {
                                             console.log(errpull);
                                             if (errpull.toString().indexOf("fatal: no submodule mapping found in .gitmodules for path ") > 0) {
@@ -3039,10 +3039,10 @@
                                                 flag.apps = true;
                                                 return keys.forEach(each);
                                             }
-                                            apps.errout({error: errpull, name: "biddle_test_moduleInstall_editions_pull_checkoutJSLint_child", stdout: stdoutpull, time: humantime(true)});
+                                            apps.errout({error: errpull, name: "biddle_test_moduleInstall_editions_pull_child", stdout: stdoutpull, time: humantime(true)});
                                         }
                                         if (stdouterpull !== null && stdouterpull !== "" && stdouterpull.indexOf("Cloning into '") < 0 && stdouterpull.indexOf("From ") < 0 && stdouterpull.indexOf("fatal: no submodule mapping found in .gitmodules for path ") < 0) {
-                                            apps.errout({error: stdouterpull, name: "biddle_test_moduleInstall_editions_pull_checkoutJSLint_child", stdout: stdoutpull, time: humantime(true)});
+                                            apps.errout({error: stdouterpull, name: "biddle_test_moduleInstall_editions_pull_child", stdout: stdoutpull, time: humantime(true)});
                                         }
                                         if (flag.today === false) {
                                             console.log("Submodules checked for updates.");
