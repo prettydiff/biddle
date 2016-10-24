@@ -2939,20 +2939,6 @@
                                 }
                                 next();
                             },
-                            checkoutJSLint = function biddle_test_moduleInstall_editions_checkoutJSLint(callback) {
-                                node
-                                    .child("git checkout jslint.js", {
-                                        cwd: data.abspath + "JSLint"
-                                    }, function biddle_test_moduleInstall_editions_checkoutJSLint_child(erjsl, stdoutjsl, stdouterjsl) {
-                                        if (erjsl !== null) {
-                                            apps.errout({error: erjsl, name: "biddle_test_moduleInstall_editions_checkoutJSLint_child", stdout: stdoutjsl, time: humantime(true)});
-                                        }
-                                        if (stdouterjsl !== null && stdouterjsl !== "" && stdouterjsl.indexOf("Cloning into '") < 0 && stdouterjsl.indexOf("From ") !== 0) {
-                                            apps.errout({error: stdouterjsl, name: "biddle_test_moduleInstall_editions_checkoutJSLint_child", stdout: stdoutjsl, time: humantime(true)});
-                                        }
-                                        callback();
-                                    });
-                            },
                             submod         = function biddle_test_moduleInstall_editions_submod(output) {
                                 var appFile        = modules[appName].dir + node.path.sep + modules[appName].file,
                                     jslintcomplete = function biddle_test_moduleInstall_editions_submod_jslintcomplete() {
@@ -3009,6 +2995,18 @@
                                 appName = val;
                                 ind     = idx + 1;
                                 submod(false);
+                            },
+                            stash          = function biddle_test_moduleInstall_editions_stash(callback) {
+                                node
+                                    .child("git submodule foreach git stash", function biddle_test_moduleInstall_editions_stash_child(erd, stdoutd, stdouterd) {
+                                        if (erd !== null) {
+                                            apps.errout({error: erd, name: "biddle_test_moduleInstall_editions_stash_child", stdout: stdoutd, time: humantime(true)});
+                                        }
+                                        if (stdouterd !== null && stdouterd !== "") {
+                                            apps.errout({error: stdouterd, name: "biddle_test_moduleInstall_editions_stash_child", stdout: stdoutd, time: humantime(true)});
+                                        }
+                                        callback();
+                                    });
                             },
                             update         = function biddle_test_moduleInstall_editions_update() {
                                 node
@@ -3077,19 +3075,11 @@
                                             if (stdouterc !== null && stdouterc !== "" && stdouterc.indexOf("Cloning into '") < 0 && stdouterc.indexOf("From ") < 0 && stdouterc.indexOf(" registered for path ") < 0) {
                                                 apps.errout({error: stdouterc, name: "biddle_test_moduleInstall_editions_init", stdout: stdoutc, time: humantime(true)});
                                             }
-                                            if (appName === "jslint") {
-                                                checkoutJSLint(update);
-                                            } else {
-                                                update();
-                                            }
+                                            stash(update);
                                             return stdoutc;
                                         });
                                 } else {
-                                    if (appName === "jslint") {
-                                        checkoutJSLint(pull);
-                                    } else {
-                                        pull();
-                                    }
+                                    stash(pull);
                                 }
                             } else {
                                 flag.today = true;
