@@ -2996,18 +2996,6 @@
                                 ind     = idx + 1;
                                 submod(false);
                             },
-                            stash          = function biddle_test_moduleInstall_editions_stash(callback) {
-                                node
-                                    .child("git submodule foreach git stash", function biddle_test_moduleInstall_editions_stash_child(erd, stdoutd, stdouterd) {
-                                        if (erd !== null) {
-                                            apps.errout({error: erd, name: "biddle_test_moduleInstall_editions_stash_child", stdout: stdoutd, time: humantime(true)});
-                                        }
-                                        if (stdouterd !== null && stdouterd !== "") {
-                                            apps.errout({error: stdouterd, name: "biddle_test_moduleInstall_editions_stash_child", stdout: stdoutd, time: humantime(true)});
-                                        }
-                                        callback();
-                                    });
-                            },
                             update         = function biddle_test_moduleInstall_editions_update() {
                                 node
                                     .child("git submodule update", function biddle_test_moduleInstall_editions_update_child(erd, stdoutd, stdouterd) {
@@ -3075,11 +3063,10 @@
                                             if (stdouterc !== null && stdouterc !== "" && stdouterc.indexOf("Cloning into '") < 0 && stdouterc.indexOf("From ") < 0 && stdouterc.indexOf(" registered for path ") < 0) {
                                                 apps.errout({error: stdouterc, name: "biddle_test_moduleInstall_editions_init", stdout: stdoutc, time: humantime(true)});
                                             }
-                                            stash(update);
-                                            return stdoutc;
+                                            update();
                                         });
                                 } else {
-                                    stash(pull);
+                                    pull();
                                 }
                             } else {
                                 flag.today = true;
@@ -3092,8 +3079,25 @@
                     };
                     apps.rmrecurse(testpath, function biddle_test_moduleInstall_rmrecurse() {
                         apps
-                            .makedir(testpath, function biddle_test_moduleInstall_makedir() {
-                                handler(0);
+                            .makedir(testpath, function biddle_test_moduleInstall_rmrecurse_makedir() {
+                                node.fs.stat(data.abspath + "JSLint/jslint.js", function biddle_test_moduleInstall_rmrecurse_makedir_stat(erstat, stat) {
+                                    if (erstat !== null) {
+                                        return apps.errout({error: erstat, name: "biddle_test_moduleInstall_rmrecurse_makedir_stat"});
+                                    }
+                                    if (stat !== undefined && stat.isFile !== undefined && stat.isFile() === true) {
+                                        node.child("git checkout jslint.js", {cwd: "JSLint"}, function biddle_test_moduleInstall_rmrecurse_makedir_stat_checkout(erj, stdoutj, stdouterj) {
+                                            if (erj !== null) {
+                                                apps.errout({error: erj, name: "biddle_test_moduleInstall_editions_init", stdout: stdoutj, time: humantime(true)});
+                                            }
+                                            if (stdouterj !== null && stdouterj !== "" && stdouterj.indexOf("Cloning into '") < 0 && stdouterj.indexOf("From ") < 0 && stdouterj.indexOf(" registered for path ") < 0) {
+                                                apps.errout({error: stdouterj, name: "biddle_test_moduleInstall_editions_init", stdout: stdoutj, time: humantime(true)});
+                                            }
+                                            handler(0);
+                                        });
+                                    } else {
+                                        handler(0);
+                                    }
+                                });
                             });
                     });
                 },
