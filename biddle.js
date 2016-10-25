@@ -1988,6 +1988,7 @@
                         time : humantime(true)
                     });
                 }
+                console.log("\u001b[31mTest Failure with Comparison\u001b[39m");
                 console.log("\u001b[4mFirst Sample\u001b[0m");
                 console.log(sampleSource);
                 console.log("");
