@@ -3153,7 +3153,10 @@
                                         .replace(/\u001b\[32m\d+(,\d+)*/g, "\u001b[32mxxx")
                                         .replace(abspath, "");
                                     if (output !== publishtest) {
-                                        return diffFiles("biddle_test_publish_child", output, publishtest);
+                                        console.log(output);
+                                        console.log("");
+                                        console.log(publishtest);
+                                        return diffFiles("biddle_test_publish_child_statTemp", output, publishtest);
                                     }
                                     console.log(humantime(false) + " \u001b[32mThe stdout for publish is correct.\u001b[39m");
                                     node
