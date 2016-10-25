@@ -3148,7 +3148,7 @@
                                     }
                                     if (errtemp.toString().indexOf("no such file or directory") < 0) {
                                         return apps.errout({error: errtemp, name: "biddle_test_publish_child_statTemp", time: humantime(true)});
-                                    }
+                                    }console.log(stdout);
                                     outputs
                                         .forEach(function biddle_test_publish_child_statTemp_formatOutput(value, index, array) {
                                             var val = value.slice(value.indexOf("publications"));
