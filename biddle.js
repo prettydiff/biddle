@@ -15,7 +15,7 @@
             get      : "Get something via http/https.",
             global   : "Make biddle a global command in the terminal.",
             hash     : "Generate a hash sequence against a file.",
-            help     : "Output the readme.md to the terminal.",
+            help     : "Parse biddle's readme.md to the terminal.",
             install  : "Install a published application.",
             list     : "List installed and/or published applications.",
             markdown : "Parse any markdown and output to terminal.",
@@ -76,7 +76,7 @@
             },
             pathSet   : function biddle_cmds_pathSet() { // Used in command global to add the biddle path to the Windows path list
                 return "powershell.exe -nologo -noprofile -command \"$PATH=[Environment]::GetEnvironment" +
-                        "Variable('PATH');[Environment]::SetEnvironmentVariable('PATH',$PATH';" + data.abspath + "cmd','Machine');\"";
+                        "Variable('PATH');[Environment]::SetEnvironmentVariable('PATH',$PATH + ';" + data.abspath + "cmd','Machine');\"";
             },
             remove    : function biddle_cmds_remove(dir) { // Recursively and forcefully removes a directory tree or file from the file system
                 if (data.platform === "win32") {
