@@ -8,7 +8,7 @@ install:
 test_script:
   # Output useful info for debugging.
   - node --version
-  - biddle test
+  - node biddle test
 
 # Don't actually build.
 build: off
