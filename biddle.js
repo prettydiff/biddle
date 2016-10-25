@@ -1988,6 +1988,13 @@
                         time : humantime(true)
                     });
                 }
+                console.log("\u001b[4mFirst Sample\u001b[0m");
+                console.log(sampleSource);
+                console.log("");
+                console.log("\u001b[4mSecond Sample\u001b[0m");
+                console.log(sampleDiff);
+                console.log("");
+                console.log("\u001b[4mComparison\u001b[0m");
                 // report indexes from diffcli feature of diffview.js
                 // 0. source line number
                 // 1. source code line
@@ -3153,9 +3160,6 @@
                                         .replace(/\u001b\[32m\d+(,\d+)*/g, "\u001b[32mxxx")
                                         .replace(abspath, "");
                                     if (output !== publishtest) {
-                                        console.log(output);
-                                        console.log("");
-                                        console.log(publishtest);
                                         return diffFiles("biddle_test_publish_child_statTemp", output, publishtest);
                                     }
                                     console.log(humantime(false) + " \u001b[32mThe stdout for publish is correct.\u001b[39m");
