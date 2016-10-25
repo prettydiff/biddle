@@ -1141,7 +1141,7 @@
                         if (stderw !== null && stderw !== "") {
                             return apps.errout({error: stderw, name: "biddle_makeGlobal_winRead_winWritePath"});
                         }
-                        console.log(data.abspath + "cmd added to %PATH% and immediately avialable.");
+                        console.log(data.abspath + "cmd added to %PATH%.");
                         apps.makedir(data.abspath + "cmd", function biddle_makeGlobal_winRead_winWritePath_winMakeDir() {
                             apps
                                 .writeFile(cmds.cmdFile(), data.abspath + "cmd\\biddle.cmd", function biddle_makeGlobal_winRead_winWritePath_winMakeDir_winWriteCmd() {
