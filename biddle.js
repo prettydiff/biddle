@@ -52,12 +52,6 @@
             cmdFile   : function biddle_cmds_cmdFile() { // Used in command global to write a cmd (batch/bin) file for windows
                 return "@IF EXIST \"%~dp0\\node.exe\" (\r\n  \"%~dp0\\node.exe\" \"" + data.abspath + "bin\\biddle\" %*\r\n) ELSE (\r\n  node \"" + data.abspath + "bin\\biddle\" %*\r\n)";
             },
-            copy      : function biddle_cmds_copy(location) { // Copy file system components from one location into a different location
-                if (data.platform === "win32") {
-                    return "xcopy \"" + data.input[2] + "\" \"" + location + "\" /E /Q /G /H /Y /J /I";
-                }
-                return "cp -R " + data.input[2] + " " + location;
-            },
             hash      : function biddle_cmds_hash(file) { // Generates a hash sequence against a file
                 if (data.platform === "darwin") {
                     return "shasum -a 512 " + file;
@@ -144,18 +138,132 @@
         } while (a > 3);
         return arr.join("");
     };
-    apps.copy        = function biddle_copy() {
-        node
-            .child(cmds.copy(data.input[3]), function biddle_copy_child(er, stdout, stder) {
-                if (er !== null) {
-                    return apps.errout({error: er, name: "biddle_copy_child"});
+    apps.copy        = function biddle_copy(target, destination, callback) {
+        var numb = {
+                dirs : 0,
+                end  : 0,
+                files: 0,
+                links: 0,
+                start: 0
+            },
+            util = {};
+        util.complete = function biddle_copy_complete() {
+            numb.end += 1;
+            if (numb.end === numb.start) {
+                if (data.command === "copy") {
+                    console.log("Copied " + target + " to " + destination);
+                    console.log("Files: " + numb.files + ", Directories: " + numb.dirs + ", Symlinks: " + numb.links);
                 }
-                if (stder !== null && stder !== "") {
-                    return apps.errout({error: stder, name: "biddle_copy_child"});
-                }
-                console.log("Copied " + apps.relToAbs(data.input[2]) + " to " + apps.relToAbs(data.input[3]));
-                return stdout;
+                callback();
+            }
+        };
+        util.eout = function biddle_copy_eout(er, name) {
+            apps.rmrecurse(destination + node.path.sep + target[target.length - 1], function biddle_copy_eout_rmrecurse() {
+                apps.errout({error: er, name: name});
             });
+        };
+        util.dir  = function biddle_copy_dir(item, dest) {
+            var readdir = function biddle_copy_dir_readdir() {
+                node.fs.readdir(item, function biddle_copy_dir_readdir_callback(err, files) {
+                    if (err !== null) {
+                        return util.eout(err, "biddle_copy_dir_readdir_callback");
+                    }
+                    if (files.length > 0) {
+                        numb.end += 1;
+                        files.forEach(function biddle_copy_dir_readdir_callback_each(value) {
+                            util.stat(item + node.path.sep + value, dest);
+                        });
+                    } else {
+                        util.complete();
+                    }
+                });
+            };
+            apps.makedir(dest, readdir);
+        };
+        util.file = function biddle_copy_file(item, dest, prop) {
+            var readStream = node.fs.createReadStream(item),
+                writeStream = node.fs.createWriteStream(dest, {mode: prop.mode}),
+                errorflag = false;
+            readStream.on("error", function biddle_copy_file_readError(error) {
+                errorflag = true;
+                return util.eout(error, "biddle_copy_file_readError");
+            });
+            writeStream.on("error", function biddle_copy_file_writeError(error) {
+                errorflag = true;
+                return util.eout(error, "biddle_copy_file_writeError");
+            });
+            if (errorflag === true) {
+                return;
+            }
+            writeStream.on("open", function biddle_copy_file_write() {
+                readStream.pipe(writeStream);
+            });
+            writeStream.once("finish", function biddle_copy_file_finish() {
+                var filename = item.split(node.path.sep);
+                node.fs.utimes(dest + node.path.sep + filename[filename.length - 1], prop.atime, prop.mtime, function biddle_copy_file_finish_utimes() {
+                    util.complete();
+                });
+            });
+        };
+        util.link = function biddle_copy_link(item, dest) {
+            node.fs.readlink(item, function biddle_copy_link_readlink(err, resolvedlink) {
+                if (err !== null) {
+                    return util.eout(err, "biddle_copy_link_readlink");
+                }
+                resolvedlink = apps.relToAbs(resolvedlink);
+                node.fs.stat(resolvedlink, function biddle_copy_link_readlink_stat(ers, stats) {
+                    var type = "file";
+                    if (ers !== null) {
+                        return util.eout(ers, "biddle_copy_link_readlink_stat");
+                    }
+                    if (stats === undefined || stats.isFile === undefined) {
+                        return util.eout("Error in performing stat against " + item, "biddle_copy_link_readlink_stat");
+                    }
+                    if (stats.isDirectory() === true) {
+                        type = "junction";
+                    }
+                    node.fs.symlink(resolvedlink, dest, type, function biddle_copy_link_readlink_stat_makelink(erl) {
+                        if (erl !== null) {
+                            return util.eout(erl, "biddle_copy_link_readlink_stat_makelink");
+                        }
+                        util.complete();
+                    });
+                });
+            });
+        };
+        util.stat = function biddle_copy_stat(item, dest) {
+            var func = (data.command === "copy")
+                ? "lstat"
+                : "stat";
+            numb.start += 1;
+            node.fs[func](item, function biddle_copy_stat_statIt(er, stats) {
+                var filename = item.split(node.path.sep);
+                if (filename.length > 1 && filename[filename.length - 1] === "") {
+                    filename.pop();
+                }
+                dest = dest.replace(/((\/|\\)+)$/, "") + node.path.sep + filename[filename.length - 1];
+                if (er !== null) {
+                    return apps.errout({error: er, name: "biddle_copy_stat_statIt"});
+                }
+                if (stats === undefined || stats.isFile === undefined) {
+                    return apps.errout({error: "Error in performing stat against " + item, name: "biddle_copy_stat_statIt"});
+                }
+                if (stats.isFile() === true) {
+                    numb.files += 1;
+                    return util.file(item, dest, {atime: (Date.parse(stats.atime) / 1000), mode: stats.mode, mtime: (Date.parse(stats.mtime) / 1000)});
+                }
+                if (stats.isDirectory() === true) {
+                    numb.dirs += 1;
+                    return util.dir(item, dest);
+                }
+                if (stats.isSymbolicLink() === true) {
+                    numb.link += 1;
+                    return util.link(item, dest);
+                }
+                util.complete();
+            });
+        };
+        util.stat(apps.relToAbs(target), apps.relToAbs(destination));
     };
     apps.errout      = function biddle_errout(errData) {
         var error = (typeof errData.error !== "string" || errData.error.toString().indexOf("Error: ") === 0)
@@ -256,7 +364,7 @@
             if ((/(\.zip)$/).test(url) === true) {
                 console.log("Address " + url + " is missing the \u001b[36mhttp(s)\u001b[39m scheme, treating as a local path...");
                 apps.makedir(addy, function biddle_get_localZip() {
-                    node.child(cmds.copy("downloads"), callback);
+                    apps.copy(data.input[2], "downloads", callback);
                 });
             } else if (data.command === "status") {
                 apps
@@ -1299,7 +1407,7 @@
                                 ? {}
                                 : data.packjson.publication_variants[value];
                             value = apps.sanitizef(value);
-                            node.child(cmds.copy(data.abspath + "temp" + node.path.sep + value), function biddle_publish_execution_variantsDir_each_copy(er, stdout, stder) {
+                            apps.copy(data.input[2], data.abspath + "temp" + node.path.sep + value, function biddle_publish_execution_variantsDir_each_copy() {
                                 var complete   = function biddle_publish_execution_variantsDir_each_copy_complete() {
                                         var location = (value === "")
                                                 ? apps.relToAbs(data.input[2])
@@ -1351,12 +1459,6 @@
                                                 }
                                             });
                                     };
-                                if (er !== null) {
-                                    return apps.errout({error: er, name: "biddle_publish_execution_variantsDir_each_copy"});
-                                }
-                                if (stder !== null && stder !== "") {
-                                    return apps.errout({error: stder, name: "biddle_publish_execution_variantsDir_each_copy"});
-                                }
                                 if (typeof varobj.exclusions !== "object" || typeof varobj.exclusions.join !== "function") {
                                     varobj.exclusions = [];
                                 }
@@ -1370,7 +1472,6 @@
                                 } else {
                                     complete();
                                 }
-                                return stdout;
                             });
                         });
                 });
@@ -1617,6 +1718,8 @@
                 abs.pop();
                 rel.splice(0, 1);
             } while (rel[0] === "..");
+        } else if (rel[0] === ".") {
+            rel.splice(0, 1);
         }
         return abs.join(node.path.sep) + node.path.sep + rel.join(node.path.sep);
     };
@@ -2065,7 +2168,7 @@
                 copy         : function biddle_test_copy() {
                     node
                         .child(childcmd + "copy " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta.js " + testpath + " childtest", function biddle_test_copy_child(er, stdout, stder) {
-                            var copytest = "Copied " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta.js to " + data.abspath + "unittest",
+                            var copytest = "Copied " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta.js to " + data.abspath + "unittest\nFiles: 1, Directories: 0, Symlinks: 0",
                                 copyfile = data.abspath + "unittest" + node.path.sep + "biddletesta.js";
                             if (er !== null) {
                                 return apps.errout({error: er, name: "biddle_test_copy_child", stdout: stdout, time: humantime(true)});
@@ -2073,7 +2176,7 @@
                             if (stder !== null && stder !== "") {
                                 return apps.errout({error: stder, name: "biddle_test_copy_child", stdout: stdout, time: humantime(true)});
                             }
-                            stdout = stdout.replace(/(\s+)$/, "");
+                            stdout = stdout.replace(/(\s+)$/, "").replace(/\r\n/g, "\n");
                             if (stdout !== copytest) {
                                 return diffFiles("biddle_test_copy_child", stdout, copytest);
                             }
@@ -3148,7 +3251,7 @@
                                     }
                                     if (errtemp.toString().indexOf("no such file or directory") < 0) {
                                         return apps.errout({error: errtemp, name: "biddle_test_publish_child_statTemp", time: humantime(true)});
-                                    }console.log(stdout);
+                                    }
                                     outputs
                                         .forEach(function biddle_test_publish_child_statTemp_formatOutput(value, index, array) {
                                             var val = value.slice(value.indexOf("publications"));
@@ -3796,7 +3899,9 @@
                     if (data.command === "commands") {
                         apps.commands();
                     } else if (data.command === "copy") {
-                        apps.copy();
+                        apps.copy(data.input[2], data.input[3], function biddle_init_start_copy() {
+                            return true;
+                        });
                     } else if (data.command === "get") {
                         apps
                             .get(data.input[2], function biddle_init_start_getback(filedata) {
