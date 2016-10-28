@@ -1881,7 +1881,7 @@
                 spawn();
             };
         if (name === undefined || name === "" || name === "biddle") {
-            data.input[2] === "biddle";
+            data.input[2] = "biddle";
             return apps.testBiddle();
         }
         if (name.indexOf(node.path.sep) < 0) {
