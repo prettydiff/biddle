@@ -150,9 +150,23 @@ Check the status of an application by name
     noe biddle status myApplicationName
 
 ### test
-Run the user acceptance tests.
+Run the user acceptance tests for a given application. This command requires a *test* property in a package.json file.
+
+Run the tests against biddle
 
     node biddle test
+
+Run the tests against an installed application
+
+    node biddle test applicationName
+
+Run the tests against a directory in the current location
+
+    node biddle test ./directory
+
+Run the tests against a directory in a different location
+
+    node biddle test ../../directory
 
 ### uninstall
 Will delete an installed application by name and remove the application from the installed list.

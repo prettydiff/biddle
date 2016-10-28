@@ -283,7 +283,7 @@
         error = error
             .toString()
             .replace(/(\s+)$/, "");
-        if (data.command === "test") {
+        if (data.command === "test" && data.input[2] === "biddle") {
             if (errData.name.indexOf("biddle_test") === 0) {
                 data.published.biddletesta = {
                     directory: data.abspath + "publications" + node.path.sep + "biddletesta"
@@ -1843,6 +1843,59 @@
         } while (a < len);
     };
     apps.test        = function biddle_test() {
+        var loc = "",
+            test = "",
+            name = data.input[2],
+            spawn = function biddle_test_spawn() {
+                var spwn = require("child_process").spawn,
+                    args = test.split(" "),
+                    cmd  = args[0],
+                    exec = function biddle_test_spawn_init() {
+                        return true;
+                    };
+                args.splice(0, 1);
+                exec = spwn(cmd, args, {cwd: loc, stdio: "inherit"});
+                if (exec.stdout !== null) {
+                    exec.stdout.on("data", function biddle_test_spawn_data(data) {
+                        console.log(data);
+                    });
+                }
+                if (exec.stderr !== null) {
+                    exec.stderr.on("data", function biddle_test_spawn_stderr(data) {
+                        console.log(data);
+                    });
+                }
+                exec.on("error", function biddle_test_spawn_error(data) {
+                    apps.errout({error: data, name: "biddle_test_spawn_error"});
+                });
+                exec.on("close", function biddle_test_spawn_close() {
+                    console.log("biddle has completed test for " + name + " is complete.");
+                });
+            },
+            foreign = function biddle_test_foreign() {
+                loc  = name;
+                test = data.packjson.test;
+                if (test === undefined) {
+                    return apps.errout({error: name + " does not have a test property in its package.json", name: "biddle_test_foreign"});
+                }
+                spawn();
+            };
+        if (name === undefined || name === "" || name === "biddle") {
+            data.input[2] === "biddle";
+            return apps.testBiddle();
+        }
+        if (name.indexOf(node.path.sep) < 0) {
+            if (data.installed[name] === undefined) {
+                return apps.errout({error: name + " is not a biddle installed appliation. For local directories try ." + node.path.sep + name, name: "biddle_test"});
+            }
+            loc = data.installed[name].location;
+            test = data.installed[name].test;
+            spawn();
+        } else {
+            apps.getpjson(foreign);
+        }
+    };
+    apps.testBiddle  = function biddle_testBiddle() {
         var startTime = Date.now(),
             order     = [
                 "moduleInstall",

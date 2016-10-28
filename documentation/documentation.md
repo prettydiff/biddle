@@ -24,7 +24,7 @@ markdown|✓|path to markdown file|number
 publish|✓|directory path|directory path
 remove|✓|file path or directory path|none
 status|?|none or application name|none
-test|X|none|none
+test|?|application name|none
 uninstall|✓|application name|none
 unpublish|✓|application name|none
 unzip|✓|path to zip file|directory path
@@ -89,6 +89,9 @@ The **list** command will indicate locally available applications by either publ
 
 ### status Command
 The **status** command determines if installed applications are outdated compared to the published version.  This command reaches out to the publication point indicated by the *published* property in the installed.json file, which could result in a network call if the publication point is a point on the web.
+
+### test Command
+The **test** command spawns a child process to run an application's user acceptance tests from the command line. Although the command is run in a child process the output is returned to the current terminal as its generated.  This is handy to verify the health and acceptance of an application before installing it or executing it.
 
 ## File Conventions
 The **publish** command writes files in addition to the necessary zip archive files.  For every zip file written by the publish command a hash file of the same file name is also written.  These file names, excluding the zip and hash file extensions, must remain the same or the **install** command will not unzip the zip file.
