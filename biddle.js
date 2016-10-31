@@ -11,9 +11,9 @@
         },
         commands = { // The list of supported biddle commands.
             commands : "List the supported commands to the console.",
-            copy     : "Copy files or directory trees from location to another on the local file system.",
+            copy     : "Copy files or directory trees from one location to another on the local file system.",
             get      : "Get something via http/https.",
-            global   : "Make biddle a global command in the terminal.",
+            global   : "Make an installed application into a global command in the terminal.",
             hash     : "Generate a hash sequence against a file.",
             help     : "Parse biddle's readme.md to the terminal.",
             install  : "Install a published application.",
