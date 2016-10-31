@@ -13,7 +13,7 @@ A package.json file is required for publication and installation support by bidd
    - There are no other rules. Style your versions as random gibberish if you wish.
 
 ## Optionally Supported Fields
-
+* *test* - A string value representing a command line instruction for running an application's user acceptance tests via the **test** command.
 * *publication_variants* - The variants field must be an object. The variants allow custom alternate publications of an application.
    - Each property name in this object becomes part of a variant file name.  For example an application named *myApp* at version *1.2.3* with a variant named *production* would produce files named:
       * myApp_1.2.3.hash

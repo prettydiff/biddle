@@ -53,6 +53,11 @@ By default applications will be installed to biddle's *applications* directory. 
 
     biddle install publications/biddletesta/biddletesta_latest.zip /myApps
 
+## Test an application
+Before we run the application let's execute its acceptance tests to determine if the application works as expected.
+
+    biddle test biddletesta
+
 ## Read the markdown
 It would be handy if we could read about the application without leaving the terminal.  Fortunately, biddle includes a markdown parser and formatter for the command line interface.
 

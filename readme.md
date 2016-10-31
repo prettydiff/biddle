@@ -5,7 +5,7 @@
 [MIT](https://opensource.org/licenses/MIT)
 
 ## Version
-0.1.5
+0.1.6 [![Build Status Image](https://semaphoreci.com/api/v1/prettydiff/biddle/branches/master/badge.svg)](https://semaphoreci.com/prettydiff/biddle) [![AppVeyor Build](https://ci.appveyor.com/api/projects/status/github/prettydiff/biddle?branch=master&svg=true)](https://ci.appveyor.com/project/prettydiff/biddle)
 
 ## About
 This application is a cross-OS solution to creating zip files for distribution and fetching files via HTTP(S).  The project's goal is to provide a universal application distribution utility that is language agnostic, operating system independent, and platform independent.  The only additional requirement for distributing application packages is online storage on a web server.  This application provides all the utilities to retrieve, bundle, and unpackage applications.
@@ -56,15 +56,23 @@ Download a file to an alternate location.
     node biddle get http://google.com ../mydirectory
 
 ### global
-The global command adds biddle's path to the OS path variable so that biddle can be run from any location without explicitly calling Node.js, example: `biddle help` instead of `node biddle help`. Use the `remove` option to remove biddle from the path. This command requires use of an administrative console in Windows.
+The global command adds an applications's path to the OS path variable so that the application can be run from any location as a command, for example: `biddle help` from root instead of `node biddle help` from the local biddle directory. Use the `remove` option to remove biddle from the path. This command requires use of an administrative console in Windows.  For additional requirements see section **Global Application Requirements** in the [documentation](documentation/documentation.md).
 
-Allowing global availability to biddle. This command requires an administrative console in Windows.
+Allowing global availability to biddle.
 
     node biddle global
 
-Removing global availability to biddle. This command requires an administrative console in Windows.
+Allowing global availability to any other application installed by biddle.
+
+    biddle global myApplication
+
+Removing global availability to biddle.
 
     biddle global remove
+
+Removing global availability to any other application installed by biddle.
+
+    biddle global myApplication remove
 
 ### hash
 Prints to console a SHA512 hash against a local file.
@@ -150,9 +158,23 @@ Check the status of an application by name
     noe biddle status myApplicationName
 
 ### test
-Run the user acceptance tests.
+Run the user acceptance tests for a given application. This command requires a *test* property in a package.json file.
+
+Run the tests against biddle
 
     node biddle test
+
+Run the tests against an installed application
+
+    node biddle test applicationName
+
+Run the tests against a directory in the current location
+
+    node biddle test ./directory
+
+Run the tests against a directory in a different location
+
+    node biddle test ../../directory
 
 ### uninstall
 Will delete an installed application by name and remove the application from the installed list.
