@@ -15,7 +15,7 @@ Command|Local|Argument Type|Second Argument
 commands|✓|none|none
 copy|✓|file path or directory path|directory path
 get|?|file path|none
-global|✓|none|none
+global|✓|application|none or "*remove*"
 hash|✓|file path|none
 help|✓|number|none
 install|?|zip file|directory path
@@ -104,3 +104,47 @@ An application qualifies for latest status under the following conditions:
 
 * The application is published for the first time.
 * The version string is greater than the prior version string, based upon JavaScript string comparison logic, and does not contain the words *alpha* or *beta*.
+
+## Global Application Requirements
+
+### bin File
+An application must have a bin file named `bin\myApplicationName`.  The *myApplicationName* file has no file extension and should be named exactly like the application's parent directory, for example: *prettydiff/bin/prettydiff*.  This file contains two things:
+
+1. A shebang statement
+2. A single execution instruction
+
+An example of the file used by biddle:
+
+    #!/usr/bin/env node
+    require("../biddle.js");
+
+The shebang statement is only used by POSIX systems.  This statement defines the environment to execute the application.  biddle is not capable of writing the bin file automatically as it cannot guess at an applications execution environment.  In the example shebang statement the executing environment is Node.js.
+
+The second line of code refers to the execution instruction, which in the biddle example tells Node.js to execute a file in the parent directory named biddle.js.
+
+### Windows Execution
+Windows requires a file named `cmd\index.cmd`. This file allows command line execution of an application file that isn't a ".exe" file.  The cmd file will point to the application's bin file and define the executing environment for the given application.  Here is an example used by biddle where the environment is Node.js.
+
+    @IF EXIST "%~dp0\node.exe" (
+        "%~dp0\node.exe" "..\bin\index" %*
+    ) ELSE (
+        node "..\bin\index" %*
+    )
+
+Windows requires execution of the global command from an administrative terminal.  biddle cannot tell if it is executing in an administrative terminal and so it is not removed from the Windows path during the **uninstall** command.  In Windows applications must be removed from the path with the global command before the application is uninstalled.
+
+    biddle global myApplicationName remove
+
+### POSIX Execution
+If an application is uninstalled by biddle it will be removed from the PATH environmental variable automatically.  Otherwise it will require a separate prior step to remove the application from the PATH.
+
+Examples:
+
+    biddle uninstall myApplication
+
+or
+
+    biddle global myApplication remove
+
+### Restarting the Terminal
+Once the **global** command is executed the result is not available until the terminal is restarted.  In POSIX systems biddle will output a command that, if executed, will allow immediate global availability of the application.

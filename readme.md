@@ -56,15 +56,23 @@ Download a file to an alternate location.
     node biddle get http://google.com ../mydirectory
 
 ### global
-The global command adds biddle's path to the OS path variable so that biddle can be run from any location without explicitly calling Node.js, example: `biddle help` instead of `node biddle help`. Use the `remove` option to remove biddle from the path. This command requires use of an administrative console in Windows.
+The global command adds an applications's path to the OS path variable so that the application can be run from any location as a command, for example: `biddle help` from root instead of `node biddle help` from the local biddle directory. Use the `remove` option to remove biddle from the path. This command requires use of an administrative console in Windows.  For additional requirements see section **Global Application Requirements** in the [documentation](documentation/documentation.md).
 
-Allowing global availability to biddle. This command requires an administrative console in Windows.
+Allowing global availability to biddle.
 
     node biddle global
 
-Removing global availability to biddle. This command requires an administrative console in Windows.
+Allowing global availability to any other application installed by biddle.
+
+    biddle global myApplication
+
+Removing global availability to biddle.
 
     biddle global remove
+
+Removing global availability to any other application installed by biddle.
+
+    biddle global myApplication remove
 
 ### hash
 Prints to console a SHA512 hash against a local file.

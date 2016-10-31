@@ -46,12 +46,10 @@
             installed    : {}, // Parsed data of the installed.json file.  Data about applications installed with biddle.
             latestVersion: false, // Used in the publish command to determine if the application is the latest version
             packjson     : {}, // Parsed data of a directory's package.json file.  Used with the publish command.
-            published    : {} // Parsed data of the published.json file.  Data about applications published by biddle.
+            published    : {}, // Parsed data of the published.json file.  Data about applications published by biddle.
+            sudo         : false // If biddle is executed with administrative rights in POSIX.
         },
         cmds     = { // The OS specific commands executed outside Node.js
-            cmdFile   : function biddle_cmds_cmdFile() { // Used in command global to write a cmd (batch/bin) file for windows
-                return "@IF EXIST \"%~dp0\\node.exe\" (\r\n  \"%~dp0\\node.exe\" \"" + data.abspath + "bin\\biddle\" %*\r\n) ELSE (\r\n  node \"" + data.abspath + "bin\\biddle\" %*\r\n)";
-            },
             hash      : function biddle_cmds_hash(file) { // Generates a hash sequence against a file
                 if (data.platform === "darwin") {
                     return "shasum -a 512 " + file;
@@ -68,9 +66,9 @@
             pathRemove: function biddle_cmds_pathRemove(cmdFile) { // Used in command global to remove the biddle path from the Windows path list
                 return "powershell.exe -nologo -noprofile -command \"$PATH='" + cmdFile + "';[Environment]::SetEnvironmentVariable('PATH',$PATH,'Machine');\"";
             },
-            pathSet   : function biddle_cmds_pathSet() { // Used in command global to add the biddle path to the Windows path list
+            pathSet   : function biddle_cmds_pathSet(appspath) { // Used in command global to add the biddle path to the Windows path list
                 return "powershell.exe -nologo -noprofile -command \"$PATH=[Environment]::GetEnvironment" +
-                        "Variable('PATH');[Environment]::SetEnvironmentVariable('PATH',$PATH + ';" + data.abspath + "cmd','Machine');\"";
+                        "Variable('PATH');[Environment]::SetEnvironmentVariable('PATH',$PATH + ';" + appspath + "cmd','Machine');\"";
             },
             remove    : function biddle_cmds_remove(dir) { // Recursively and forcefully removes a directory tree or file from the file system
                 if (data.platform === "win32") {
@@ -138,15 +136,15 @@
         } while (a > 3);
         return arr.join("");
     };
-    apps.copy        = function biddle_copy(target, destination, callback) {
-        var numb = {
+    apps.copy        = function biddle_copy(target, destination, exclusions, callback) {
+        var numb  = {
                 dirs : 0,
                 end  : 0,
                 files: 0,
                 links: 0,
                 start: 0
             },
-            util = {};
+            util  = {};
         util.complete = function biddle_copy_complete() {
             numb.end += 1;
             if (numb.end === numb.start) {
@@ -237,16 +235,30 @@
                 : "stat";
             numb.start += 1;
             node.fs[func](item, function biddle_copy_stat_statIt(er, stats) {
-                var filename = item.split(node.path.sep);
-                if (filename.length > 1 && filename[filename.length - 1] === "") {
-                    filename.pop();
-                }
-                dest = dest.replace(/((\/|\\)+)$/, "") + node.path.sep + filename[filename.length - 1];
+                var filename = item.split(node.path.sep),
+                    exlen    = exclusions.length,
+                    expath   = [],
+                    a        = 0;
                 if (er !== null) {
                     return apps.errout({error: er, name: "biddle_copy_stat_statIt"});
                 }
                 if (stats === undefined || stats.isFile === undefined) {
                     return apps.errout({error: "Error in performing stat against " + item, name: "biddle_copy_stat_statIt"});
+                }
+                if (filename.length > 1 && filename[filename.length - 1] === "") {
+                    filename.pop();
+                }
+                dest = dest.replace(/((\/|\\)+)$/, "") + node.path.sep + filename[filename.length - 1];
+                if (exlen > 0) {
+                    do {
+                        if (dest.lastIndexOf(exclusions[a]) === dest.length - exclusions[a].length && dest.length - exclusions[a].length > 0) {
+                            expath = exclusions[a].split(node.path.sep);
+                            if (expath[expath.length - 1] === filename[filename.length - 1]) {
+                                return util.complete();
+                            }
+                        }
+                        a += 1;
+                    } while (a < exlen);
                 }
                 if (stats.isFile() === true) {
                     numb.files += 1;
@@ -263,6 +275,9 @@
                 util.complete();
             });
         };
+        exclusions.forEach(function biddle_copy_exclusions(value, index, array) {
+            array[index] = value.replace(/\/|\\/g, node.path.sep).replace(/((\/|\\)+)$/, "");
+        });
         util.stat(apps.relToAbs(target), apps.relToAbs(destination));
     };
     apps.errout      = function biddle_errout(errData) {
@@ -364,7 +379,7 @@
             if ((/(\.zip)$/).test(url) === true) {
                 console.log("Address " + url + " is missing the \u001b[36mhttp(s)\u001b[39m scheme, treating as a local path...");
                 apps.makedir(addy, function biddle_get_localZip() {
-                    apps.copy(data.input[2], "downloads", callback);
+                    apps.copy(data.input[2], "downloads", [], callback);
                 });
             } else if (data.command === "status") {
                 apps
@@ -463,6 +478,189 @@
                 }
                 data.packjson.name = apps.sanitizef(data.packjson.name);
                 callback();
+            });
+    };
+    apps.global      = function biddle_global(loc) {
+        var bin = loc + "bin";
+        if (data.input[2] === undefined || data.input[2] === "") {
+            data.input[2] = "biddle";
+        } else if (data.input[2] === "remove") {
+            data.input[2] = "biddle";
+            data.input[3] = "remove";
+        } else {
+            if (data.installed[data.input[2]] === undefined && data.command === "global") {
+                return apps.errout({error: "Application " + data.input[2] + " is not installed by biddle. biddle will only add applications to the environmental path that it has installed.", name: "biddle_global"});
+            }
+            bin = loc + "bin";
+        }
+        if (data.platform === "win32") {
+            return node.child(cmds.pathRead(), function biddle_global_winRead(er, stdout, stder) {
+                var remove = "";
+                if (er !== null) {
+                    return apps.errout({error: er, name: "biddle_global_winRead"});
+                }
+                if (stder !== null && stder !== "") {
+                    return apps.errout({error: stder, name: "biddle_global_winRead"});
+                }
+                if (stdout.indexOf(bin) > -1) {
+                    if (data.input[3] === "remove") {
+                        remove = stdout
+                            .replace(";" + loc + "cmd", "")
+                            .replace(/(\s+)$/, "");
+                        return node.child(cmds.pathRemove(remove), function biddle_global_winRead_winRemovePath(erw, stdoutw, stderw) {
+                            if (erw !== null) {
+                                return apps.errout({error: erw, name: "biddle_global_winRead_winRemovePath"});
+                            }
+                            if (stderw !== null && stderw !== "") {
+                                return apps.errout({error: stderw, name: "biddle_global_winRead_winRemovePath"});
+                            }
+                            if (data.command === "global") {
+                                console.log(loc + "cmd removed from %PATH%.");
+                            }
+                            return stdoutw;
+                        });
+                    }
+                    if (data.command === "global") {
+                        return apps.errout({
+                            error: loc + "cmd is already in %PATH%",
+                            name : "biddle_global_winRead"
+                        });
+                    }
+                }
+                if (data.input[3] === "remove" && data.command === "global") {
+                    return apps.errout({
+                        error: loc + "cmd is not present in %PATH%",
+                        name : "biddle_global_winRead"
+                    });
+                }
+                node
+                    .child(cmds.pathSet(loc), function biddle_global_winRead_winWritePath(erw, stdoutw, stderw) {
+                        if (erw !== null) {
+                            return apps.errout({error: erw, name: "biddle_global_winRead_winWritePath"});
+                        }
+                        if (stderw !== null && stderw !== "") {
+                            return apps.errout({error: stderw, name: "biddle_global_winRead_winWritePath"});
+                        }
+                        if (data.command === "global") {
+                            console.log(loc + "cmd added to %PATH%.");
+                        }
+                        return stdoutw;
+                    });
+            });
+        }
+        node
+            .child("echo ~", function biddle_global_findHome(erh, stdouth, stderh) {
+                var flag     = {
+                        bash_profile: false,
+                        profile     : false
+                    },
+                    terminal = function biddle_global_findHome_terminal() {
+                        if (data.input[3] === "remove" && data.command === "global") {
+                            return console.log(bin + " removed from $PATH but will remain available until the terminal is restarted" +
+                                    ".");
+                        }
+                        if (data.command === "global") {
+                            console.log("Restart the terminal or execute:  export PATH=" + bin + ":$PATH");
+                        }
+                    },
+                    readPath = function biddle_global_findHome_readPath(dotfile) {
+                        node
+                            .fs
+                            .readFile(dotfile, "utf8", function biddle_global_findHome_readPath_nixRead(err, filedata) {
+                                var pathStatement = "\nexport PATH=\"" + bin + ":$PATH\"\n";
+                                if (err !== null && err !== undefined) {
+                                    return apps.errout({error: err, name: "biddle_global_findHome_nixStat_nixRead"});
+                                }
+                                if (filedata.indexOf(bin) > -1) {
+                                    if (data.input[3] === "remove") {
+                                        return apps.writeFile(filedata.replace(pathStatement, ""), dotfile, function biddle_global_findHome_readPath_nixRead_nixRemove() {
+                                            if (data.command === "global") {
+                                                console.log("Path updated in " + dotfile);
+                                            }
+                                            if (dotfile.indexOf("bash_profile") > 0) {
+                                                flag.bash_profile = true;
+                                                if (flag.profile === true) {
+                                                    terminal();
+                                                }
+                                            } else {
+                                                flag.profile = true;
+                                                if (flag.bash_profile === true) {
+                                                    terminal();
+                                                }
+                                            }
+                                        });
+                                    }
+                                    if (data.command === "global") {
+                                        return apps.errout({
+                                            error: bin + " is already in $PATH",
+                                            name : "biddle_global_findHome_readPath_nixRead"
+                                        });
+                                    }
+                                }
+                                if (data.input[3] === "remove" && data.command !== "uninstall") {
+                                    return apps.errout({
+                                        error: bin + " is not present in $PATH",
+                                        name : "biddle_global_findHome_readPath_nixRead"
+                                    });
+                                }
+                                apps
+                                    .writeFile(filedata + pathStatement, dotfile, function biddle_global_findHome_readPath_nixRead_nixRemove() {
+                                        if (data.command === "global") {
+                                            console.log("Path updated in " + dotfile);
+                                        }
+                                        if (dotfile.indexOf("bash_profile") > 0) {
+                                            flag.bash_profile = true;
+                                            if (flag.profile === true) {
+                                                terminal();
+                                            }
+                                        } else {
+                                            flag.profile = true;
+                                            if (flag.bash_profile === true) {
+                                                terminal();
+                                            }
+                                        }
+                                    });
+                            });
+                    };
+                if (erh !== null) {
+                    return apps.errout({error: erh, name: "biddle_global_findHome"});
+                }
+                if (stderh !== null && stderh !== "") {
+                    return apps.errout({error: stderh, name: "biddle_global_findHome"});
+                }
+                stdouth = stdouth.replace(/\s+/g, "") + "/.";
+                node
+                    .fs
+                    .stat(stdouth + "profile", function biddle_cmds_global_findHome_nixStatProfile(er) {
+                        if (er !== null) {
+                            if (er.toString().indexOf("no such file or directory") > 1) {
+                                flag.profile = true;
+                                if (flag.bash_profile === true) {
+                                    terminal();
+                                }
+                            } else {
+                                return apps.errout({error: er, name: "biddle_cmds_global_findHome_nixStatProfile"});
+                            }
+                        } else {
+                            readPath(stdouth + "profile");
+                        }
+                    });
+                node
+                    .fs
+                    .stat(stdouth + "bash_profile", function biddle_cmds_global_findHome_nixStatBash(er) {
+                        if (er !== null) {
+                            if (er.toString().indexOf("no such file or directory") > 1) {
+                                flag.bash_profile = true;
+                                if (flag.profile === true) {
+                                    terminal();
+                                }
+                            } else {
+                                return apps.errout({error: er, name: "biddle_cmds_global_findHome_nixStatBash"});
+                            }
+                        } else {
+                            readPath(stdouth + "bash_profile");
+                        }
+                    });
             });
     };
     apps.hashCmd     = function biddle_hashCmd(filepath, store, callback) {
@@ -1201,172 +1399,6 @@
                 callback();
             });
     };
-    apps.makeGlobal  = function biddle_makeGlobal() {
-        if (data.platform === "win32") {
-            return node.child(cmds.pathRead(), function biddle_makeGlobal_winRead(er, stdout, stder) {
-                var remove = "";
-                if (er !== null) {
-                    return apps.errout({error: er, name: "biddle_makeGlobal_winRead"});
-                }
-                if (stder !== null && stder !== "") {
-                    return apps.errout({error: stder, name: "biddle_makeGlobal_winRead"});
-                }
-                if (stdout.indexOf(data.abspath) > -1) {
-                    if (data.input[2] === "remove") {
-                        remove = stdout
-                            .replace(";" + data.abspath + "cmd", "")
-                            .replace(/(\s+)$/, "");
-                        return node.child(cmds.pathRemove(remove), function biddle_makeGlobal_winRead_winRemovePath(erw, stdoutw, stderw) {
-                            if (erw !== null) {
-                                return apps.errout({error: erw, name: "biddle_makeGlobal_winRead_winRemovePath"});
-                            }
-                            if (stderw !== null && stderw !== "") {
-                                return apps.errout({error: stderw, name: "biddle_makeGlobal_winRead_winRemovePath"});
-                            }
-                            console.log(data.abspath + "cmd removed from %PATH%.");
-                            apps.rmrecurse(data.abspath + "cmd", function biddle_makeGlobal_winRead_winRemovePath_winRemoveBin() {
-                                console.log(data.abspath + "cmd deleted.");
-                            });
-                            return stdoutw;
-                        });
-                    }
-                    return apps.errout({
-                        error: data.abspath + "cmd is already in %PATH%",
-                        name : "biddle_makeGlobal_winRead"
-                    });
-                }
-                if (data.input[2] === "remove") {
-                    return apps.errout({
-                        error: data.abspath + "cmd is not present in %PATH%",
-                        name : "biddle_makeGlobal_winRead"
-                    });
-                }
-                node
-                    .child(cmds.pathSet(), function biddle_makeGlobal_winRead_winWritePath(erw, stdoutw, stderw) {
-                        if (erw !== null) {
-                            return apps.errout({error: erw, name: "biddle_makeGlobal_winRead_winWritePath"});
-                        }
-                        if (stderw !== null && stderw !== "") {
-                            return apps.errout({error: stderw, name: "biddle_makeGlobal_winRead_winWritePath"});
-                        }
-                        console.log(data.abspath + "cmd added to %PATH%.");
-                        apps.makedir(data.abspath + "cmd", function biddle_makeGlobal_winRead_winWritePath_winMakeDir() {
-                            apps
-                                .writeFile(cmds.cmdFile(), data.abspath + "cmd\\biddle.cmd", function biddle_makeGlobal_winRead_winWritePath_winMakeDir_winWriteCmd() {
-                                    console.log(data.abspath + "cmd\\biddle.cmd written. Please restart your terminal.");
-                                });
-                        });
-                        return stdoutw;
-                    });
-            });
-        }
-        node
-            .child("echo ~", function biddle_makeGlobal_findHome(erh, stdouth, stderh) {
-                var flag     = {
-                        bash_profile: false,
-                        profile     : false
-                    },
-                    terminal = function biddle_makeGlobal_findHome_terminal() {
-                        if (data.input[2] === "remove") {
-                            return console.log(data.abspath + "bin removed from $PATH but will remain available until the terminal is restarted" +
-                                    ".");
-                        }
-                        console.log("Restart the terminal or execute:  export PATH=" + data.abspath + "bin:$PATH");
-                    },
-                    readPath = function biddle_makeGlobal_findHome_readPath(dotfile) {
-                        node
-                            .fs
-                            .readFile(dotfile, "utf8", function biddle_makeGlobal_findHome_readPath_nixRead(err, filedata) {
-                                var pathStatement = "\nexport PATH=\"" + data.abspath + "bin:$PATH\"\n";
-                                if (err !== null && err !== undefined) {
-                                    return apps.errout({error: err, name: "biddle_makeGlobal_findHome_nixStat_nixRead"});
-                                }
-                                if (filedata.indexOf(data.abspath + "bin") > -1) {
-                                    if (data.input[2] === "remove") {
-                                        return apps.writeFile(filedata.replace(pathStatement, ""), dotfile, function biddle_makeGlobal_findHome_readPath_nixRead_nixRemove() {
-                                            console.log("Path updated in " + dotfile);
-                                            if (dotfile.indexOf("bash_profile") > 0) {
-                                                flag.bash_profile = true;
-                                                if (flag.profile === true) {
-                                                    terminal();
-                                                }
-                                            } else {
-                                                flag.profile = true;
-                                                if (flag.bash_profile === true) {
-                                                    terminal();
-                                                }
-                                            }
-                                        });
-                                    }
-                                    return apps.errout({
-                                        error: data.abspath + "bin is already in $PATH",
-                                        name : "biddle_makeGlobal_findHome_readPath_nixRead"
-                                    });
-                                }
-                                if (data.input[2] === "remove") {
-                                    return apps.errout({
-                                        error: data.abspath + "bin is not present in $PATH",
-                                        name : "biddle_makeGlobal_findHome_readPath_nixRead"
-                                    });
-                                }
-                                apps
-                                    .writeFile(filedata + pathStatement, dotfile, function biddle_makeGlobal_findHome_readPath_nixRead_nixRemove() {
-                                        console.log("Path updated in " + dotfile);
-                                        if (dotfile.indexOf("bash_profile") > 0) {
-                                            flag.bash_profile = true;
-                                            if (flag.profile === true) {
-                                                terminal();
-                                            }
-                                        } else {
-                                            flag.profile = true;
-                                            if (flag.bash_profile === true) {
-                                                terminal();
-                                            }
-                                        }
-                                    });
-                            });
-                    };
-                if (erh !== null) {
-                    return apps.errout({error: erh, name: "biddle_makeGlobal_findHome"});
-                }
-                if (stderh !== null && stderh !== "") {
-                    return apps.errout({error: stderh, name: "biddle_makeGlobal_findHome"});
-                }
-                stdouth = stdouth.replace(/\s+/g, "") + "/.";
-                node
-                    .fs
-                    .stat(stdouth + "profile", function biddle_cmds_makeGlobal_findHome_nixStatProfile(er) {
-                        if (er !== null) {
-                            if (er.toString().indexOf("no such file or directory") > 1) {
-                                flag.profile = true;
-                                if (flag.bash_profile === true) {
-                                    terminal();
-                                }
-                            } else {
-                                return apps.errout({error: er, name: "biddle_cmds_makeGlobal_findHome_nixStatProfile"});
-                            }
-                        } else {
-                            readPath(stdouth + "profile");
-                        }
-                    });
-                node
-                    .fs
-                    .stat(stdouth + "bash_profile", function biddle_cmds_makeGlobal_findHome_nixStatBash(er) {
-                        if (er !== null) {
-                            if (er.toString().indexOf("no such file or directory") > 1) {
-                                flag.bash_profile = true;
-                                if (flag.profile === true) {
-                                    terminal();
-                                }
-                            } else {
-                                return apps.errout({error: er, name: "biddle_cmds_makeGlobal_findHome_nixStatBash"});
-                            }
-                        } else {
-                            readPath(stdouth + "bash_profile");
-                        }
-                    });
-            });
-    };
     apps.publish     = function biddle_publish() {
         var flag      = {
                 finalish: false,
@@ -1404,10 +1436,16 @@
                     variants
                         .forEach(function biddle_publish_execution_variantsDir_each(value) {
                             var varobj = (value === "")
-                                ? {}
-                                : data.packjson.publication_variants[value];
+                                    ? {}
+                                    : data.packjson.publication_variants[value];
                             value = apps.sanitizef(value);
-                            apps.copy(data.input[2], data.abspath + "temp" + node.path.sep + value, function biddle_publish_execution_variantsDir_each_copy() {
+                            if (typeof varobj.exclusions !== "object" || typeof varobj.exclusions.join !== "function") {
+                                varobj.exclusions = [];
+                            }
+                            varobj.exclusions = varobj
+                                .exclusions
+                                .concat(data.ignore);
+                            apps.copy(data.input[2], data.abspath + "temp" + node.path.sep + value, varobj.exclusions, function biddle_publish_execution_variantsDir_each_copy() {
                                 var complete   = function biddle_publish_execution_variantsDir_each_copy_complete() {
                                         var location = (value === "")
                                                 ? apps.relToAbs(data.input[2])
@@ -1442,32 +1480,8 @@
                                                     complete();
                                                 }
                                             });
-                                    },
-                                    exclusions = function biddle_publish_execution_variantsDir_each_copy_exclusions() {
-                                        apps
-                                            .rmrecurse(data.abspath + "temp" + node.path.sep + value + node.path.sep + varobj.exclusions[0], function biddle_publish_execution_variantsDir_each_copy_exclusions_remove() {
-                                                var len = varobj.exclusions.length - 1;
-                                                varobj
-                                                    .exclusions
-                                                    .splice(0, 1);
-                                                if (len > 0) {
-                                                    biddle_publish_execution_variantsDir_each_copy_exclusions();
-                                                } else if (varobj.tasks === "object" && varobj.tasks.length > 0) {
-                                                    tasks();
-                                                } else {
-                                                    complete();
-                                                }
-                                            });
                                     };
-                                if (typeof varobj.exclusions !== "object" || typeof varobj.exclusions.join !== "function") {
-                                    varobj.exclusions = [];
-                                }
-                                varobj.exclusions = varobj
-                                    .exclusions
-                                    .concat(data.ignore);
-                                if (varobj.exclusions.length > 0) {
-                                    exclusions();
-                                } else if (varobj.tasks === "object" && varobj.tasks.length > 0) {
+                                if (varobj.tasks === "object" && varobj.tasks.length > 0) {
                                     tasks();
                                 } else {
                                     complete();
@@ -3763,10 +3777,15 @@
         }
         apps
             .rmrecurse(app.location, function biddle_uninstall_rmrecurse() {
-                var str = "";
+                var str = "",
+                    loc = app.location;
                 delete data.installed[data.input[2]];
                 str = JSON.stringify(data.installed);
                 apps.writeFile(str, data.abspath + "installed.json", function biddle_uninstall_rmrecurse_writeFile() {
+                    data.input[3] = "remove";
+                    if (data.platform !== "win32") {
+                        apps.global(loc);
+                    }
                     if (fromTest === false) {
                         console.log("App \u001b[36m" + data.input[2] + "\u001b[39m is uninstalled.");
                     }
@@ -3952,7 +3971,7 @@
                     if (data.command === "commands") {
                         apps.commands();
                     } else if (data.command === "copy") {
-                        apps.copy(data.input[2], data.input[3], function biddle_init_start_copy() {
+                        apps.copy(data.input[2], data.input[3], [], function biddle_init_start_copy() {
                             return true;
                         });
                     } else if (data.command === "get") {
@@ -3964,7 +3983,7 @@
                                     });
                             });
                     } else if (data.command === "global") {
-                        apps.makeGlobal();
+                        apps.global(data.abspath);
                     } else if (data.command === "hash") {
                         apps
                             .hashCmd(data.input[2], "hashFile", function biddle_init_start_hash() {
@@ -4019,6 +4038,7 @@
                 process
                     .argv
                     .splice(0, 1);
+                data.sudo = true;
             }
             paths = process
                 .argv[0]
@@ -4095,8 +4115,10 @@
                     return apps.errout({error: err, name: "biddle_init_installed"});
                 }
                 status.installed = true;
-                parsed           = JSON.parse(fileData);
-                data.installed   = parsed;
+                if (fileData !== "") {
+                    parsed = JSON.parse(fileData);
+                }
+                data.installed = parsed;
                 if (status.published === true) {
                     start();
                 }
@@ -4109,8 +4131,10 @@
                     return apps.errout({error: err, name: "biddle_init_published"});
                 }
                 status.published = true;
-                parsed           = JSON.parse(fileData);
-                data.published   = parsed;
+                if (fileData !== "") {
+                    parsed = JSON.parse(fileData);
+                }
+                data.published = parsed;
                 if (status.installed === true) {
                     start();
                 }
