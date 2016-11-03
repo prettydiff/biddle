@@ -21,10 +21,6 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
 ## Beta Release
 Project is in **beta** status.  This project is stable and ready for examination, but not ready for production or commercial use.
 
-### Todo list
-* need to work out *global* switch for **install** command
-* there is a minor bug in the *lint* phase of the **test** command where the program occasionally exits early
-
 ## Documentation
 * [Getting Started](documentation/gettingstarted.md)
 * [package.json](documentation/package.md)
