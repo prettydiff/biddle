@@ -8,32 +8,48 @@ For definitions and usage examples please see the [readme.md](../readme.md) file
 ### Command Overview
 biddle operates with the convention: `biddle command argument1 argument2`
 
-The following table describes which commands require arguments and which commands run locally without a network connection.  Commands with a "?" in the *Local* column are commands that will access the internet if provided a web address as an argument.  A second argument is required for the **copy** command and either optional or unused for all other commands.
+The following table describes which commands require arguments and which commands run locally without a network connection.  Commands with a "?" in the *Local* column are commands that will access the internet if provided a web address as an argument while commands with a "✓" will not access the internet.  A second argument is required for the **copy** command and either optional or unused for all other commands.
 
 Command|Local|Argument Type|Second Argument
 ---|---|---|---
 commands|✓|none|none
-copy|✓|file path or directory path|directory path
-get|?|file path|none
-global|✓|application|none or "*remove*"
+copy|✓|local file system address|directory path
+get|?|local or web address|none
+global|✓|application name|none or "*remove*"
 hash|✓|file path|none
 help|✓|number|none
-install|?|zip file|directory path
+install|?|zip file address (local or web)|directory path
 list|✓|"*installed*" or "*published*"|none
 markdown|✓|path to markdown file|number
 publish|✓|directory path|directory path
-remove|✓|file path or directory path|none
+remove|✓|local file system address|none
 status|?|none or application name|none
 test|?|application name|none
 uninstall|✓|application name|none
 unpublish|✓|application name|none
 unzip|✓|path to zip file|directory path
-zip|✓|file path or directory path|directory path
+zip|✓|local file system address|directory path
 
 ### cmds Object
-Some biddle commands require OS specific actions.  For instance the commands to recursively delete a directory tree, copy a directory tree, or zip a file differ by operating system.  Many of these simple operations are required for the primary publication and installation tasks and are provided directly as a convenience.
+Some biddle commands require OS specific actions.  For instance the commands to recursively delete a directory tree or zip a file differ by operating system.  Many of these simple operations are required for the primary publication and installation tasks and are provided directly as a convenience.
 
 These commands are found in the **cmds** object in biddle.js near the top of the file.
+
+## .biddlerc File
+An application may contain a file named *.biddlerc* to serve as a preset.  This file will contain JSON in this format:
+
+    {
+        "directories": {
+            "applications": "applications",
+            "downloads"   : "downloads",
+            "publications": "publications"
+        },
+        "exclusions" : [
+            "file", "file", "directory"
+        ]
+    }
+
+There are two key properties supported in the *.biddlerc* file: *directories* and *exclusions*.  The *directories* object allows application specific defaults to be defined for the three directories that biddle will write to.  The addresses are relative to the application directory and absolute addresses are also supported.  The *exclusions* object allows an application specific list of files or directories to exclude when running the **publish** command.
 
 ## Publication and the published.json File
 The published.json file stores data on applications published by biddle with the following schema:
@@ -43,7 +59,7 @@ The published.json file stores data on applications published by biddle with the
             "directory": "path/to/application",
             "latest"   : "latestVersion",
             "versions" : [
-                "version", "olderVersion"
+                "oldest version", "older version", "version string", "latest version"
             ]
         }
     }
@@ -54,7 +70,7 @@ If an application is published with the same name an version as a previously pub
 Since applications are stored by name an application of a given name may only exist once in biddle.  Should a name conflict arise a possible solution is to run multiple instances of biddle for different types of applications.  With biddle there isn't any central repository so another solution is to simply rename an application to something unique prior to publication.
 
 ### Directory
-The default publication point is the *publications* directory in biddle.  An application may be published to any location permitted by the operating system.  This location is stored as the *directory* property in the published.json file.
+The default publication point is the *publications* directory in biddle.  An application may be published to any location permitted by the operating system.  The published location is stored as the *directory* property in the published.json file.
 
 ### Versions
 Versions in biddle are completely free form.  [SemVer](http://semver.org/) is strongly encourage, but any string is accepted.
@@ -63,7 +79,7 @@ Versions in biddle are completely free form.  [SemVer](http://semver.org/) is st
 In addition to publishing a specified version of an application biddle will also create a *latest* version in the following criteria is met:
 
 * The current version is the first publication
-* larger than the immediately preceding version where larger means sorts higher after a JavaScript string sort.
+* larger than the immediately preceding version where larger means sorts lower after a JavaScript string sort.
 
 ## Installation and the installed.json File
 The published.json file stores data on applications published by biddle with the following schema:
@@ -105,7 +121,7 @@ An application qualifies for latest status under the following conditions:
 * The application is published for the first time.
 * The version string is greater than the prior version string, based upon JavaScript string comparison logic, and does not contain the words *alpha* or *beta*.
 
-## Global Application Requirements
+## Global Installation Requirements
 
 ### bin File
 An application must have a bin file named `bin\myApplicationName`.  The *myApplicationName* file has no file extension and should be named exactly like the application's parent directory, for example: *prettydiff/bin/prettydiff*.  This file contains two things:

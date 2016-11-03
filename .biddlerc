@@ -1,0 +1,11 @@
+{
+    "directories": {
+        "applications": "applications",
+        "downloads"   : "downloads",
+        "publications": "publications"
+    },
+    "exclusions" : [
+        ".DC_Store",
+        "._DC_Store"
+    ]
+}
