@@ -1473,6 +1473,7 @@
                             varobj.exclusions = varobj
                                 .exclusions
                                 .concat(data.ignore);
+                            varobj.exclusions.push(".biddlerc");
                             apps.copy(data.input[2], data.abspath + "temp" + node.path.sep + value, varobj.exclusions, function biddle_publish_execution_variantsDir_each_copy() {
                                 var complete = function biddle_publish_execution_variantsDir_each_copy_complete() {
                                         var location = (value === "")
@@ -1736,10 +1737,12 @@
             rel.splice(0, 1);
         }
         b = rel.length;
-        do {
-            rel[a] = apps.sanitizef(rel[a]);
-            a += 1;
-        } while (a < b);
+        if (b < 0) {
+            do {
+                rel[a] = apps.sanitizef(rel[a]);
+                a += 1;
+            } while (a < b);
+        }
         return abs.join(node.path.sep) + node.path.sep + rel.join(node.path.sep);
     };
     apps.rmrecurse   = function biddle_rmrecurse(dirToKill, callback) {

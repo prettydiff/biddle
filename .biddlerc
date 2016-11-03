@@ -6,6 +6,8 @@
     },
     "exclusions" : [
         ".DC_Store",
-        "._DC_Store"
+        "._DC_Store",
+        ".git",
+        "node_modules"
     ]
 }
