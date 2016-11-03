@@ -1718,7 +1718,9 @@
                     .cwd
                     .replace(/((\/|\\)+)$/, "")
                     .split(node.path.sep),
-            rel = apps.sanitizef(filepath).split(node.path.sep);
+            rel = filepath.split(node.path.sep),
+            a   = 0,
+            b   = 0;
         if (data.platform === "win32" && (/^(\w:\\)/).test(filepath) === true) {
             return filepath;
         }
@@ -1733,6 +1735,11 @@
         } else if (rel[0] === ".") {
             rel.splice(0, 1);
         }
+        b = rel.length;
+        do {
+            rel[a] = apps.sanitizef(rel[a]);
+            a += 1;
+        } while (a < b);
         return abs.join(node.path.sep) + node.path.sep + rel.join(node.path.sep);
     };
     apps.rmrecurse   = function biddle_rmrecurse(dirToKill, callback) {
@@ -2569,20 +2576,20 @@
                 listChild = function biddle_test_listStatus_childWrapper() {
                     node
                         .child(childcmd + listcmds[0] + " childtest", function biddle_test_listStatus_childWrapper_child(er, stdout, stder) {
-                            var listout = "\u001b[4mInstalled applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[39m -" +
-                                        " 99.99.1234 - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* \u001b[36mbiddletestb\u001b[39m - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep + "\n\n\u001b[4mPublished applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[3" +
+                            var listout = "\u001b[4minstalled applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[39m -" +
+                                        " 99.99.1234 - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* \u001b[36mbiddletestb\u001b[39m - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep + "\n\n\u001b[4mpublished applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[3" +
                                         "9m - 99.99.1234 - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* \u001b[36mbiddletestb\u001b[39m - 98.98.1234 - " + data.abspath + "publications" + node.path.sep + "biddletestb" + node.path.sep,
-                                listpub = "\u001b[4mPublished applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[39m -" +
+                                listpub = "\u001b[4mpublished applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[39m -" +
                                         " 99.99.1234 - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* \u001b[36mbiddletestb\u001b[39m - 98.98.1234 - " + data.abspath + "publications" + node.path.sep + "biddletestb" + node.path.sep,
-                                listist = "\u001b[4mInstalled applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[39m -" +
+                                listist = "\u001b[4minstalled applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[39m -" +
                                         " 99.99.1234 - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* \u001b[36mbiddletestb\u001b[39m - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep,
-                                statout = "\n\u001b[4m\u001b[32mAll Applications Are Current:\u001b[39m\u001b[0m\n\n* biddl" +
+                                statout = "\n\u001b[4m\u001b[32mall applications are current:\u001b[39m\u001b[0m\n\n* biddl" +
                                         "etesta matches published version \u001b[36m99.99.1234\u001b[39m\n* biddletestb m" +
                                         "atches published version \u001b[36m98.98.1234\u001b[39m",
                                 statpba = "\n* biddletesta matches published version \u001b[36m99.99.1234\u001b[39m",
-                                statpbb = "\n\u001b[4mOutdated Applications:\u001b[0m\n\n* biddletesta is installed at vers" +
+                                statpbb = "\n\u001b[4moutdated applications:\u001b[0m\n\n* biddletesta is installed at vers" +
                                         "ion \u001b[1m\u001b[31m99.99.1234\u001b[39m\u001b[0m but published version is " +
-                                        "\u001b[36m11.22.6789\u001b[39m\n\n\u001b[4mCurrent Applications:\u001b[0m\n\n* b" +
+                                        "\u001b[36m11.22.6789\u001b[39m\n\n\u001b[4mcurrent applications:\u001b[0m\n\n* b" +
                                         "iddletestb matches published version \u001b[36m98.98.1234\u001b[39m",
                                 statpbc = "\n* biddletesta is installed at version \u001b[1m\u001b[31m99.99.1234\u001b[39m" +
                                         "\u001b[0m but published version is \u001b[36m11.22.6789\u001b[39m";
@@ -2603,6 +2610,7 @@
                                 });
                             }
                             stdout = stdout
+                                .toLowerCase()
                                 .replace(/(\s+)$/, "")
                                 .replace(/\r\n/g, "\n");
                             if (changed === false && listcmds[0] === "list") {
@@ -4156,18 +4164,17 @@
             });
         if (data.command === "get" || data.command === "install" || data.command === "publish") {
             (function biddle_init_biddlerc() {
-                var fname  = process.cwd().split(node.path.sep),
-                    rcpath = (data.command === "publish")
-                    ? data.input[2].replace(/((\/|\\)+)$/, "") + node.path.sep + ".biddlerc"
-                    : fname[fname.length - 1] + node.path.sep + ".biddlerc";
+                var rcpath = (data.command === "publish")
+                    ? apps.relToAbs(data.input[2].replace(/((\/|\\)+)$/, "")) + node.path.sep + ".biddlerc"
+                    : process.cwd() + node.path.sep + ".biddlerc";
                 node
                     .fs
                     .readFile(rcpath, "utf8", function biddle_init_biddlerc_readFile(err, fileData) {
                         var parsed = {},
                             dirs   = function biddle_init_biddlerc_dirs(type) {
-                                if (typeof parsed[type] === "string") {
-                                    if (parsed[type].length > 0) {
-                                        data.address[type] = apps.relToAbs(parsed[type]) + node.path.sep;
+                                if (typeof parsed.directories[type] === "string") {
+                                    if (parsed.directories[type].length > 0) {
+                                        data.address[type] = apps.relToAbs(parsed.directories[type]) + node.path.sep;
                                         return;
                                     }
                                 }
