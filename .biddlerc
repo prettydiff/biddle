@@ -8,6 +8,7 @@
         ".DC_Store",
         "._DC_Store",
         ".git",
+        ".gitmodules",
         "node_modules"
     ]
 }

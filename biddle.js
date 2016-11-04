@@ -225,7 +225,7 @@
                     if (err !== null) {
                         return util.eout(err, "biddle_copy_link_readlink");
                     }
-                    resolvedlink = apps.relToAbs(resolvedlink);
+                    resolvedlink = apps.relToAbs(resolvedlink, data.cwd);
                     node
                         .fs
                         .stat(resolvedlink, function biddle_copy_link_readlink_stat(ers, stats) {
@@ -308,7 +308,7 @@
                 .replace(/\/|\\/g, node.path.sep)
                 .replace(/((\/|\\)+)$/, "");
         });
-        util.stat(apps.relToAbs(target), apps.relToAbs(destination));
+        util.stat(apps.relToAbs(target, data.cwd), apps.relToAbs(destination, data.cwd));
     };
     apps.errout      = function biddle_errout(errData) {
         var error = (typeof errData.error !== "string" || errData.error.toString().indexOf("Error: ") === 0)
@@ -475,7 +475,7 @@
                 if (err !== null && err !== undefined) {
                     if (err.toString().indexOf("no such file or directory") > 0) {
                         return apps.errout({
-                            error: "The package.json file is missing from " + data.input[2] + ". biddle cannot publish without a package.json file. Perhaps " + apps.relToAbs(data.input[2], false) + " is the incorrect location.",
+                            error: "The package.json file is missing from " + data.input[2] + ". biddle cannot publish without a package.json file. Perhaps " + apps.relToAbs(data.input[2], data.cwd) + " is the incorrect location.",
                             name : "biddle_getpjson_readFile"
                         });
                     }
@@ -1242,7 +1242,7 @@
                                         ? data
                                             .input[2]
                                             .slice(0, data.input[2].lastIndexOf("/") + 1)
-                                        : apps.relToAbs(data.input[2].slice(0, data.input[2].lastIndexOf(node.path.sep) + 1));
+                                        : apps.relToAbs(data.input[2].slice(0, data.input[2].lastIndexOf(node.path.sep) + 1), data.cwd);
                                     apps.writeFile(JSON.stringify(data.installed), data.abspath + "installed.json", function biddle_install_compareHash_hashCmd_installedJSON() {
                                         status.packjson = true;
                                         if (status.remove === true) {
@@ -1256,7 +1256,7 @@
                                         }
                                     });
                                 }, {
-                                    location: apps.relToAbs(data.input[2]),
+                                    location: apps.relToAbs(data.input[2], data.cwd),
                                     name    : ""
                                 });
                         } else {
@@ -1474,10 +1474,13 @@
                                 .exclusions
                                 .concat(data.ignore);
                             varobj.exclusions.push(".biddlerc");
+                            varobj.exclusions.push(data.address.downloads);
+                            varobj.exclusions.push(data.address.applications);
+                            varobj.exclusions.push(data.address.publications);
                             apps.copy(data.input[2], data.abspath + "temp" + node.path.sep + value, varobj.exclusions, function biddle_publish_execution_variantsDir_each_copy() {
                                 var complete = function biddle_publish_execution_variantsDir_each_copy_complete() {
                                         var location = (value === "")
-                                                ? apps.relToAbs(data.input[2])
+                                                ? apps.relToAbs(data.input[2], data.cwd)
                                                 : data.abspath + "temp" + node.path.sep + value,
                                             finalVar = (vflag === variants.length - 1);
                                         vflag += 1;
@@ -1709,14 +1712,8 @@
                 data.status[datalist] = true;
             });
     };
-    apps.relToAbs    = function biddle_relToAbs(filepath, fromBiddle) {
-        var abs = (fromBiddle === true)
-                ? data
-                    .abspath
-                    .replace(/((\/|\\)+)$/, "")
-                    .split(node.path.sep)
-                : data
-                    .cwd
+    apps.relToAbs    = function biddle_relToAbs(filepath, reference) {
+        var abs = reference
                     .replace(/((\/|\\)+)$/, "")
                     .split(node.path.sep),
             rel = filepath.split(node.path.sep),
@@ -3929,7 +3926,7 @@
             } else {
                 zipfile = data.address.target + apps.sanitizef(data.packjson.name.toLowerCase()) + variantName + "_" + apps.sanitizef(data.packjson.version) + ".zip";
             }
-            cmd = cmds.zip(apps.relToAbs(zipfile, false));
+            cmd = cmds.zip(apps.relToAbs(zipfile, data.cwd));
             if (data.command === "publish") {
                 zipdir = zippack.location;
                 if (data.latestVersion === true) {
@@ -3967,7 +3964,7 @@
                     if (typeof data.input[3] === "string") {
                         data.address.target = apps.relToAbs(data
                             .input[3]
-                            .replace(/((\\|\/)+)$/, "")) + node.path.sep;
+                            .replace(/((\\|\/)+)$/, ""), data.cwd) + node.path.sep;
                     } else if (data.command === "publish") {
                         data.address.target = data.address.publications;
                     } else if (data.command === "install") {
@@ -4047,7 +4044,7 @@
                     } else if (data.command === "remove") {
                         apps
                             .rmrecurse(data.input[2], function biddle_init_stat_remove() {
-                                console.log("Removed " + apps.relToAbs(data.input[2]));
+                                console.log("Removed " + apps.relToAbs(data.input[2], data.cwd));
                             });
                     } else if (data.command === "status") {
                         apps.status();
@@ -4062,7 +4059,7 @@
                             .zip(function biddle_init_start_unzip(zipfile) {
                                 return console.log("File " + zipfile + " unzipped to: " + data.address.target);
                             }, {
-                                location: apps.relToAbs(data.input[2]),
+                                location: apps.relToAbs(data.input[2], data.cwd),
                                 name    : ""
                             });
                     } else if (data.command === "zip") {
@@ -4070,7 +4067,7 @@
                             .zip(function biddle_init_start_zip(zipfile) {
                                 return console.log("Zip file written: " + zipfile);
                             }, {
-                                location: apps.relToAbs(data.input[2]),
+                                location: apps.relToAbs(data.input[2], data.cwd),
                                 name    : ""
                             });
                     }
@@ -4168,7 +4165,7 @@
         if (data.command === "get" || data.command === "install" || data.command === "publish") {
             (function biddle_init_biddlerc() {
                 var rcpath = (data.command === "publish")
-                    ? apps.relToAbs(data.input[2].replace(/((\/|\\)+)$/, "")) + node.path.sep + ".biddlerc"
+                    ? apps.relToAbs(data.input[2].replace(/((\/|\\)+)$/, ""), data.cwd) + node.path.sep + ".biddlerc"
                     : process.cwd() + node.path.sep + ".biddlerc";
                 node
                     .fs
@@ -4177,7 +4174,11 @@
                             dirs   = function biddle_init_biddlerc_dirs(type) {
                                 if (typeof parsed.directories[type] === "string") {
                                     if (parsed.directories[type].length > 0) {
-                                        data.address[type] = apps.relToAbs(parsed.directories[type]) + node.path.sep;
+                                        if (data.command === "publish") {
+                                            data.address[type] = apps.relToAbs(parsed.directories[type], apps.relToAbs(data.input[2], data.cwd)) + node.path.sep;
+                                        } else {
+                                            data.address[type] = apps.relToAbs(parsed.directories[type], data.abspath) + node.path.sep;
+                                        }
                                         return;
                                     }
                                 }
@@ -4195,6 +4196,8 @@
                         if (fileData !== "") {
                             parsed = JSON.parse(fileData);
                         }
+                        // 1. should be relative from data.input[2]
+                        // 2. verify directory and files are purged on uninstall
                         dirs("applications");
                         dirs("downloads");
                         dirs("publications");
