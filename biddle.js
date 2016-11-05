@@ -1555,6 +1555,8 @@
                 data.published[data.packjson.name].latest    = "";
                 data.published[data.packjson.name].directory = data.address.target + apps.sanitizef(data.packjson.name) + node.path.sep;
             }
+            data.packjson.name = apps.sanitizef(data.packjson.name);
+            data.address.target = data.address.target + data.packjson.name + node.path.sep;
             data
                 .published[data.packjson.name]
                 .versions
@@ -2262,7 +2264,9 @@
             };
         phases.copy          = function biddle_test_copy() {
             node
-                .child(childcmd + "copy " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta.js " + testpath + " childtest", function biddle_test_copy_child(er, stdout, stder) {
+                .child(childcmd + "copy " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta.js " + testpath + " childtest", {
+                    cwd: data.abspath
+                }, function biddle_test_copy_child(er, stdout, stder) {
                     var copytest = "Copied " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta.js to " + data.abspath + "unittest\nFiles: 1, Directories: 0, Symlinks: 0",
                         copyfile = data.abspath + "unittest" + node.path.sep + "biddletesta.js";
                     if (er !== null) {
@@ -2298,7 +2302,9 @@
         };
         phases.get           = function biddle_test_get() {
             node
-                .child(childcmd + "get http://www.google.com " + data.abspath + "unittest childtest", function biddle_test_get_child(er, stdout, stder) {
+                .child(childcmd + "get http://www.google.com " + data.abspath + "unittest childtest", {
+                    cwd: data.abspath
+                }, function biddle_test_get_child(er, stdout, stder) {
                     var size = "";
                     if (er !== null) {
                         return apps.errout({error: er, name: "biddle_test_get_child", stdout: stdout, time: humantime(true)});
@@ -2320,7 +2326,9 @@
         };
         phases.hash          = function biddle_test_hash() {
             node
-                .child(childcmd + "hash " + data.abspath + "LICENSE childtest", function biddle_test_hash_child(er, stdout, stder) {
+                .child(childcmd + "hash " + data.abspath + "LICENSE childtest", {
+                    cwd: data.abspath
+                }, function biddle_test_hash_child(er, stdout, stder) {
                     var hashtest = "be09a71a2cda28b74e9dd206f46c1621aebe29182723f191d8109db4705ced014de469043c397fee" +
                             "4d8f3483e396007ca739717af4bf43fed4c2e3dd14f3dc0c";
                     if (er !== null) {
@@ -2339,7 +2347,9 @@
         };
         phases.install       = function biddle_test_install() {
             node
-                .child(childcmd + "install " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta_latest.zip childtest", function biddle_test_install_child(er, stdout, stder) {
+                .child(childcmd + "install " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta_latest.zip childtest", {
+                    cwd: data.abspath
+                }, function biddle_test_install_child(er, stdout, stder) {
                     var instfile = data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "liba" + node.path.sep + "libab.txt";
                     if (er !== null) {
                         return apps.errout({error: er, name: "biddle_test_hash_child", stdout: stdout, time: humantime(true)});
@@ -2575,7 +2585,9 @@
                 changed   = false,
                 listChild = function biddle_test_listStatus_childWrapper() {
                     node
-                        .child(childcmd + listcmds[0] + " childtest", function biddle_test_listStatus_childWrapper_child(er, stdout, stder) {
+                        .child(childcmd + listcmds[0] + " childtest", {
+                            cwd: data.abspath
+                        }, function biddle_test_listStatus_childWrapper_child(er, stdout, stder) {
                             var listout = "\u001b[4minstalled applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[39m -" +
                                         " 99.99.1234 - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* \u001b[36mbiddletestb\u001b[39m - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep + "\n\n\u001b[4mpublished applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[3" +
                                         "9m - 99.99.1234 - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* \u001b[36mbiddletestb\u001b[39m - 98.98.1234 - " + data.abspath + "publications" + node.path.sep + "biddletestb" + node.path.sep,
@@ -2677,7 +2689,9 @@
                 "60" : false,
                 "80" : false
             };
-            node.child(childcmd + "markdown " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "READMEa.md 60 childtest", function biddle_test_markdown_60(er, stdout, stder) {
+            node.child(childcmd + "markdown " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "READMEa.md 60 childtest", {
+                cwd: data.abspath
+            }, function biddle_test_markdown_60(er, stdout, stder) {
                 var markdowntest = "\n\u001b[4m\u001b[1m\u001b[31mtest README\u001b[39m\u001b[0m\u001b[24m\nsome dum" +
                                  "my subtext\n\n\u001b[4m\u001b[1m\u001b[36mFirst Secondary Heading\u001b[39m" +
                                  "\u001b[0m\u001b[24m\n    | a big block quote lives here. This is where I\n    | " +
@@ -2810,7 +2824,9 @@
                     next();
                 }
             });
-            node.child(childcmd + "markdown " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "READMEa.md 80 childtest", function biddle_test_markdown_80(er, stdout, stder) {
+            node.child(childcmd + "markdown " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "READMEa.md 80 childtest", {
+                cwd: data.abspath
+            }, function biddle_test_markdown_80(er, stdout, stder) {
                 var markdowntest = "\n\u001b[4m\u001b[1m\u001b[31mtest README\u001b[39m\u001b[0m\u001b[24m\nsome dum" +
                                  "my subtext\n\n\u001b[4m\u001b[1m\u001b[36mFirst Secondary Heading\u001b[39m" +
                                  "\u001b[0m\u001b[24m\n    | a big block quote lives here. This is where I am goin" +
@@ -2940,7 +2956,9 @@
                     next();
                 }
             });
-            node.child(childcmd + "markdown " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "READMEa.md 120 childtest", function biddle_test_markdown_120(er, stdout, stder) {
+            node.child(childcmd + "markdown " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "READMEa.md 120 childtest", {
+                cwd: data.abspath
+            }, function biddle_test_markdown_120(er, stdout, stder) {
                 var markdowntest = "\n\u001b[4m\u001b[1m\u001b[31mtest README\u001b[39m\u001b[0m\u001b[24m\nsome dum" +
                                  "my subtext\n\n\u001b[4m\u001b[1m\u001b[36mFirst Secondary Heading\u001b[39m" +
                                  "\u001b[0m\u001b[24m\n    | a big block quote lives here. This is where I am goin" +
@@ -3100,7 +3118,9 @@
                         .stat(modules[mod].dir, function biddle_test_moduleInstall_handler_stat(erstat, stats) {
                             var add = function biddle_test_moduleInstall_handler_stat_add() {
                                 console.log("Adding " + modules[mod].name);
-                                node.child("git submodule add " + modules[mod].repo, function biddle_test_moduleInstall_handler_stat_add_submodule(era, stdouta, stdoutera) {
+                                node.child("git submodule add " + modules[mod].repo, {
+                                    cwd: data.abspath
+                                }, function biddle_test_moduleInstall_handler_stat_add_submodule(era, stdouta, stdoutera) {
                                     if (era !== null && era.toString().indexOf("already exists in the index") < 0) {
                                         return apps.errout({error: era, name: "biddle_test_moduleInstall_handler_stat_add_submodule", stdout: stdouta, time: humantime(true)});
                                     }
@@ -3108,7 +3128,9 @@
                                         return apps.errout({error: stdoutera, name: "biddle_test_moduleInstall_handler_stat_add_submodule", stdout: stdouta, time: humantime(true)});
                                     }
                                     node
-                                        .child("git clone " + modules[mod].repo, function biddle_test_moduleInstall_handler_stat_add_submodule_clone(erb, stdoutb, stdouterb) {
+                                        .child("git clone " + modules[mod].repo, {
+                                            cwd: data.abspath
+                                        }, function biddle_test_moduleInstall_handler_stat_add_submodule_clone(erb, stdoutb, stdouterb) {
                                             if (erb !== null) {
                                                 return apps.errout({error: erb, name: "biddle_test_moduleInstall_handler_stat_add_submodule_clone", stdout: stdoutb, time: humantime(true)});
                                             }
@@ -3216,7 +3238,9 @@
                     },
                     update = function biddle_test_moduleInstall_editions_update() {
                         node
-                            .child("git submodule update", function biddle_test_moduleInstall_editions_update_child(erd, stdoutd, stdouterd) {
+                            .child("git submodule update", {
+                                cwd: data.abspath
+                            }, function biddle_test_moduleInstall_editions_update_child(erd, stdoutd, stdouterd) {
                                 if (erd !== null) {
                                     apps.errout({error: erd, name: "biddle_test_moduleInstall_editions_update_child", stdout: stdoutd, time: humantime(true)});
                                 }
@@ -3231,7 +3255,9 @@
                     },
                     pull   = function biddle_test_moduleInstall_editions_pull() {
                         node
-                            .child("git submodule foreach git pull origin master", function biddle_test_moduleInstall_editions_pull_child(errpull, stdoutpull, stdouterpull) {
+                            .child("git submodule foreach git pull origin master", {
+                                cwd: data.abspath
+                            }, function biddle_test_moduleInstall_editions_pull_child(errpull, stdoutpull, stdouterpull) {
                                 if (errpull !== null) {
                                     console.log(errpull);
                                     if (errpull.toString().indexOf("fatal: no submodule mapping found in .gitmodules for path ") > 0) {
@@ -3284,7 +3310,9 @@
                                     });
                                 if (cloned === true) {
                                     node
-                                        .child("git submodule init", function biddle_test_moduleInstall_editions_checkoutJSLint_init(erc, stdoutc, stdouterc) {
+                                        .child("git submodule init", {
+                                            cwd: data.abspath
+                                        }, function biddle_test_moduleInstall_editions_checkoutJSLint_init(erc, stdoutc, stdouterc) {
                                             if (erc !== null) {
                                                 apps.errout({error: erc, name: "biddle_test_moduleInstall_editions_checkoutJSLint_init", stdout: stdoutc, time: humantime(true)});
                                             }
@@ -3315,7 +3343,9 @@
         };
         phases.publish       = function biddle_test_publish() {
             node
-                .child(childcmd + "publish " + data.abspath + "test" + node.path.sep + "biddletesta childtest", function biddle_test_publish_child(er, stdout, stder) {
+                .child(childcmd + "publish " + data.abspath + "test" + node.path.sep + "biddletesta childtest", {
+                    cwd: data.abspath
+                }, function biddle_test_publish_child(er, stdout, stder) {
                     var publishtest = "File publications/biddletesta/biddletesta_\u001b[1m\u001b[36mxxx.zip\u001b[39m" +
                                 "\u001b[0m written at \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes.\nFile publ" +
                                 "ications/biddletesta/biddletesta_\u001b[1m\u001b[36mlatest.zip\u001b[39m\u001b[0" +
@@ -3441,7 +3471,9 @@
                                                             stats[files[index]] = true;
                                                             if (stats[files[0]] === true && stats[files[1]] === true && stats[files[2]] === true && stats[files[3]] === true && stats[files[4]] === true && stats[files[5]] === true && stats[files[6]] === true && stats[files[7]] === true && stats[files[8]] === true && stats[files[9]] === true && stats[files[10]] === true && stats[files[11]] === true) {
                                                                 console.log(humantime(false) + " \u001b[32mpublish test passed.\u001b[39m");
-                                                                node.child(childcmd + "publish " + data.abspath + "test" + node.path.sep + "biddletesta childtest", function biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish(erx, stdoutx, stderx) {
+                                                                node.child(childcmd + "publish " + data.abspath + "test" + node.path.sep + "biddletesta childtest", {
+                                                                    cwd: data.abspath
+                                                                }, function biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish(erx, stdoutx, stderx) {
                                                                     var publishagain = "\u001b[1m\u001b[36mFunction:\u001b[39m\u001b[0m biddle_publish_execution\n\u001b" +
                                                                                      "[1m\u001b[31mError:\u001b[39m\u001b[0m Attempted to publish biddletesta over exi" +
                                                                                      "sting version",
@@ -3518,7 +3550,9 @@
         };
         phases.remove        = function biddle_test_remove() {
             node
-                .child(childcmd + "remove " + testpath + node.path.sep + "biddletesta.js childtest", function biddle_test_remove_child(er, stdout, stder) {
+                .child(childcmd + "remove " + testpath + node.path.sep + "biddletesta.js childtest", {
+                    cwd: data.abspath
+                }, function biddle_test_remove_child(er, stdout, stder) {
                     var removefile = testpath + node.path.sep + "biddletesta.js",
                         removetest = "Removed " + removefile;
                     if (er !== null) {
@@ -3544,7 +3578,9 @@
         };
         phases.uninstall     = function biddle_test_uninstall() {
             node
-                .child(childcmd + "uninstall biddletesta childtest", function biddle_test_uninstall_child(er, stdout, stder) {
+                .child(childcmd + "uninstall biddletesta childtest", {
+                    cwd: data.abspath
+                }, function biddle_test_uninstall_child(er, stdout, stder) {
                     var uninsttest = "App \u001b[36mbiddletesta\u001b[39m is uninstalled.";
                     if (er !== null) {
                         return apps.errout({error: er, name: "biddle_test_uninstall_child", stdout: stdout, time: humantime(true)});
@@ -3587,7 +3623,9 @@
                                             return apps.errout({error: "biddletesta property still present in installed.json file", name: "biddle_test_uninstall_child_stat_readfile", stdout: stdout, time: humantime(true)});
                                         }
                                         console.log(humantime(false) + " \u001b[32muninstall test passed.\u001b[39m");
-                                        node.child(childcmd + "uninstall biddletesta childtest", function biddle_test_uninstall_child_stat_readfile_again(erx, stdoutx, stderx) {
+                                        node.child(childcmd + "uninstall biddletesta childtest", {
+                                            cwd: data.abspath
+                                        }, function biddle_test_uninstall_child_stat_readfile_again(erx, stdoutx, stderx) {
                                             var uninstagain = "Attempted to uninstall \u001b[36mbiddletesta\u001b[39m which is \u001b[1m\u001b[" +
                                                             "31mabsent\u001b[39m\u001b[0m from the list of installed applications. Try using " +
                                                             "the command \u001b[32mbiddle list installed\u001b[39m.",
@@ -3626,7 +3664,9 @@
         };
         phases.unpublish     = function biddle_test_unpublish() {
             node
-                .child(childcmd + "unpublish biddletesta childtest", function biddle_test_unpublish_child(er, stdout, stder) {
+                .child(childcmd + "unpublish biddletesta childtest", {
+                    cwd: data.abspath
+                }, function biddle_test_unpublish_child(er, stdout, stder) {
                     var unpubtest = "App \u001b[36mbiddletesta\u001b[39m is unpublished.";
                     if (er !== null) {
                         return apps.errout({error: er, name: "biddle_test_unpublish_child", stdout: stdout, time: humantime(true)});
@@ -3669,7 +3709,9 @@
                                             return apps.errout({error: "biddletesta property still present in published.json file", name: "biddle_test_unpublish_child_stat_readfile", stdout: stdout, time: humantime(true)});
                                         }
                                         console.log(humantime(false) + " \u001b[32munpublish test passed.\u001b[39m");
-                                        node.child(childcmd + "unpublish biddletesta childtest", function biddle_test_unpublish_child_stat_readfile_again(erx, stdoutx, stderx) {
+                                        node.child(childcmd + "unpublish biddletesta childtest", {
+                                            cwd: data.abspath
+                                        }, function biddle_test_unpublish_child_stat_readfile_again(erx, stdoutx, stderx) {
                                             var unpubagain = "Attempted to unpublish \u001b[36mbiddletesta\u001b[39m which is \u001b[1m\u001b[" +
                                                            "31mabsent\u001b[39m\u001b[0m from the list of published applications. Try using " +
                                                            "the command \u001b[32mbiddle list published\u001b[39m.",
@@ -3708,7 +3750,9 @@
         };
         phases.unzip         = function biddle_test_unzip() {
             node
-                .child(childcmd + "unzip " + data.abspath + "unittest" + node.path.sep + "biddletesta.zip " + data.abspath + "unittest" + node.path.sep + "unzip childtest", function biddle_test_unzip_child(er, stdout, stder) {
+                .child(childcmd + "unzip " + data.abspath + "unittest" + node.path.sep + "biddletesta.zip " + data.abspath + "unittest" + node.path.sep + "unzip childtest", {
+                    cwd: data.abspath
+                }, function biddle_test_unzip_child(er, stdout, stder) {
                     if (er !== null) {
                         return apps.errout({error: er, name: "biddle_test_unzip_child", stdout: stdout, time: humantime(true)});
                     }
@@ -3750,7 +3794,9 @@
         };
         phases.zip           = function biddle_test_zip() {
             node
-                .child(childcmd + "zip " + data.abspath + "test" + node.path.sep + "biddletesta " + data.abspath + "unittest childtest", function biddle_test_zip_child(er, stdout, stder) {
+                .child(childcmd + "zip " + data.abspath + "test" + node.path.sep + "biddletesta " + data.abspath + "unittest childtest", {
+                    cwd: data.abspath
+                }, function biddle_test_zip_child(er, stdout, stder) {
                     var ziptest = "Zip file written: unittest" + node.path.sep + "biddletesta.zip";
                     if (er !== null) {
                         return apps.errout({error: er, name: "biddle_test_zip_child", stdout: stdout, time: humantime(true)});
@@ -3924,17 +3970,19 @@
             if (data.command === "zip") {
                 zipfile = data.address.target + data.fileName + ".zip";
             } else {
-                zipfile = data.address.target + apps.sanitizef(data.packjson.name.toLowerCase()) + variantName + "_" + apps.sanitizef(data.packjson.version) + ".zip";
+                zipfile = data.address.target + data.packjson.name + variantName + "_" + apps.sanitizef(data.packjson.version) + ".zip";
             }
-            cmd = cmds.zip(apps.relToAbs(zipfile, data.cwd));
+            cmd = cmds.zip(zipfile);
             if (data.command === "publish") {
-                zipdir = zippack.location;
-                if (data.latestVersion === true) {
-                    latestfile = zipfile.replace(data.packjson.version + ".zip", "latest.zip");
-                    latestcmd  = cmd.replace(data.packjson.version + ".zip", "latest.zip");
-                    childfunc(latestfile, latestcmd, false);
-                }
-                childfunc(zipfile, cmd, true);
+                apps.makedir(data.address.target, function biddle_zip_makepubdir() {
+                    zipdir = zippack.location;
+                    if (data.latestVersion === true) {
+                        latestfile = zipfile.replace(data.packjson.version + ".zip", "latest.zip");
+                        latestcmd  = cmd.replace(data.packjson.version + ".zip", "latest.zip");
+                        childfunc(latestfile, latestcmd, false);
+                    }
+                    childfunc(zipfile, cmd, true);
+                });
             } else {
                 apps
                     .makedir(data.input[2], function biddle_zip_makedir() {
@@ -4196,8 +4244,6 @@
                         if (fileData !== "") {
                             parsed = JSON.parse(fileData);
                         }
-                        // 1. should be relative from data.input[2]
-                        // 2. verify directory and files are purged on uninstall
                         dirs("applications");
                         dirs("downloads");
                         dirs("publications");
