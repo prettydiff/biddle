@@ -1469,14 +1469,19 @@
                             value = apps.sanitizef(value);
                             if (typeof varobj.exclusions !== "object" || typeof varobj.exclusions.join !== "function") {
                                 varobj.exclusions = [];
+                            } else {
+                                varobj.exclusions.forEach(function biddle_publish_execution_variantsDir_each_exclusions(val, ind, arr) {
+                                    arr[ind] = apps.relToAbs(val.replace(/\\|\//g, node.path.sep), data.input[2]);
+                                });
                             }
                             varobj.exclusions = varobj
                                 .exclusions
                                 .concat(data.ignore);
-                            varobj.exclusions.push(".biddlerc");
+                            varobj.exclusions.push(apps.relToAbs(".biddlerc", data.input[2]));
                             varobj.exclusions.push(data.address.downloads);
                             varobj.exclusions.push(data.address.applications);
                             varobj.exclusions.push(data.address.publications);
+                            varobj.exclusions.sort();
                             apps.copy(data.input[2], data.abspath + "temp" + node.path.sep + value, varobj.exclusions, function biddle_publish_execution_variantsDir_each_copy() {
                                 var complete = function biddle_publish_execution_variantsDir_each_copy_complete() {
                                         var location = (value === "")
@@ -1719,13 +1724,35 @@
                     .replace(/((\/|\\)+)$/, "")
                     .split(node.path.sep),
             rel = filepath.split(node.path.sep),
+            cur = data.cwd.split(node.path.sep),
             a   = 0,
-            b   = 0;
-        if (data.platform === "win32" && (/^(\w:\\)/).test(filepath) === true) {
-            return filepath;
+            b   = 0,
+            reftest = false;
+        if (data.platform === "win32") {
+            if ((/^(\w:\\)/).test(filepath) === true) {
+                return filepath;
+            }
+            if ((/^(\w:\\)/).test(reference) === true) {
+                reftest = true;
+            }
+        } else {
+            if (filepath.charAt(0) === "/") {
+                return filepath;
+            }
+            if (reference.charAt(0) === "/") {
+                reftest = true;
+            }
         }
-        if (data.platform !== "win32" && filepath.charAt(0) === "/") {
-            return filepath;
+        if (data.cwd !== reference && reftest === false) {
+            if (abs[0] === "..") {
+                do {
+                    cur.pop();
+                    abs.splice(0, 1);
+                } while (cur[0] === "..");
+            } else if (cur[0] === ".") {
+                cur.splice(0, 1);
+            }
+            abs = cur.concat(abs);
         }
         if (rel[0] === "..") {
             do {
@@ -4248,7 +4275,9 @@
                         dirs("downloads");
                         dirs("publications");
                         if (typeof parsed.exclusions === "object" && parsed.exclusions.length > 0) {
-                            data.ignore = parsed.exclusions;
+                            parsed.exclusions.forEach(function biddle_init_biddlerc_readFile_exclusions(value) {
+                                data.ignore.push(apps.relToAbs(value.replace(/\\|\//g, node.path.sep), data.input[2]));
+                            });
                         }
                         status.biddlerc = true;
                         if (status.installed === true && status.published === true) {
