@@ -142,14 +142,15 @@
         return arr.join("");
     };
     apps.copy        = function biddle_copy(target, destination, exclusions, callback) {
-        var numb = {
+        var numb  = {
                 dirs : 0,
                 end  : 0,
                 files: 0,
                 links: 0,
                 start: 0
             },
-            util = {};
+            exlen = exclusions.length,
+            util  = {};
         util.complete = function biddle_copy_complete() {
             numb.end += 1;
             if (numb.end === numb.start) {
@@ -251,15 +252,29 @@
                 });
         };
         util.stat     = function biddle_copy_stat(item, dest) {
-            var func = (data.command === "copy")
-                ? "lstat"
-                : "stat";
+            var func     = (data.command === "copy")
+                    ? "lstat"
+                    : "stat",
+                filename = item.split(node.path.sep),
+                expath   = [],
+                a        = 0;
             numb.start += 1;
+            if (filename.length > 1 && filename[filename.length - 1] === "") {
+                filename.pop();
+            }
+            dest = dest.replace(/((\/|\\)+)$/, "") + node.path.sep + filename[filename.length - 1];
+            if (exlen > 0) {
+                do {
+                    if (dest.lastIndexOf(exclusions[a]) === dest.length - exclusions[a].length && dest.length - exclusions[a].length > 0) {
+                        expath = exclusions[a].split(node.path.sep);
+                        if (expath[expath.length - 1] === filename[filename.length - 1]) {
+                            return util.complete();
+                        }
+                    }
+                    a += 1;
+                } while (a < exlen);
+            }
             node.fs[func](item, function biddle_copy_stat_statIt(er, stats) {
-                var filename = item.split(node.path.sep),
-                    exlen    = exclusions.length,
-                    expath   = [],
-                    a        = 0;
                 if (er !== null) {
                     return apps.errout({error: er, name: "biddle_copy_stat_statIt"});
                 }
@@ -268,21 +283,6 @@
                         error: "Error in performing stat against " + item,
                         name : "biddle_copy_stat_statIt"
                     });
-                }
-                if (filename.length > 1 && filename[filename.length - 1] === "") {
-                    filename.pop();
-                }
-                dest = dest.replace(/((\/|\\)+)$/, "") + node.path.sep + filename[filename.length - 1];
-                if (exlen > 0) {
-                    do {
-                        if (dest.lastIndexOf(exclusions[a]) === dest.length - exclusions[a].length && dest.length - exclusions[a].length > 0) {
-                            expath = exclusions[a].split(node.path.sep);
-                            if (expath[expath.length - 1] === filename[filename.length - 1]) {
-                                return util.complete();
-                            }
-                        }
-                        a += 1;
-                    } while (a < exlen);
                 }
                 if (stats.isFile() === true) {
                     numb.files += 1;
