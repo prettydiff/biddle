@@ -151,7 +151,7 @@
             },
             exlen = exclusions.length,
             util  = {};
-        util.complete = function biddle_copy_complete() {
+        util.complete = function biddle_copy_complete(item) {
             numb.end += 1;
             if (numb.end === numb.start) {
                 if (data.command === "copy") {
@@ -160,6 +160,7 @@
                 }
                 callback();
             }
+            return item;
         };
         util.eout     = function biddle_copy_eout(er, name) {
             apps
@@ -181,7 +182,7 @@
                                 util.stat(item + node.path.sep + value, dest);
                             });
                         } else {
-                            util.complete();
+                            util.complete(item);
                         }
                     });
             };
@@ -215,7 +216,7 @@
                 node
                     .fs
                     .utimes(dest + node.path.sep + filename[filename.length - 1], prop.atime, prop.mtime, function biddle_copy_file_finish_utimes() {
-                        util.complete();
+                        util.complete(item);
                     });
             });
         };
@@ -246,7 +247,7 @@
                                     if (erl !== null) {
                                         return util.eout(erl, "biddle_copy_link_readlink_stat_makelink");
                                     }
-                                    util.complete();
+                                    util.complete(item);
                                 });
                         });
                 });
@@ -268,7 +269,9 @@
                     if (dest.lastIndexOf(exclusions[a]) === dest.length - exclusions[a].length && dest.length - exclusions[a].length > 0) {
                         expath = exclusions[a].split(node.path.sep);
                         if (expath[expath.length - 1] === filename[filename.length - 1]) {
-                            return util.complete();
+                            return setTimeout(function biddle_copy_stat_statIt_delay() {
+                                util.complete(item);
+                            }, 20);
                         }
                     }
                     a += 1;
@@ -300,7 +303,7 @@
                     numb.link += 1;
                     return util.link(item, dest);
                 }
-                util.complete();
+                util.complete(item);
             });
         };
         util.stat(apps.relToAbs(target, data.cwd), apps.relToAbs(destination, data.cwd));
@@ -1475,13 +1478,12 @@
                             apps.copy(data.input[2], data.abspath + "temp" + node.path.sep + value, varobj.exclusions, function biddle_publish_execution_variantsDir_each_copy() {
                                 var complete = function biddle_publish_execution_variantsDir_each_copy_complete() {
                                         var location = data.abspath + "temp" + node.path.sep + value,
+                                            valname  = (value === "biddletempprimary")
+                                                ? ""
+                                                : value,
                                             finalVar = (vflag === variants.length - 1);
                                         vflag += 1;
-                                        if (value === "biddletempprimary") {
-                                            zippy({final: finalVar, location: location, name: ""});
-                                        } else {
-                                            zippy({final: finalVar, location: location, name: value});
-                                        }
+                                        zippy({final: finalVar, location: location, name: valname});
                                     },
                                     tasks    = function biddle_publish_execution_variantsDir_each_copy_tasks() {
                                         node
