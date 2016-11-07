@@ -259,11 +259,11 @@
                 expath   = [],
                 a        = 0;
             numb.start += 1;
-            if (filename.length > 1 && filename[filename.length - 1] === "") {
-                filename.pop();
-            }
-            dest = dest.replace(/((\/|\\)+)$/, "") + node.path.sep + filename[filename.length - 1];
             if (exlen > 0) {
+                if (filename.length > 1 && filename[filename.length - 1] === "") {
+                    filename.pop();
+                }
+                dest = dest.replace(/((\/|\\)+)$/, "") + node.path.sep + filename[filename.length - 1];
                 do {
                     if (dest.lastIndexOf(exclusions[a]) === dest.length - exclusions[a].length && dest.length - exclusions[a].length > 0) {
                         expath = exclusions[a].split(node.path.sep);
@@ -303,11 +303,6 @@
                 util.complete();
             });
         };
-        exclusions.forEach(function biddle_copy_exclusions(value, index, array) {
-            array[index] = value
-                .replace(/\/|\\/g, node.path.sep)
-                .replace(/((\/|\\)+)$/, "");
-        });
         util.stat(apps.relToAbs(target, data.cwd), apps.relToAbs(destination, data.cwd));
     };
     apps.errout      = function biddle_errout(errData) {
@@ -1466,29 +1461,25 @@
                             var varobj = (value === "")
                                 ? {}
                                 : data.packjson.publication_variants[value];
+                            if (value === "") {
+                                value = "biddletempprimary";
+                            }
                             value = apps.sanitizef(value);
                             if (typeof varobj.exclusions !== "object" || typeof varobj.exclusions.join !== "function") {
                                 varobj.exclusions = [];
-                            } else {
-                                varobj.exclusions.forEach(function biddle_publish_execution_variantsDir_each_exclusions(val, ind, arr) {
-                                    arr[ind] = apps.relToAbs(val.replace(/\\|\//g, node.path.sep), data.input[2]);
-                                });
                             }
                             varobj.exclusions = varobj
                                 .exclusions
                                 .concat(data.ignore);
-                            varobj.exclusions.push(apps.relToAbs(".biddlerc", data.input[2]));
-                            varobj.exclusions.push(data.address.downloads);
-                            varobj.exclusions.push(data.address.applications);
-                            varobj.exclusions.push(data.address.publications);
                             varobj.exclusions.sort();
                             apps.copy(data.input[2], data.abspath + "temp" + node.path.sep + value, varobj.exclusions, function biddle_publish_execution_variantsDir_each_copy() {
                                 var complete = function biddle_publish_execution_variantsDir_each_copy_complete() {
-                                        var location = (value === "")
-                                                ? apps.relToAbs(data.input[2], data.cwd)
-                                                : data.abspath + "temp" + node.path.sep + value,
+                                        var location = data.abspath + "temp" + node.path.sep + value,
                                             finalVar = (vflag === variants.length - 1);
                                         vflag += 1;
+                                        if (value === "biddletempprimary") {
+                                            value = "";
+                                        }
                                         zippy({final: finalVar, location: location, name: value});
                                     },
                                     tasks    = function biddle_publish_execution_variantsDir_each_copy_tasks() {
@@ -4254,6 +4245,7 @@
                                         } else {
                                             data.address[type] = apps.relToAbs(parsed.directories[type], data.abspath) + node.path.sep;
                                         }
+                                        data.ignore.push(parsed.directories[type]);
                                         return;
                                     }
                                 }
@@ -4276,8 +4268,9 @@
                         dirs("publications");
                         if (typeof parsed.exclusions === "object" && parsed.exclusions.length > 0) {
                             parsed.exclusions.forEach(function biddle_init_biddlerc_readFile_exclusions(value) {
-                                data.ignore.push(apps.relToAbs(value.replace(/\\|\//g, node.path.sep), data.input[2]));
+                                data.ignore.push(value.replace(/\\|\//g, node.path.sep));
                             });
+                            data.ignore.push(".biddlerc");
                         }
                         status.biddlerc = true;
                         if (status.installed === true && status.published === true) {
