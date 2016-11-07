@@ -1478,9 +1478,10 @@
                                             finalVar = (vflag === variants.length - 1);
                                         vflag += 1;
                                         if (value === "biddletempprimary") {
-                                            value = "";
+                                            zippy({final: finalVar, location: location, name: ""});
+                                        } else {
+                                            zippy({final: finalVar, location: location, name: value});
                                         }
-                                        zippy({final: finalVar, location: location, name: value});
                                     },
                                     tasks    = function biddle_publish_execution_variantsDir_each_copy_tasks() {
                                         node
