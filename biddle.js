@@ -88,12 +88,15 @@
                 }
                 return "unzip -oq " + data.input[2] + " -d " + data.address.target;
             },
-            zip       : function biddle_cmds_zip(filename) { // Stores all items of the given directory into a zip archive directly without creating a new directory. Locations resolved by a symlink are stored, but the actual symlink is not stored.
+            zip       : function biddle_cmds_zip(filename, file) { // Stores all items of the given directory into a zip archive directly without creating a new directory. Locations resolved by a symlink are stored, but the actual symlink is not stored.
                 if (data.platform === "win32") {
                     return "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compress" +
                             "ion.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('.', '" + filename + "'); }\"";
                 }
-                return "zip -r9yq " + filename + " ." + node.path.sep + " *.[!.]";
+                if (file === "") {
+                    return "zip -r9yq " + filename + " ." + node.path.sep + " *.[!.]";
+                }
+                return "zip -r9yq " + filename + " " + file;
             }
         },
         apps     = {};
@@ -142,15 +145,16 @@
         return arr.join("");
     };
     apps.copy        = function biddle_copy(target, destination, exclusions, callback) {
-        var numb = {
+        var numb  = {
                 dirs : 0,
                 end  : 0,
                 files: 0,
                 links: 0,
                 start: 0
             },
-            util = {};
-        util.complete = function biddle_copy_complete() {
+            exlen = exclusions.length,
+            util  = {};
+        util.complete = function biddle_copy_complete(item) {
             numb.end += 1;
             if (numb.end === numb.start) {
                 if (data.command === "copy") {
@@ -159,10 +163,12 @@
                 }
                 callback();
             }
+            return item;
         };
         util.eout     = function biddle_copy_eout(er, name) {
+            var filename = target.split(node.path.sep);
             apps
-                .rmrecurse(destination + node.path.sep + target[target.length - 1], function biddle_copy_eout_rmrecurse() {
+                .rmrecurse(destination + node.path.sep + filename[filename.length - 1], function biddle_copy_eout_rmrecurse() {
                     apps.errout({error: er, name: name});
                 });
         };
@@ -180,7 +186,7 @@
                                 util.stat(item + node.path.sep + value, dest);
                             });
                         } else {
-                            util.complete();
+                            util.complete(item);
                         }
                     });
             };
@@ -214,7 +220,7 @@
                 node
                     .fs
                     .utimes(dest + node.path.sep + filename[filename.length - 1], prop.atime, prop.mtime, function biddle_copy_file_finish_utimes() {
-                        util.complete();
+                        util.complete(item);
                     });
             });
         };
@@ -245,21 +251,57 @@
                                     if (erl !== null) {
                                         return util.eout(erl, "biddle_copy_link_readlink_stat_makelink");
                                     }
-                                    util.complete();
+                                    util.complete(item);
                                 });
                         });
                 });
         };
         util.stat     = function biddle_copy_stat(item, dest) {
-            var func = (data.command === "copy")
-                ? "lstat"
-                : "stat";
+            var func     = (data.command === "copy")
+                    ? "lstat"
+                    : "stat",
+                filename = item.split(node.path.sep),
+                expath   = [],
+                a        = 0,
+                delay    = function biddle_copy_stat_statIt_delay() {
+                    util.complete(item);
+                };
             numb.start += 1;
+            if (filename.length > 1 && filename[filename.length - 1] === "") {
+                filename.pop();
+            }
+            dest = dest.replace(/((\/|\\)+)$/, "") + node.path.sep + filename[filename.length - 1];
+            if (exlen > 0) {
+                do {
+                    if (dest.lastIndexOf(exclusions[a]) === dest.length - exclusions[a].length && dest.length - exclusions[a].length > 0) {
+                        expath = exclusions[a].split(node.path.sep);
+                        if (expath[expath.length - 1] === filename[filename.length - 1]) {
+                            return setTimeout(delay, 20);
+                        }
+                    }
+                    a += 1;
+                } while (a < exlen);
+            }
             node.fs[func](item, function biddle_copy_stat_statIt(er, stats) {
-                var filename = item.split(node.path.sep),
-                    exlen    = exclusions.length,
-                    expath   = [],
-                    a        = 0;
+                var action = function biddle_copy_stat_statIt_action() {
+                    if (stats.isFile() === true) {
+                        numb.files += 1;
+                        return util.file(item, dest, {
+                            atime: (Date.parse(stats.atime) / 1000),
+                            mode : stats.mode,
+                            mtime: (Date.parse(stats.mtime) / 1000)
+                        });
+                    }
+                    if (stats.isDirectory() === true) {
+                        numb.dirs += 1;
+                        return util.dir(item, dest);
+                    }
+                    if (stats.isSymbolicLink() === true) {
+                        numb.link += 1;
+                        return util.link(item, dest);
+                    }
+                    util.complete(item);
+                };
                 if (er !== null) {
                     return apps.errout({error: er, name: "biddle_copy_stat_statIt"});
                 }
@@ -269,45 +311,17 @@
                         name : "biddle_copy_stat_statIt"
                     });
                 }
-                if (filename.length > 1 && filename[filename.length - 1] === "") {
-                    filename.pop();
-                }
-                dest = dest.replace(/((\/|\\)+)$/, "") + node.path.sep + filename[filename.length - 1];
-                if (exlen > 0) {
-                    do {
-                        if (dest.lastIndexOf(exclusions[a]) === dest.length - exclusions[a].length && dest.length - exclusions[a].length > 0) {
-                            expath = exclusions[a].split(node.path.sep);
-                            if (expath[expath.length - 1] === filename[filename.length - 1]) {
-                                return util.complete();
-                            }
-                        }
-                        a += 1;
-                    } while (a < exlen);
-                }
-                if (stats.isFile() === true) {
-                    numb.files += 1;
-                    return util.file(item, dest, {
-                        atime: (Date.parse(stats.atime) / 1000),
-                        mode : stats.mode,
-                        mtime: (Date.parse(stats.mtime) / 1000)
+                if (numb.start === 1 && stats.isDirectory() === false && data.command === "copy") {
+                    expath = dest.split(node.path.sep);
+                    expath.pop();
+                    apps.makedir(expath.join(node.path.sep), function biddle_copy_stat_statIt_makedir() {
+                        action();
                     });
+                } else {
+                    action();
                 }
-                if (stats.isDirectory() === true) {
-                    numb.dirs += 1;
-                    return util.dir(item, dest);
-                }
-                if (stats.isSymbolicLink() === true) {
-                    numb.link += 1;
-                    return util.link(item, dest);
-                }
-                util.complete();
             });
         };
-        exclusions.forEach(function biddle_copy_exclusions(value, index, array) {
-            array[index] = value
-                .replace(/\/|\\/g, node.path.sep)
-                .replace(/((\/|\\)+)$/, "");
-        });
         util.stat(apps.relToAbs(target, data.cwd), apps.relToAbs(destination, data.cwd));
     };
     apps.errout      = function biddle_errout(errData) {
@@ -1466,30 +1480,26 @@
                             var varobj = (value === "")
                                 ? {}
                                 : data.packjson.publication_variants[value];
+                            if (value === "") {
+                                value = "biddletempprimary";
+                            }
                             value = apps.sanitizef(value);
                             if (typeof varobj.exclusions !== "object" || typeof varobj.exclusions.join !== "function") {
                                 varobj.exclusions = [];
-                            } else {
-                                varobj.exclusions.forEach(function biddle_publish_execution_variantsDir_each_exclusions(val, ind, arr) {
-                                    arr[ind] = apps.relToAbs(val.replace(/\\|\//g, node.path.sep), data.input[2]);
-                                });
                             }
                             varobj.exclusions = varobj
                                 .exclusions
                                 .concat(data.ignore);
-                            varobj.exclusions.push(apps.relToAbs(".biddlerc", data.input[2]));
-                            varobj.exclusions.push(data.address.downloads);
-                            varobj.exclusions.push(data.address.applications);
-                            varobj.exclusions.push(data.address.publications);
                             varobj.exclusions.sort();
                             apps.copy(data.input[2], data.abspath + "temp" + node.path.sep + value, varobj.exclusions, function biddle_publish_execution_variantsDir_each_copy() {
                                 var complete = function biddle_publish_execution_variantsDir_each_copy_complete() {
-                                        var location = (value === "")
-                                                ? apps.relToAbs(data.input[2], data.cwd)
-                                                : data.abspath + "temp" + node.path.sep + value,
+                                        var location = data.abspath + "temp" + node.path.sep + value + node.path.sep + data.packjson.name,
+                                            valname  = (value === "biddletempprimary")
+                                                ? ""
+                                                : value,
                                             finalVar = (vflag === variants.length - 1);
                                         vflag += 1;
-                                        zippy({final: finalVar, location: location, name: value});
+                                        zippy({final: finalVar, location: location, name: valname});
                                     },
                                     tasks    = function biddle_publish_execution_variantsDir_each_copy_tasks() {
                                         node
@@ -3999,8 +4009,8 @@
             } else {
                 zipfile = data.address.target + data.packjson.name + variantName + "_" + apps.sanitizef(data.packjson.version) + ".zip";
             }
-            cmd = cmds.zip(zipfile);
             if (data.command === "publish") {
+                cmd = cmds.zip(zipfile, "");
                 apps.makedir(data.address.target, function biddle_zip_makepubdir() {
                     zipdir = zippack.location;
                     if (data.latestVersion === true) {
@@ -4011,11 +4021,26 @@
                     childfunc(zipfile, cmd, true);
                 });
             } else {
-                apps
-                    .makedir(data.input[2], function biddle_zip_makedir() {
-                        zipdir = data.input[2];
+                node.fs.stat(data.input[2], function biddle_zip_stat(ers, stats) {
+                    if (ers !== null) {
+                        return apps.errout({error: ers, name: "biddle_zip_stat"});
+                    }
+                    if (stats.isDirectory() === true) {
+                        cmd = cmds.zip(zipfile, "");
+                        apps
+                            .makedir(data.input[2], function biddle_zip_stat_makedir() {
+                                zipdir = data.input[2];
+                                childfunc(zipfile, cmd, false);
+                            });
+                    } else {
+                        zipdir = (function biddle_zip_stat_zipdir() {
+                            var dirs = data.input[2].split(node.path.sep);
+                            cmd = cmds.zip(zipfile, dirs.pop());
+                            return apps.relToAbs(dirs.join(node.path.sep), data.cwd);
+                        }());
                         childfunc(zipfile, cmd, false);
-                    });
+                    }
+                });
             }
         }
         if (data.command === "install" || data.command === "unzip") {
@@ -4254,6 +4279,7 @@
                                         } else {
                                             data.address[type] = apps.relToAbs(parsed.directories[type], data.abspath) + node.path.sep;
                                         }
+                                        data.ignore.push(parsed.directories[type]);
                                         return;
                                     }
                                 }
@@ -4276,8 +4302,9 @@
                         dirs("publications");
                         if (typeof parsed.exclusions === "object" && parsed.exclusions.length > 0) {
                             parsed.exclusions.forEach(function biddle_init_biddlerc_readFile_exclusions(value) {
-                                data.ignore.push(apps.relToAbs(value.replace(/\\|\//g, node.path.sep), data.input[2]));
+                                data.ignore.push(value.replace(/\\|\//g, node.path.sep));
                             });
+                            data.ignore.push(".biddlerc");
                         }
                         status.biddlerc = true;
                         if (status.installed === true && status.published === true) {
