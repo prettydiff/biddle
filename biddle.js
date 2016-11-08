@@ -88,12 +88,15 @@
                 }
                 return "unzip -oq " + data.input[2] + " -d " + data.address.target;
             },
-            zip       : function biddle_cmds_zip(filename) { // Stores all items of the given directory into a zip archive directly without creating a new directory. Locations resolved by a symlink are stored, but the actual symlink is not stored.
+            zip       : function biddle_cmds_zip(filename, file) { // Stores all items of the given directory into a zip archive directly without creating a new directory. Locations resolved by a symlink are stored, but the actual symlink is not stored.
                 if (data.platform === "win32") {
                     return "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compress" +
                             "ion.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('.', '" + filename + "'); }\"";
                 }
-                return "zip -r9yq " + filename + " ." + node.path.sep + " *.[!.]";
+                if (file === "") {
+                    return "zip -r9yq " + filename + " ." + node.path.sep + " *.[!.]";
+                }
+                return "zip -r9yq " + filename + " " + file;
             }
         },
         apps     = {};
@@ -163,8 +166,9 @@
             return item;
         };
         util.eout     = function biddle_copy_eout(er, name) {
+            var filename = target.split(node.path.sep);
             apps
-                .rmrecurse(destination + node.path.sep + target[target.length - 1], function biddle_copy_eout_rmrecurse() {
+                .rmrecurse(destination + node.path.sep + filename[filename.length - 1], function biddle_copy_eout_rmrecurse() {
                     apps.errout({error: er, name: name});
                 });
         };
@@ -258,26 +262,46 @@
                     : "stat",
                 filename = item.split(node.path.sep),
                 expath   = [],
-                a        = 0;
+                a        = 0,
+                delay    = function biddle_copy_stat_statIt_delay() {
+                    util.complete(item);
+                };
             numb.start += 1;
+            if (filename.length > 1 && filename[filename.length - 1] === "") {
+                filename.pop();
+            }
+            dest = dest.replace(/((\/|\\)+)$/, "") + node.path.sep + filename[filename.length - 1];
             if (exlen > 0) {
-                if (filename.length > 1 && filename[filename.length - 1] === "") {
-                    filename.pop();
-                }
-                dest = dest.replace(/((\/|\\)+)$/, "") + node.path.sep + filename[filename.length - 1];
                 do {
                     if (dest.lastIndexOf(exclusions[a]) === dest.length - exclusions[a].length && dest.length - exclusions[a].length > 0) {
                         expath = exclusions[a].split(node.path.sep);
                         if (expath[expath.length - 1] === filename[filename.length - 1]) {
-                            return setTimeout(function biddle_copy_stat_statIt_delay() {
-                                util.complete(item);
-                            }, 20);
+                            return setTimeout(delay, 20);
                         }
                     }
                     a += 1;
                 } while (a < exlen);
             }
             node.fs[func](item, function biddle_copy_stat_statIt(er, stats) {
+                var action = function biddle_copy_stat_statIt_action() {
+                    if (stats.isFile() === true) {
+                        numb.files += 1;
+                        return util.file(item, dest, {
+                            atime: (Date.parse(stats.atime) / 1000),
+                            mode : stats.mode,
+                            mtime: (Date.parse(stats.mtime) / 1000)
+                        });
+                    }
+                    if (stats.isDirectory() === true) {
+                        numb.dirs += 1;
+                        return util.dir(item, dest);
+                    }
+                    if (stats.isSymbolicLink() === true) {
+                        numb.link += 1;
+                        return util.link(item, dest);
+                    }
+                    util.complete(item);
+                };
                 if (er !== null) {
                     return apps.errout({error: er, name: "biddle_copy_stat_statIt"});
                 }
@@ -287,23 +311,15 @@
                         name : "biddle_copy_stat_statIt"
                     });
                 }
-                if (stats.isFile() === true) {
-                    numb.files += 1;
-                    return util.file(item, dest, {
-                        atime: (Date.parse(stats.atime) / 1000),
-                        mode : stats.mode,
-                        mtime: (Date.parse(stats.mtime) / 1000)
+                if (numb.start === 1 && stats.isDirectory() === false && data.command === "copy") {
+                    expath = dest.split(node.path.sep);
+                    expath.pop();
+                    apps.makedir(expath.join(node.path.sep), function biddle_copy_stat_statIt_makedir() {
+                        action();
                     });
+                } else {
+                    action();
                 }
-                if (stats.isDirectory() === true) {
-                    numb.dirs += 1;
-                    return util.dir(item, dest);
-                }
-                if (stats.isSymbolicLink() === true) {
-                    numb.link += 1;
-                    return util.link(item, dest);
-                }
-                util.complete(item);
             });
         };
         util.stat(apps.relToAbs(target, data.cwd), apps.relToAbs(destination, data.cwd));
@@ -1477,7 +1493,7 @@
                             varobj.exclusions.sort();
                             apps.copy(data.input[2], data.abspath + "temp" + node.path.sep + value, varobj.exclusions, function biddle_publish_execution_variantsDir_each_copy() {
                                 var complete = function biddle_publish_execution_variantsDir_each_copy_complete() {
-                                        var location = data.abspath + "temp" + node.path.sep + value,
+                                        var location = data.abspath + "temp" + node.path.sep + value + node.path.sep + data.packjson.name,
                                             valname  = (value === "biddletempprimary")
                                                 ? ""
                                                 : value,
@@ -3993,8 +4009,8 @@
             } else {
                 zipfile = data.address.target + data.packjson.name + variantName + "_" + apps.sanitizef(data.packjson.version) + ".zip";
             }
-            cmd = cmds.zip(zipfile);
             if (data.command === "publish") {
+                cmd = cmds.zip(zipfile, "");
                 apps.makedir(data.address.target, function biddle_zip_makepubdir() {
                     zipdir = zippack.location;
                     if (data.latestVersion === true) {
@@ -4005,11 +4021,26 @@
                     childfunc(zipfile, cmd, true);
                 });
             } else {
-                apps
-                    .makedir(data.input[2], function biddle_zip_makedir() {
-                        zipdir = data.input[2];
+                node.fs.stat(data.input[2], function biddle_zip_stat(ers, stats) {
+                    if (ers !== null) {
+                        return apps.errout({error: ers, name: "biddle_zip_stat"});
+                    }
+                    if (stats.isDirectory() === true) {
+                        cmd = cmds.zip(zipfile, "");
+                        apps
+                            .makedir(data.input[2], function biddle_zip_stat_makedir() {
+                                zipdir = data.input[2];
+                                childfunc(zipfile, cmd, false);
+                            });
+                    } else {
+                        zipdir = (function biddle_zip_stat_zipdir() {
+                            var dirs = data.input[2].split(node.path.sep);
+                            cmd = cmds.zip(zipfile, dirs.pop());
+                            return apps.relToAbs(dirs.join(node.path.sep), data.cwd);
+                        }());
                         childfunc(zipfile, cmd, false);
-                    });
+                    }
+                });
             }
         }
         if (data.command === "install" || data.command === "unzip") {
