@@ -5,7 +5,7 @@
 [MIT](https://opensource.org/licenses/MIT)
 
 ## Version
-0.1.11 [![Build Status Image](https://semaphoreci.com/api/v1/prettydiff/biddle/branches/master/badge.svg)](https://semaphoreci.com/prettydiff/biddle) [![AppVeyor Build](https://ci.appveyor.com/api/projects/status/github/prettydiff/biddle?branch=master&svg=true)](https://ci.appveyor.com/project/prettydiff/biddle)
+0.1.12 [![Build Status Image](https://semaphoreci.com/api/v1/prettydiff/biddle/branches/master/badge.svg)](https://semaphoreci.com/prettydiff/biddle) [![AppVeyor Build](https://ci.appveyor.com/api/projects/status/github/prettydiff/biddle?branch=master&svg=true)](https://ci.appveyor.com/project/prettydiff/biddle)
 
 ## About
 This application is a cross-OS solution to creating zip files for distribution and fetching files via HTTP(S).  The project's goal is to provide a universal application distribution utility that is language agnostic, operating system independent, and platform independent.  The only additional requirement for distributing application packages is online storage on a web server.  This application provides all the utilities to retrieve, bundle, and unpackage applications.
