@@ -5,7 +5,7 @@
 [MIT](https://opensource.org/licenses/MIT)
 
 ## Version
-0.1.12 [![Build Status Image](https://semaphoreci.com/api/v1/prettydiff/biddle/branches/master/badge.svg)](https://semaphoreci.com/prettydiff/biddle) [![AppVeyor Build](https://ci.appveyor.com/api/projects/status/github/prettydiff/biddle?branch=master&svg=true)](https://ci.appveyor.com/project/prettydiff/biddle)
+0.1.13 [![Build Status Image](https://semaphoreci.com/api/v1/prettydiff/biddle/branches/master/badge.svg)](https://semaphoreci.com/prettydiff/biddle) [![AppVeyor Build](https://ci.appveyor.com/api/projects/status/github/prettydiff/biddle?branch=master&svg=true)](https://ci.appveyor.com/project/prettydiff/biddle)
 
 ## About
 This application is a cross-OS solution to creating zip files for distribution and fetching files via HTTP(S).  The project's goal is to provide a universal application distribution utility that is language agnostic, operating system independent, and platform independent.  The only additional requirement for distributing application packages is online storage on a web server.  This application provides all the utilities to retrieve, bundle, and unpackage applications.
@@ -18,8 +18,8 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
 * *management* - There is no dependency hell here.  Dependency management will not be automated, but a means to manage and review the status of all installed/published packages is provided.
 * *freedom* - biddle will work everywhere Node.js runs.  It can be used with any application written in any language whether binary or text.
 
-## Beta Release
-Project is in **beta** status.  This project is stable and ready for examination, but not ready for production or commercial use.
+## Beta Status
+Project is in **beta** status.  This project is stable and ready for examination, but not ready for production or commercial use.  As of version 0.1.13 biddle is used in production for [Pretty Diff](https://github.com/prettydiff/prettydiff/issues/291#issuecomment-259951141).
 
 ## Documentation
 * [Getting Started](documentation/gettingstarted.md)

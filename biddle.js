@@ -1534,168 +1534,222 @@
             varcount  = 0,
             publoc    = "",
             indexfile = function biddle_publish_indexfile() {
-                var rows = [],
+                var rows   = [],
                     file   = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><!DOCTYPE html PUBLIC \"-//W3C//DTD X" +
                             "HTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\"><html xml:lang=" +
-                            "\"en\" xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>!!app name!! - Publications" +
-                            "</title> <meta content=\"application/xhtml+xml;charset=UTF-8\" http-equiv=" +
+                            "\"en\" xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>!!app name!! - Public" +
+                            "ations</title> <meta content=\"application/xhtml+xml;charset=UTF-8\" http-equiv=" +
                             "\"Content-Type\"/> <meta content=\"text/css\" http-equiv=\"content-style-type\"/" +
                             "> <meta content=\"application/javascript\" http-equiv=\"content-script-type\"/> " +
                             "<meta content=\"Global\" name=\"distribution\"/> <meta content=\"width=device-wi" +
                             "dth, initial-scale=1\" name=\"viewport\"/> <meta content=\"index, follow\" name=" +
                             "\"robots\"/> <style type=\"text/css\">body{background:#e8ddd8;font-family:\"Cent" +
                             "ury Gothic\",\"Trebuchet MS\";font-size:10px;margin:0;padding:1em}table{border-c" +
-                            "ollapse:collapse}td,th{border:#333 solid 0.09em;font-" +
-                            "size:1.6em;padding:0.5em 1em}h1{background:#fff8e8;border:0.05em solid #321;display:" +
-                            "inline-block;margin:0;padding:0.2em}p{font-size:1.6em}tfoot td{font-size:1.2em;t" +
-                            "ext-align:right}tfoot,thead{background:#e8e8e8}thead th{cursor:pointer;height:1.5em;text-alig" +
-                            "n:center;vertical-align:baseline}tbody tr:hover{background:#dfd}tr.odd{background:#e8e8ff}tr.even{backgr" +
-                            "ound:#fff}.sort{float:left;margin:0 0.5em 0 -0.5em}td[data-size]{text-align:right}</style></head><body><h1>!!app name!! - Publications<" +
-                            "/h1><p>Click on table headings to sort.</p><table><thead><tr><th><span aria-desc" +
-                            "ribedby=\"aria-arrow\" class=\"sort\" style=\"visibility:hidden;\">&#x25bc;</spa" +
-                            "n> Version</th><th><span aria-describedby=\"aria-arrow\" class=\"sort\" style=\"" +
-                            "visibility:hidden;\">&#x25bc;</span> Date</th><th><span aria-describedby=\"aria-" +
-                            "arrow\" class=\"sort\" style=\"visibility:hidden;\">&#x25bc;</span> Size</th><th" +
-                            "><span aria-describedby=\"aria-arrow\" class=\"sort\" style=\"visibility:hidden;" +
+                            "ollapse:collapse}td,th{border:#333 solid 0.09em;font-size:1.6em;padding:0.5em 1e" +
+                            "m}h1{background:#fff8e8;border:0.05em solid #321;display:inline-block;margin:0;p" +
+                            "adding:0.2em}p{font-size:1.6em}tfoot td{font-size:1.2em;text-align:right}tfoot,t" +
+                            "head{background:#e8e8e8}thead th{cursor:pointer;height:1.5em;text-align:center;v" +
+                            "ertical-align:baseline}tbody tr:hover{background:#dfd}tr.odd{background:#e8e8ff}" +
+                            "tr.even{background:#fff}.sort{float:left;margin:0 0.5em 0 -0.5em;width:1em}td[da" +
+                            "ta-size]{text-align:right}</style></head><body><h1>!!app name!! - Publications</" +
+                            "h1><p>Click on table headings to sort.</p><table><thead><tr><th><span aria-descr" +
+                            "ibedby=\"aria-arrow\" class=\"sort\" style=\"visibility:hidden;\">&#x25bc;</span" +
+                            "> Version</th><th><span aria-describedby=\"aria-arrow\" class=\"sort\" style=\"v" +
+                            "isibility:hidden;\">&#x25bc;</span> Date</th><th><span aria-describedby=\"aria-a" +
+                            "rrow\" class=\"sort\" style=\"visibility:hidden;\">&#x25bc;</span> Size</th><th>" +
+                            "<span aria-describedby=\"aria-arrow\" class=\"sort\" style=\"visibility:hidden;" +
                             "\">&#x25bc;</span> Variant Name</th><th><span aria-describedby=\"aria-arrow\" cl" +
                             "ass=\"sort\" style=\"visibility:hidden;\">&#x25bc;</span> Zip File</th></tr></th" +
-                            "ead><tbody>!!row!!</tbody><tfoot><tr><td colspan=\"5\">Published with <a href=" +
-                            "\"https://github.com/prettydiff/biddle\">biddle</a>.</td></tr></tfoot></table><p" +
-                            " aria-hidden=\"true\" id=\"aria-arrow\" style=\"display:none;\"></p><script src=" +
-                            "\"biddlesort.js\" type=\"application/javascript\"></script></body></html>",
-                    script = "(function(){var headings=document.getElementsByTagName(\"thead\")[0].getElementsByTagName(\"th\"),hlen=headings.length,a=0,start=1,sorter=function(heading){var b=0,ind=0,len=headings.length,span=\"\",rows=[],rowlist=[],tbody=document.getElementsByTagName(\"tbody\")[0],ascend=false,rowsort=function(a,b){var vala=\"\",valb=\"\";if(ind===1){vala=Number(a.getElementsByTagName(\"td\")[1].getAttribute(\"data-date\"));valb=Number(b.getElementsByTagName(\"td\")[1].getAttribute(\"data-date\"))}else if(ind===2){vala=Number(a.getElementsByTagName(\"td\")[2].getAttribute(\"data-size\"));valb=Number(b.getElementsByTagName(\"td\")[2].getAttribute(\"data-size\"))}else{vala=a.getElementsByTagName(\"td\")[ind].innerHTML;valb=b.getElementsByTagName(\"td\")[ind].innerHTML}if(ascend===true){if(vala>valb){return 1}else{return -1}}else{if(vala>valb){return -1}else{return 1}}};do{span=headings[b].getElementsByTagName(\"span\")[0];if(heading===headings[b]){ind=b;if(span.style.visibility===\"visible\"){if(span.innerHTML===\"▲\"){span.innerHTML=\"▼\"}else{span.innerHTML=\"▲\"}}else{span.style.visibility=\"visible\"}if(span.innerHTML===\"▲\"){ascend=true;document.getElementById(\"aria-arrow\").innerHTML=\"Sorting by \"+headings[b].lastChild.textContent+\" ascending\"}else{ascend=false;document.getElementById(\"aria-arrow\").innerHTML=\"Sorting by \"+headings[b].lastChild.textContent+\" descending\"}}else{span.style.visibility=\"hidden\"}b+=1}while(b<len);rowlist=[];rows=tbody.getElementsByTagName(\"tr\");len=rows.length;b=0;do{rowlist.push(rows[b]);b+=1}while(b<len);rowlist.sort(rowsort);b=0;do{if(b%2===0){rowlist[b].setAttribute(\"class\",\"even\")}else{rowlist[b].setAttribute(\"class\",\"odd\")}tbody.removeChild(rowlist[b]);tbody.appendChild(rowlist[b]);b+=1}while(b<len)};do{headings[a].onclick=function(e){sorter(this);e.preventDefault();return false;};a+=1}while(a<hlen);document.getElementsByTagName(\"thead\")[0].getElementsByTagName(\"th\")[start].getElementsByTagName(\"span\")[0].innerHTML=\"▲\";document.getElementsByTagName(\"thead\")[0].getElementsByTagName(\"th\")[start].getElementsByTagName(\"span\")[0].style.visibility=\"visible\";sorter(document.getElementsByTagName(\"thead\")[0].getElementsByTagName(\"th\")[start])}());";
+                            "ead><tbody>!!row!!</tbody><tfoot><tr><td colspan=\"5\">Published with <a href=\"" +
+                            "https://github.com/prettydiff/biddle\">biddle</a>.</td></tr></tfoot></table><p a" +
+                            "ria-hidden=\"true\" id=\"aria-arrow\" style=\"display:none;\"></p><script src=\"" +
+                            "biddlesort.js\" type=\"application/javascript\"></script></body></html>",
+                    script = "(function(){var headings=document.getElementsByTagName(\"thead\")[0].getElements" +
+                            "ByTagName(\"th\"),hlen=headings.length,a=0,start=1,sorter=function(heading){var " +
+                            "b=0,ind=0,len=headings.length,span=\"\",rows=[],rowlist=[],tbody=document.getEle" +
+                            "mentsByTagName(\"tbody\")[0],ascend=false,rowsort=function(a,b){var vala=\"\",va" +
+                            "lb=\"\";if(ind===1){vala=Number(a.getElementsByTagName(\"td\")[1].getAttribute(" +
+                            "\"data-date\"));valb=Number(b.getElementsByTagName(\"td\")[1].getAttribute(\"dat" +
+                            "a-date\"))}else if(ind===2){vala=Number(a.getElementsByTagName(\"td\")[2].getAtt" +
+                            "ribute(\"data-size\"));valb=Number(b.getElementsByTagName(\"td\")[2].getAttribut" +
+                            "e(\"data-size\"))}else{vala=a.getElementsByTagName(\"td\")[ind].innerHTML.toLowe" +
+                            "rCase();valb=b.getElementsByTagName(\"td\")[ind].innerHTML.toLowerCase()}if(asce" +
+                            "nd===true){if(vala>valb){return 1}else{return -1}}else{if(vala>valb){return -1}e" +
+                            "lse{return 1}}};do{span=headings[b].getElementsByTagName(\"span\")[0];if(heading" +
+                            "===headings[b]){ind=b;if(span.style.visibility===\"visible\"){if(span.innerHTML=" +
+                            "==\"▲\"){span.innerHTML=\"▼\"}else{span.innerHTML=\"▲\"}}else{span.style.visibil" +
+                            "ity=\"visible\"}if(span.innerHTML===\"▲\"){ascend=true;document.getElementById(" +
+                            "\"aria-arrow\").innerHTML=\"Sorting by \"+headings[b].lastChild.textContent+\" a" +
+                            "scending\"}else{ascend=false;document.getElementById(\"aria-arrow\").innerHTML=" +
+                            "\"Sorting by \"+headings[b].lastChild.textContent+\" descending\"}}else{span.sty" +
+                            "le.visibility=\"hidden\"}b+=1}while(b<len);rowlist=[];rows=tbody.getElementsByTa" +
+                            "gName(\"tr\");len=rows.length;b=0;do{rowlist.push(rows[b]);b+=1}while(b<len);row" +
+                            "list.sort(rowsort);b=0;do{if(b%2===0){rowlist[b].setAttribute(\"class\",\"even\"" +
+                            ")}else{rowlist[b].setAttribute(\"class\",\"odd\")}tbody.removeChild(rowlist[b]);" +
+                            "tbody.appendChild(rowlist[b]);b+=1}while(b<len)};do{headings[a].onclick=function" +
+                            "(e){sorter(this);e.preventDefault();return false;};a+=1}while(a<hlen);document.g" +
+                            "etElementsByTagName(\"thead\")[0].getElementsByTagName(\"th\")[start].getElement" +
+                            "sByTagName(\"span\")[0].innerHTML=\"▲\";document.getElementsByTagName(\"thead\")" +
+                            "[0].getElementsByTagName(\"th\")[start].getElementsByTagName(\"span\")[0].style." +
+                            "visibility=\"visible\";sorter(document.getElementsByTagName(\"thead\")[0].getEle" +
+                            "mentsByTagName(\"th\")[start])}());";
                 file = file.replace(/\!\!app\u0020name\!\!/g, data.packjson.name);
                 if (typeof data.packjson.author === "string") {
                     file = file.replace("</title> <", "</title> <meta content=\"" + data.packjson.author.replace(/\s+/g, " ").replace(/"/g, "") + "\" name=\"author\"/> <");
                 }
-                filedata.forEach(function biddle_publish_indexfile_filedata(val) {
-                    var build = [],
-                        monthval = val.date.slice(4, 6),
-                        month = {
-                            "01" : "January",
-                            "02" : "February",
-                            "03" : "March",
-                            "04" : "April",
-                            "05" : "May",
-                            "06" : "June",
-                            "07" : "July",
-                            "08" : "August",
-                            "09" : "September",
-                            "10" : "October",
-                            "11" : "November",
-                            "12" : "December"
-                        },
-                        varname = (val.variant === "")
-                            ? "Full Application"
-                            : val.variant;
-                    build.push("<tr><td>");
-                    build.push(val.version);
-                    build.push("</td><td data-date=\"");
-                    build.push(val.date);
-                    build.push("\">");
-                    build.push(val.date.slice(6));
-                    build.push("\u0020");
-                    build.push(month[monthval]);
-                    build.push("\u0020");
-                    build.push(val.date.slice(0, 4));
-                    build.push("</td><td data-size=\"");
-                    build.push(val.size);
-                    build.push("\">");
-                    build.push(apps.commas(Number(val.size)));
-                    build.push("</td><td>");
-                    build.push(varname);
-                    build.push("</td><td><a href=\"");
-                    build.push(val.filename);
-                    build.push("\">");
-                    build.push(val.filename);
-                    build.push("</a></td></tr>");
-                    rows.push(build.join(""));
-                });
+                filedata
+                    .forEach(function biddle_publish_indexfile_filedata(val) {
+                        var build    = [],
+                            monthval = val
+                                .date
+                                .slice(4, 6),
+                            month    = {
+                                "01": "January",
+                                "02": "February",
+                                "03": "March",
+                                "04": "April",
+                                "05": "May",
+                                "06": "June",
+                                "07": "July",
+                                "08": "August",
+                                "09": "September",
+                                "10": "October",
+                                "11": "November",
+                                "12": "December"
+                            },
+                            varname  = (val.variant === "")
+                                ? "Full Application"
+                                : val.variant;
+                        build.push("<tr><td>");
+                        build.push(val.version);
+                        build.push("</td><td data-date=\"");
+                        build.push(val.date);
+                        build.push("\">");
+                        build.push(val.date.slice(6));
+                        build.push("\u0020");
+                        build.push(month[monthval]);
+                        build.push("\u0020");
+                        build.push(val.date.slice(0, 4));
+                        build.push("</td><td data-size=\"");
+                        build.push(val.size);
+                        build.push("\">");
+                        build.push(apps.commas(Number(val.size)));
+                        build.push("</td><td>");
+                        build.push(varname);
+                        build.push("</td><td><a href=\"");
+                        build.push(val.filename);
+                        build.push("\">");
+                        build.push(val.filename);
+                        build.push("</a></td></tr>");
+                        rows.push(build.join(""));
+                    });
                 file = file.replace(/\!\!row\!\!/, rows.join(""));
-                apps
-                    .writeFile(file, publoc + "index.xhtml",
-                    function biddle_publish_indexfile_readIndex_index_writeXhtml() {
-                        return true;
-                    });
-                apps
-                    .writeFile(script, publoc + "biddlesort.js",
-                    function biddle_publish_indexfile_readIndex_writeScript() {
-                        return true;
-                    });
+                apps.writeFile(file, publoc + "index.xhtml",
+                function biddle_publish_indexfile_readIndex_index_writeXhtml() {
+                    return true;
+                });
+                apps.writeFile(script, publoc + "biddlesort.js",
+                function biddle_publish_indexfile_readIndex_writeScript() {
+                    return true;
+                });
             },
             zippy     = function biddle_publish_zippy(vardata) {
                 apps
                     .zip(function biddle_publish_zippy_zip(zipfilename, writejson) {
-                        node.fs.stat(zipfilename, function biddle_publish_zippy_zip_stat(erstat, stats) {
-                            var filename = zipfilename.split(node.path.sep).pop(),
-                                variants = filename.replace(data.packjson.name, "").split("_"),
-                                variant = "",
-                                sdate = new Date(),
-                                year = String(sdate.getUTCFullYear()),
-                                month = String(sdate.getMonth() + 1),
-                                day = String(sdate.getDate());
-                            if (erstat !== null) {
-                                return apps.errout({error: erstat, name: "biddle_publish_zippy_zip_stat"});
-                            }
-                            if (typeof stats !== "object") {
-                                return apps.errout({error: "stats is not an object, from node.fs.stat", name: "biddle_publish_zippy_zip_stat"});
-                            }
-                            if (month.length < 2) {
-                                month = "0" + month;
-                            }
-                            if (day.length < 2) {
-                                day = "0" + day;
-                            }
-                            if (variants.length > 2) {
-                                variant = variants[1];
-                            }
-                            filedata.push({
-                                version: data.packjson.version,
-                                date: year + month + day,
-                                size: stats.size,
-                                variant: variant,
-                                filename: filename
-                            });
-                            varcount += 1;
-                            if (varcount === varlen) {
-                                node.fs.readFile(publoc + "filedata.json", function biddle_publish_zippy_zip_stat_readfiledata(erd, catalogue) {
-                                    var parsed = {};
-                                    if (erd !== null && erd !== "") {
-                                        if (erd.toString().indexOf("no such file or directory") > 0) {
-                                            apps.writeFile(JSON.stringify({filedata: filedata}), publoc + "filedata.json", function biddle_publish_zippy_zip_stat_readfiledata_writeNew() {
+                        node
+                            .fs
+                            .stat(zipfilename, function biddle_publish_zippy_zip_stat(erstat, stats) {
+                                var filename = zipfilename
+                                        .split(node.path.sep)
+                                        .pop(),
+                                    variants = filename
+                                        .replace(data.packjson.name, "")
+                                        .split("_"),
+                                    variant  = "",
+                                    sdate    = new Date(),
+                                    year     = String(sdate.getUTCFullYear()),
+                                    month    = String(sdate.getMonth() + 1),
+                                    day      = String(sdate.getDate());
+                                if (erstat !== null) {
+                                    return apps.errout({
+                                        error: erstat,
+                                        name : "biddle_publish_zippy_zip_stat"
+                                    });
+                                }
+                                if (typeof stats !== "object") {
+                                    return apps.errout({
+                                        error: "stats is not an object, from node.fs.stat",
+                                        name : "biddle_publish_zippy_zip_stat"
+                                    });
+                                }
+                                if (month.length < 2) {
+                                    month = "0" + month;
+                                }
+                                if (day.length < 2) {
+                                    day = "0" + day;
+                                }
+                                if (variants.length > 2) {
+                                    variant = variants[1];
+                                }
+                                filedata.push({
+                                    date    : year + month + day,
+                                    filename: filename,
+                                    size    : stats.size,
+                                    variant : variant,
+                                    version : data.packjson.version
+                                });
+                                varcount += 1;
+                                if (varcount === varlen) {
+                                    node
+                                        .fs
+                                        .readFile(publoc + "filedata.json",
+                                        function biddle_publish_zippy_zip_stat_readfiledata(erd, catalogue) {
+                                            var parsed = {};
+                                            if (erd !== null && erd !== "") {
+                                                if (erd.toString().indexOf("no such file or directory") > 0) {
+                                                    apps
+                                                        .writeFile(JSON.stringify({
+                                                            filedata: filedata
+                                                        }), publoc + "filedata.json",
+                                                        function biddle_publish_zippy_zip_stat_readfiledata_writeNew() {
+                                                            return true;
+                                                        });
+                                                    return indexfile();
+                                                }
+                                                return apps.errout({
+                                                    error: erd,
+                                                    name : "biddle_publish_zippy_zip_stat_readfiledata"
+                                                });
+                                            }
+                                            parsed   = JSON.parse(catalogue);
+                                            filedata = filedata.concat(parsed.filedata);
+                                            apps.writeFile(JSON.stringify({
+                                                filedata: filedata
+                                            }), publoc + "filedata.json",
+                                            function biddle_publish_zippy_zip_stat_readfiledata_write() {
                                                 return true;
                                             });
-                                            return indexfile();
-                                        }
-                                        return apps.errout({error: erd, name: "biddle_publish_zippy_zip_stat_readfiledata"});
-                                    }
-                                    parsed = JSON.parse(catalogue);
-                                    filedata = filedata.concat(parsed.filedata);
-                                    apps.writeFile(JSON.stringify({filedata: filedata}), publoc + "filedata.json", function biddle_publish_zippy_zip_stat_readfiledata_write() {
-                                        return true;
-                                    });
-                                    indexfile();
-                                });
-                            }
-                        });
-                        apps
-                            .hashCmd(zipfilename, "hashFile", function biddle_publish_zippy_zip_hash() {
-                                apps
-                                    .writeFile(data.hashFile, zipfilename.replace(".zip", ".hash"), function biddle_publish_zippy_zip_hash_writehash() {
-                                        return true;
-                                    });
-                                if (writejson === true && vardata.final === true) {
-                                    apps
-                                        .writeFile(JSON.stringify(data.published), data.abspath + "published.json",
-                                        function biddle_publish_zippy_zip_hash_writeJSON() {
-                                            apps
-                                                .rmrecurse(data.abspath + "temp",
-                                                function biddle_publish_zippy_zip_hash_writeJSON_removeTemp() {
-                                                    return true;
-                                                });
+                                            indexfile();
                                         });
                                 }
                             });
+                        apps.hashCmd(zipfilename, "hashFile", function biddle_publish_zippy_zip_hash() {
+                            apps
+                                .writeFile(data.hashFile, zipfilename.replace(".zip", ".hash"), function biddle_publish_zippy_zip_hash_writehash() {
+                                    return true;
+                                });
+                            if (writejson === true && vardata.final === true) {
+                                apps
+                                    .writeFile(JSON.stringify(data.published), data.abspath + "published.json",
+                                    function biddle_publish_zippy_zip_hash_writeJSON() {
+                                        apps
+                                            .rmrecurse(data.abspath + "temp",
+                                            function biddle_publish_zippy_zip_hash_writeJSON_removeTemp() {
+                                                return true;
+                                            });
+                                    });
+                            }
+                        });
                     }, vardata);
             },
             execution = function biddle_publish_execution() {
@@ -1781,7 +1835,7 @@
                 apps
                     .makedir(data.address.target, function biddle_publish_preexec_makedir() {
                         if (data.latestVersion === true) {
-                            varlen = varlen * 2;
+                            varlen                                    = varlen * 2;
                             data.published[data.packjson.name].latest = data.packjson.version;
                             apps.writeFile(data.packjson.version, data.address.target + "latest.txt",
                             function biddle_zip_makedir_latestTXT() {
@@ -3863,19 +3917,23 @@
                 .child(childcmd + "publish " + data.abspath + "test" + node.path.sep + "biddletesta childtest", {
                     cwd: data.abspath
                 }, function biddle_test_publish_child(er, stdout, stder) {
-                    var publishtest = "File publications/biddletesta/biddlesort.js written at \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes.\nFile publications/biddletesta/biddletesta_\u001b[1m\u001b[36mxxx.zip\u001b[39m" +
-                                "\u001b[0m written at \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes.\nFile publ" +
-                                "ications/biddletesta/biddletesta_\u001b[1m\u001b[36mlatest.zip\u001b[39m\u001b[0" +
-                                "m written at \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes.\nFile publications" +
-                                "/biddletesta/biddletesta_\u001b[1m\u001b[36mmin_xxx.zip\u001b[39m\u001b[0m writt" +
-                                "en at \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes.\nFile publications/biddle" +
-                                "testa/biddletesta_\u001b[1m\u001b[36mmin_latest.zip\u001b[39m\u001b[0m written a" +
-                                "t \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes.\nFile publications/biddletest" +
-                                "a/biddletesta_\u001b[1m\u001b[36mprod_xxx.zip\u001b[39m\u001b[0m written at " +
-                                "\u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes.\nFile publications/biddletesta/" +
-                                "biddletesta_\u001b[1m\u001b[36mprod_latest.zip\u001b[39m\u001b[0m written at " +
-                                "\u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes.\nFile publications/biddletesta/filedata.json written at \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes.\nFile publications/biddletesta/index.xhtml written at \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes.\nFile publications/biddletesta/" +
-                                "latest.txt written at \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes.",
+                    var publishtest = "File publications/biddletesta/biddlesort.js written at \u001b[1m\u001b[32mxxx" +
+                                "\u001b[39m\u001b[0m bytes.\nFile publications/biddletesta/biddletesta_\u001b[1m" +
+                                "\u001b[36mxxx.zip\u001b[39m\u001b[0m written at \u001b[1m\u001b[32mxxx\u001b[39m" +
+                                "\u001b[0m bytes.\nFile publications/biddletesta/biddletesta_\u001b[1m\u001b[36ml" +
+                                "atest.zip\u001b[39m\u001b[0m written at \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0" +
+                                "m bytes.\nFile publications/biddletesta/biddletesta_\u001b[1m\u001b[36mmin_xxx.z" +
+                                "ip\u001b[39m\u001b[0m written at \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes" +
+                                ".\nFile publications/biddletesta/biddletesta_\u001b[1m\u001b[36mmin_latest.zip" +
+                                "\u001b[39m\u001b[0m written at \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes." +
+                                "\nFile publications/biddletesta/biddletesta_\u001b[1m\u001b[36mprod_xxx.zip" +
+                                "\u001b[39m\u001b[0m written at \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes." +
+                                "\nFile publications/biddletesta/biddletesta_\u001b[1m\u001b[36mprod_latest.zip" +
+                                "\u001b[39m\u001b[0m written at \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes." +
+                                "\nFile publications/biddletesta/filedata.json written at \u001b[1m\u001b[32mxxx" +
+                                "\u001b[39m\u001b[0m bytes.\nFile publications/biddletesta/index.xhtml written at" +
+                                " \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes.\nFile publications/biddletesta" +
+                                "/latest.txt written at \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes.",
                         outputs     = stdout
                             .replace(/(\s+)$/, "")
                             .replace("\r\n", "\n")
@@ -3972,10 +4030,11 @@
                                     node
                                         .fs
                                         .readdir(pub, function biddle_test_publish_child_statTemp_readJSON_readdir(errr, files) {
-                                            var filetest = "biddlesort.js,biddletesta_v.hash,biddletesta_v.zip,biddletesta_latest.hash,biddletesta_latest." +
-                                                        "zip,biddletesta_min_v.hash,biddletesta_min_v.zip,biddletesta_min_latest.hash,bid" +
-                                                        "dletesta_min_latest.zip,biddletesta_prod_v.hash,biddletesta_prod_v.zip,biddletes" +
-                                                        "ta_prod_latest.hash,biddletesta_prod_latest.zip,filedata.json,index.xhtml,latest.txt",
+                                            var filetest = "biddlesort.js,biddletesta_v.hash,biddletesta_v.zip,biddletesta_latest.hash,biddl" +
+                                                        "etesta_latest.zip,biddletesta_min_v.hash,biddletesta_min_v.zip,biddletesta_min_l" +
+                                                        "atest.hash,biddletesta_min_latest.zip,biddletesta_prod_v.hash,biddletesta_prod_v" +
+                                                        ".zip,biddletesta_prod_latest.hash,biddletesta_prod_latest.zip,filedata.json,inde" +
+                                                        "x.xhtml,latest.txt",
                                                 filelist = files.sort(function biddle_test_publish_child_statTemp_readJSON_readdir_outSort(a, b) {
                                                     if (a > b) {
                                                         return 1;
