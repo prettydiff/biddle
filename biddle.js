@@ -81,12 +81,12 @@
                 }
                 return "rm -rf " + dir;
             },
-            unzip     : function biddle_cmds_unzip() { // Unzips a zip archive into a collection
+            unzip     : function biddle_cmds_unzip(filename) { // Unzips a zip archive into a collection
                 if (data.platform === "win32") {
                     return "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compress" +
-                            "ion.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('" + data.input[2] + "', '" + data.address.target + "'); }\"";
+                            "ion.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('" + filename + "', '" + data.address.target + "'); }\"";
                 }
-                return "unzip -oq " + data.input[2] + " -d " + data.address.target;
+                return "unzip -oq " + filename + " -d " + data.address.target;
             },
             zip       : function biddle_cmds_zip(filename, file) { // Stores all items of the given directory into a zip archive directly without creating a new directory. Locations resolved by a symlink are stored, but the actual symlink is not stored.
                 if (data.platform === "win32") {
@@ -403,15 +403,14 @@
         var a       = (typeof url === "string")
                 ? url.indexOf("s://")
                 : 0,
-            file    = "",
-            hashy   = (data.command === "install" && data.fileName.indexOf(".hash") < 0),
-            addy    = (hashy === true)
+            zippy   = (data.command === "install" && (/(\.zip)$/).test(url) === true),
+            addy    = (zippy === true)
                 ? data.address.downloads
                 : data.address.target,
             getcall = function biddle_get_getcall(res) {
-                res.setEncoding("utf8");
+                var file = [];
                 res.on("data", function biddle_get_getcall_data(chunk) {
-                    file += chunk;
+                    file.push(chunk);
                 });
                 res.on("end", function biddle_get_getcall_end() {
                     if (res.statusCode !== 200) {
@@ -421,11 +420,15 @@
                             data.fileName = apps.getFileName();
                             biddle_get(res.headers.location, callback);
                         }
-                    } else {
+                    } else if ((data.command !== "install" && (/[\u0002-\u0008]|[\u000e-\u001f]/).test(file[0]) === true) || zippy === true) {
                         apps
                             .makedir(addy, function biddle_get_getcall_end_complete() {
-                                callback(file);
+                                apps.writeFile(Buffer.concat(file), addy + data.fileName, function biddle_get_getcall_end_complete_writeFile(data) {
+                                    callback(data);
+                                });
                             });
+                    } else {
+                        callback(file.join(""));
                     }
                 });
                 res.on("error", function biddle_get_getcall_error(error) {
@@ -1305,13 +1308,25 @@
                     dirs = data
                         .input[2]
                         .split(sep);
-                dirs.pop();
+                data.fileName = dirs.pop();
                 return dirs.join(sep) + sep + "latest.txt";
             }()),
             compareHash = function biddle_install_compareHash() {
                 apps
                     .hashCmd(data.address.downloads + data.fileName, "hashZip", function biddle_install_compareHash_hashCmd() {
                         if (data.hashFile === data.hashZip) {
+                            var location = "",
+                                puba     = [],
+                                pubs     = "";
+                            if ((/^(https?:\/\/)/i).test(data.input[2]) === true) {
+                                location = data.address.downloads + data.input[2].split("/").pop();
+                                puba     = data.input[2].split("/");
+                                puba.pop();
+                                pubs     = puba.join("/");
+                            } else {
+                                location = apps.relToAbs(data.input[2], data.cwd);
+                                pubs     = apps.relToAbs(data.input[2].slice(0, data.input[2].lastIndexOf(node.path.sep) + 1), data.cwd);
+                            }
                             apps
                                 .zip(function biddle_install_callback() {
                                     var status   = {
@@ -1319,16 +1334,12 @@
                                             remove  : false
                                         },
                                         complete = function biddle_install_compareHash_hashCmd_complete() {
-                                            console.log("Application " + data.packjson.name + " is installed to version: " + data.packjson.version);
+                                            console.log("Application \u001b[36m" + data.packjson.name + "\u001b[39m is installed to version: " + data.packjson.version);
                                         };
                                     data.installed[data.packjson.name]           = {};
                                     data.installed[data.packjson.name].location  = data.address.target;
                                     data.installed[data.packjson.name].version   = data.packjson.version;
-                                    data.installed[data.packjson.name].published = ((/^(https?:\/\/)/i).test(data.input[2]) === true)
-                                        ? data
-                                            .input[2]
-                                            .slice(0, data.input[2].lastIndexOf("/") + 1)
-                                        : apps.relToAbs(data.input[2].slice(0, data.input[2].lastIndexOf(node.path.sep) + 1), data.cwd);
+                                    data.installed[data.packjson.name].published = pubs;
                                     apps.writeFile(JSON.stringify(data.installed), data.abspath + "installed.json",
                                     function biddle_install_compareHash_hashCmd_installedJSON() {
                                         status.packjson = true;
@@ -1343,26 +1354,25 @@
                                         }
                                     });
                                 }, {
-                                    location: apps.relToAbs(data.input[2], data.cwd),
+                                    location: location,
                                     name    : ""
                                 });
                         } else {
-                            console.log("\u001b[31mHashes don't match\u001b[39m for " + data.input[2] + ". File is saved in the downloads directory and will not be installed.");
-                            console.log("Generated hash - " + data.hashZip);
-                            console.log("Requested hash - " + data.hashFile);
+                            return apps.errout({error: "\u001b[31mHashes don't match\u001b[39m for " + data.input[2] + ". File is saved in the downloads directory and will not be installed.\r\nGenerated hash - " + data.hashZip + "\r\nRequested hash - " + data.hashFile, name: "biddle_install_compareHash"});
                         }
                     });
             };
-        apps.get(data.input[2], function biddle_install_getzip(fileData) {
+        apps.get(data.input[2], function biddle_install_getzip() {
             flag.zip = true;
             if (flag.hash === true && flag.late === true) {
-                compareHash(fileData);
+                compareHash();
             }
         });
         apps.get(data.input[2].replace(".zip", ".hash"), function biddle_install_gethash(fileData) {
             flag.hash = true;
+            data.hashFile = fileData;
             if (flag.zip === true && flag.late === true) {
-                compareHash(fileData);
+                compareHash();
             }
         });
         apps.get(late, function biddle_install_getlate(fileData) {
@@ -4659,21 +4669,24 @@
     };
     apps.writeFile   = function biddle_writeFile(fileData, fileName, callback) {
         var callbacker = function biddle_writeFile_callbacker(size) {
-            var colored = [];
-            if (size > 0 && fileName.replace(data.abspath, "") !== "published.json" && fileName.replace(data.abspath, "") !== "installed.json") {
-                colored                     = fileName.split(node.path.sep);
-                colored[colored.length - 1] = colored[colored.length - 1].replace("_", "_\u001b[1m\u001b[36m");
-                if ((/((\.zip)|(\.hash))$/).test(fileName) === true) {
-                    console.log("File " + colored.join(node.path.sep) + "\u001b[39m\u001b[0m written at \u001b[1m\u001b[32m" + apps.commas(size) + "\u001b[39m\u001b[0m bytes.");
-                } else {
-                    console.log("File " + colored.join(node.path.sep) + " written at \u001b[1m\u001b[32m" + apps.commas(size) + "\u001b[39m\u001b[0m bytes.");
+                var colored = [];
+                if (size > 0 && fileName.replace(data.abspath, "") !== "published.json" && fileName.replace(data.abspath, "") !== "installed.json") {
+                    colored                     = fileName.split(node.path.sep);
+                    colored[colored.length - 1] = colored[colored.length - 1].replace("_", "_\u001b[1m\u001b[36m");
+                    if ((/((\.zip)|(\.hash))$/).test(fileName) === true) {
+                        console.log("File " + colored.join(node.path.sep) + "\u001b[39m\u001b[0m written at \u001b[1m\u001b[32m" + apps.commas(size) + "\u001b[39m\u001b[0m bytes.");
+                    } else {
+                        console.log("File " + colored.join(node.path.sep) + " written at \u001b[1m\u001b[32m" + apps.commas(size) + "\u001b[39m\u001b[0m bytes.");
+                    }
                 }
-            }
-            callback(fileData);
-        };
+                callback(fileData);
+            },
+            encoding = ((data.command !== "install" && (/[\u0002-\u0008]|[\u000e-\u001f]/).test(fileData) === true) || (/(\.zip)$/).test(fileName) === true)
+                ? "binary"
+                : "utf8";
         node
             .fs
-            .writeFile(fileName, fileData, function biddle_writeFile_callback(err) {
+            .writeFile(fileName, fileData, encoding, function biddle_writeFile_callback(err) {
                 if (err !== null) {
                     if (data.platform !== "win32" && data.command === "global" && err.toString().indexOf("EACCES: permission denied")) {
                         return apps.errout({
@@ -4802,7 +4815,20 @@
             }
         }
         if (data.command === "install" || data.command === "unzip") {
-            cmd = cmds.unzip();
+            if (data.command === "install") {
+                var fileName = (function biddle_zip_fileName() {
+                    var sep = ((/^(https?:\/\/)/).test(data.input[2]) === true)
+                        ? "/"
+                        : node.path.sep;
+                    return data
+                        .input[2]
+                        .split(sep)
+                        .pop();
+                }());
+                cmd = cmds.unzip(data.address.downloads + fileName);
+            } else {
+                cmd = cmds.unzip(data.input[2]);
+            }
             apps.makedir(data.address.target, function biddle_zip_unzip() {
                 childfunc(data.input[2], cmd, false);
             });
@@ -4824,9 +4850,13 @@
                     } else if (data.command === "publish") {
                         data.address.target = data.address.publications;
                     } else if (data.command === "install") {
-                        dir                 = data
-                            .input[2]
-                            .split(node.path.sep);
+                        dir                 = ((/^(https?:\/\/)/i).test(data.input[2]) === true)
+                            ? data
+                                .input[2]
+                                .split("/")
+                            : data
+                                .input[2]
+                                .split(node.path.sep);
                         app                 = dir[dir.length - 1];
                         data.address.target = data.address.applications + apps.sanitizef(app.slice(0, app.indexOf("_"))) + node.path.sep;
                     } else {
