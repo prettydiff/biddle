@@ -3,11 +3,12 @@
 (function biddle() {
     "use strict";
     var node     = {
-            child: require("child_process").exec,
-            fs   : require("fs"),
-            http : require("http"),
-            https: require("https"),
-            path : require("path")
+            child : require("child_process").exec,
+            crypto: require("crypto"),
+            fs    : require("fs"),
+            http  : require("http"),
+            https : require("https"),
+            path  : require("path")
         },
         text     = { // List of ANSI formatting instructions
             normal   : "\u001b[0m",
@@ -68,15 +69,6 @@
             sudo         : false // If biddle is executed with administrative rights in POSIX.
         },
         cmds     = { // The OS specific commands executed outside Node.js
-            hash      : function biddle_cmds_hash(file) { // Generates a hash sequence against a file
-                if (data.platform === "darwin") {
-                    return "shasum -a 512 " + file;
-                }
-                if (data.platform === "win32") {
-                    return "certUtil -hashfile \"" + file + "\" SHA512";
-                }
-                return "sha512sum " + file;
-            },
             pathRead  : function biddle_cmds_pathRead() { // Used in command global to read the OS's stored paths
                 return "powershell.exe -nologo -noprofile -command \"[Environment]::GetEnvironmentVariab" +
                         "le('PATH','Machine');\"";
@@ -785,64 +777,98 @@
                     });
             });
     };
-    apps.hashCmd     = function biddle_hashCmd(filepath, store, callback) {
-        node
-            .fs
-            .stat(filepath, function biddle_hashCmd_stat(er, stat) {
-                if (er !== null) {
-                    if (er.toString().indexOf("no such file or directory") > 0) {
+    apps.hash        = function biddle_hash(filepath, store, callback) {
+        var hash = node.crypto.createHash("sha512");
+        if (filepath === "string" && data.input[3] !== undefined) {
+            hash.update(data.input[3]);
+            console.log(hash.digest("hex"));
+        } else {
+            node
+                .fs
+                .stat(filepath, function biddle_hash_stat(er, stat) {
+                    if (er !== null) {
+                        if (er.toString().indexOf("no such file or directory") > 0) {
+                            if (data.command === "install") {
+                                return apps.errout({
+                                    error: filepath + " " + text.red + "does not appear to be a zip file" + text.nocolor + ". Install command expects t" +
+                                            "o receive a zip file and a hash file at the same location and file name.",
+                                    name : "biddle_hash_stat"
+                                });
+                            }
+                            return apps.errout({
+                                error: "filepath " + filepath + " is not a file.",
+                                name : "biddle_hash_stat"
+                            });
+                        }
+                        return apps.errout({
+                            error: er,
+                            name : "biddle_hash_stat"
+                        });
+                    }
+                    if (stat === undefined || stat.isFile() === false) {
                         if (data.command === "install") {
                             return apps.errout({
                                 error: filepath + " " + text.red + "does not appear to be a zip file" + text.nocolor + ". Install command expects t" +
                                         "o receive a zip file and a hash file at the same location and file name.",
-                                name : "biddle_hashCmd_stat"
+                                name : "biddle_hash_stat"
                             });
                         }
                         return apps.errout({
                             error: "filepath " + filepath + " is not a file.",
-                            name : "biddle_hashCmd_stat"
+                            name : "biddle_hash_stat"
                         });
                     }
-                    return apps.errout({
-                        error: er,
-                        name : "biddle_hashCmd_stat"
-                    });
-                }
-                if (stat === undefined || stat.isFile() === false) {
-                    if (data.command === "install") {
-                        return apps.errout({
-                            error: filepath + " " + text.red + "does not appear to be a zip file" + text.nocolor + ". Install command expects t" +
-                                    "o receive a zip file and a hash file at the same location and file name.",
-                            name : "biddle_hashCmd_stat"
+                    node.fs.open(filepath, "r", function biddle_hash_stat_open(ero, fd) {
+                        var msize = (stat.size < 100)
+                                ? stat.size
+                                : 100,
+                            buff  = new Buffer(msize);
+                        if (ero !== null) {
+                            return apps.errout({error: ero, name: "biddle_hash_stat_open"});
+                        }
+                        node.fs.read(fd, buff, 0, msize, 1, function biddle_hash_stat_open_read(erra, bytesa, buffera) {
+                            var bstring  = "",
+                                hashExec = function biddle_hash_stat_open_read_hashExec(filedump) {
+                                    hash.on("readable", function biddle_hash_stat_open_read_readBinary_hash() {
+                                        var hashdata = hash.read(),
+                                            hashstr  = "";
+                                        if (hashdata !== null) {
+                                            hashstr = hashdata.toString("hex").replace(/\s+/g, "");
+                                            data[store] = hashstr;
+                                            callback(hashstr);
+                                        }
+                                    });
+                                    hash.write(filedump);
+                                    hash.end();
+                                };
+                            if (erra !== null) {
+                                return apps.errout({error: erra, name: "biddle_hash_stat_open_read"});
+                            }
+                            bstring = buffera.toString("utf8", 0, buffera.length);
+                            bstring = bstring.slice(2, bstring.length - 2);
+                            if ((/[\u0002-\u0008]|[\u000e-\u001f]/).test(bstring) === true) {
+                                buff = new Buffer(stat.size);
+                                node.fs.read(fd, buff, 0, stat.size, 0, function biddle_hash_stat_open_read_readBinary(errb, bytesb, bufferb) {
+                                    if (errb !== null) {
+                                        return apps.errout({error: errb, name: "biddle_hash_stat_open_read_readBinary"});
+                                    }
+                                    if (bytesb > 0) {
+                                        hashExec(bufferb);
+                                    }
+                                });
+                            } else {
+                                node.fs.readFile(filepath, {encoding: "utf8"}, function biddle_hash_stat_open_read_readFile(errc, dump) {
+                                    if (errc !== null && errc !== undefined) {
+                                        return apps.errout({error: errc, name: "biddle_hash_stat_open_read_readFile"});
+                                    }
+                                    hashExec(dump);
+                                });
+                            }
+                            return bytesa;
                         });
-                    }
-                    return apps.errout({
-                        error: "filepath " + filepath + " is not a file.",
-                        name : "biddle_hashCmd_stat"
                     });
-                }
-                node
-                    .child(cmds.hash(filepath), function biddle_hashCmd_stat_child(err, stdout, stderr) {
-                        if (err !== null) {
-                            return apps.errout({
-                                error: err,
-                                name : "biddle_hashCmd_stat_child"
-                            });
-                        }
-                        if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
-                            return apps.errout({
-                                error: stderr,
-                                name : "biddle_hashCmd_stat_child"
-                            });
-                        }
-                        stdout      = stdout.replace(/\s+/g, "");
-                        stdout      = stdout.replace(filepath, "");
-                        stdout      = stdout.replace("SHA512hashoffile:", "");
-                        stdout      = stdout.replace("CertUtil:-hashfilecommandcompletedsuccessfully.", "");
-                        data[store] = stdout;
-                        callback(stdout);
-                    });
-            });
+                });
+        }
     };
     apps.install     = function biddle_install() {
         var flag        = {
@@ -862,7 +888,7 @@
             }()),
             compareHash = function biddle_install_compareHash() {
                 apps
-                    .hashCmd(data.address.downloads + data.fileName, "hashZip", function biddle_install_compareHash_hashCmd() {
+                    .hash(data.address.downloads + data.fileName, "hashZip", function biddle_install_compareHash_hash() {
                         if (data.hashFile === data.hashZip) {
                             var location = "",
                                 puba     = [],
@@ -882,7 +908,7 @@
                                             packjson: false,
                                             remove  : false
                                         },
-                                        complete = function biddle_install_compareHash_hashCmd_complete() {
+                                        complete = function biddle_install_compareHash_hash_complete() {
                                             console.log("Application " + text.cyan + data.packjson.name + text.nocolor + "m is installed to version: " + data.packjson.version);
                                         };
                                     data.installed[data.packjson.name]           = {};
@@ -890,13 +916,13 @@
                                     data.installed[data.packjson.name].version   = data.packjson.version;
                                     data.installed[data.packjson.name].published = pubs;
                                     apps.writeFile(JSON.stringify(data.installed), data.abspath + "installed.json",
-                                    function biddle_install_compareHash_hashCmd_installedJSON() {
+                                    function biddle_install_compareHash_hash_installedJSON() {
                                         status.packjson = true;
                                         if (status.remove === true) {
                                             complete();
                                         }
                                     });
-                                    apps.rmrecurse(data.abspath + "downloads" + node.path.sep + data.fileName, function biddle_install_compareHash_hashCmd_remove() {
+                                    apps.rmrecurse(data.abspath + "downloads" + node.path.sep + data.fileName, function biddle_install_compareHash_hash_remove() {
                                         status.remove = true;
                                         if (status.packjson === true) {
                                             complete();
@@ -1759,7 +1785,7 @@
                                         });
                                 }
                             });
-                        apps.hashCmd(zipfilename, "hashFile", function biddle_publish_zippy_zip_hash() {
+                        apps.hash(zipfilename, "hashFile", function biddle_publish_zippy_zip_hash() {
                             apps
                                 .writeFile(data.hashFile, zipfilename.replace(".zip", ".hash"), function biddle_publish_zippy_zip_hash_writehash() {
                                     return true;
@@ -2754,7 +2780,7 @@
                             time  : humantime(true)
                         });
                     }
-                    stdout = stdout.replace(/(\r?\n)$/, "");
+                    stdout = stdout.replace(/((\r?\n)+)$/, "");
                     if (stdout !== hashtest) {
                         return diffFiles("biddle_test_hash_child", stdout, hashtest);
                     }
@@ -4594,7 +4620,7 @@
                         apps.global(data.abspath);
                     } else if (data.command === "hash") {
                         apps
-                            .hashCmd(data.input[2], "hashFile", function biddle_init_start_hash() {
+                            .hash(data.input[2], "hashFile", function biddle_init_start_hash() {
                                 console.log(data.hashFile);
                             });
                     } else if (data.command === "install") {

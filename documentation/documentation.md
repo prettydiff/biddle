@@ -16,7 +16,7 @@ commands|✓|none|none
 copy|✓|local file system address|directory path
 get|?|local or web address|none
 global|✓|application name|none or "*remove*"
-hash|✓|file path|none
+hash|✓|file path or "*string*"|string value
 help|✓|number|none
 install|?|zip file address (local or web)|directory path
 list|✓|"*installed*" or "*published*"|none
