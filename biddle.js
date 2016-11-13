@@ -3,11 +3,25 @@
 (function biddle() {
     "use strict";
     var node     = {
-            child: require("child_process").exec,
-            fs   : require("fs"),
-            http : require("http"),
-            https: require("https"),
-            path : require("path")
+            child : require("child_process").exec,
+            crypto: require("crypto"),
+            fs    : require("fs"),
+            http  : require("http"),
+            https : require("https"),
+            path  : require("path")
+        },
+        text     = { // List of ANSI formatting instructions
+            normal   : "\u001b[0m",
+            bold     : "\u001b[1m",
+            underline: "\u001b[4m",
+            red      : "\u001b[31m",
+            green    : "\u001b[32m",
+            yellow   : "\u001b[33m",
+            blue     : "\u001b[34m",
+            purple   : "\u001b[35m",
+            cyan     : "\u001b[36m",
+            nocolor  : "\u001b[39m",
+            none     : "\u001b[39m\u001b[0m"
         },
         commands = { // The list of supported biddle commands.
             commands : "List the supported commands to the console.",
@@ -55,15 +69,6 @@
             sudo         : false // If biddle is executed with administrative rights in POSIX.
         },
         cmds     = { // The OS specific commands executed outside Node.js
-            hash      : function biddle_cmds_hash(file) { // Generates a hash sequence against a file
-                if (data.platform === "darwin") {
-                    return "shasum -a 512 " + file;
-                }
-                if (data.platform === "win32") {
-                    return "certUtil -hashfile \"" + file + "\" SHA512";
-                }
-                return "sha512sum " + file;
-            },
             pathRead  : function biddle_cmds_pathRead() { // Used in command global to read the OS's stored paths
                 return "powershell.exe -nologo -noprofile -command \"[Environment]::GetEnvironmentVariab" +
                         "le('PATH','Machine');\"";
@@ -107,7 +112,7 @@
             lens = 0,
             a    = 0,
             b    = 0;
-        console.log("\u001b[4mbiddle Commands\u001b[0m");
+        console.log(text.underline + "biddle Commands" + text.normal);
         console.log("");
         do {
             if (keys[a].length > lens) {
@@ -125,7 +130,7 @@
                     b    += 1;
                 } while (b < lens);
             }
-            console.log("\u001b[36m" + comm + "\u001b[39m: " + commands[keys[a]]);
+            console.log(text.cyan + comm + text.nocolor + ": " + commands[keys[a]]);
             a += 1;
         } while (a < len);
     };
@@ -339,8 +344,8 @@
                 ? errData
                     .error
                     .toString()
-                    .replace("Error: ", "\u001b[1m\u001b[31mError:\u001b[39m\u001b[0m ")
-                : "\u001b[1m\u001b[31mError:\u001b[39m\u001b[0m " + errData
+                    .replace("Error: ", text.bold + text.red + "Error:" + text.none + " ")
+                : text.bold + text.red + "Error:" + text.none + " " + errData
                     .error
                     .toString(),
             stack = new Error().stack;
@@ -370,11 +375,11 @@
                     apps
                         .rmrecurse(data.abspath + "temp",
                         function biddle_errout_dataClean_tempTestClean() {
-                            console.log("\u001b[31mUnit test failure.\u001b[39m");
+                            console.log(text.red + "Unit test failure." + text.nocolor);
                             if (errData.stdout !== undefined) {
                                 console.log(errData.stdout);
                             }
-                            console.log("\u001b[1m\u001b[36mFunction:\u001b[39m\u001b[0m " + errData.name);
+                            console.log(text.bold + text.cyan + "Function:" + text.none + " " + errData.name);
                             console.log(error);
                             console.log("");
                             console.log(stack);
@@ -387,7 +392,7 @@
             apps
                 .rmrecurse(data.abspath + "temp",
                 function biddle_errout_dataClean_tempNontestClean() {
-                    console.log("\u001b[1m\u001b[36mFunction:\u001b[39m\u001b[0m " + errData.name);
+                    console.log(text.bold + text.cyan + "Function:" + text.none + " " + errData.name);
                     console.log(error);
                     if (data.childtest === false) {
                         console.log("");
@@ -440,7 +445,7 @@
             };
         if ((/^(https?:\/\/)/).test(url) === false) {
             if ((/(\.zip)$/).test(url) === true) {
-                console.log("Address " + url + " is missing the \u001b[36mhttp(s)\u001b[39m scheme, treating as a local path...");
+                console.log("Address " + url + " is missing the " + text.cyan + "http(s)" + text.nocolor + " scheme, treating as a local path...");
                 apps.makedir(addy, function biddle_get_localZip() {
                     apps.copy(data.input[2], "downloads", [], callback);
                 });
@@ -520,13 +525,13 @@
                 data.packjson = JSON.parse(fileData);
                 if (typeof data.packjson.name !== "string" || data.packjson.name.length < 1) {
                     return apps.errout({
-                        error: "The package.json file is missing the required \u001b[31mname\u001b[39m property.",
+                        error: "The package.json file is missing the required " + text.red + "name" + text.nocolor + " property.",
                         name : "biddle_getpjson_readfile"
                     });
                 }
                 if (typeof data.packjson.version !== "string" || data.packjson.version.length < 1) {
                     return apps.errout({
-                        error: "The package.json file is missing the required \u001b[31mversion\u001b[39m proper" +
+                        error: "The package.json file is missing the required " + text.red + "version" + text.nocolor + " proper" +
                                   "ty.",
                         name : "biddle_getpjson_readfile"
                     });
@@ -772,528 +777,98 @@
                     });
             });
     };
-    apps.hashCmd     = function biddle_hashCmd(filepath, store, callback) {
-        node
-            .fs
-            .stat(filepath, function biddle_hashCmd_stat(er, stat) {
-                if (er !== null) {
-                    if (er.toString().indexOf("no such file or directory") > 0) {
+    apps.hash        = function biddle_hash(filepath, store, callback) {
+        var hash = node.crypto.createHash("sha512");
+        if (filepath === "string" && data.input[3] !== undefined) {
+            hash.update(data.input[3]);
+            console.log(hash.digest("hex"));
+        } else {
+            node
+                .fs
+                .stat(filepath, function biddle_hash_stat(er, stat) {
+                    if (er !== null) {
+                        if (er.toString().indexOf("no such file or directory") > 0) {
+                            if (data.command === "install") {
+                                return apps.errout({
+                                    error: filepath + " " + text.red + "does not appear to be a zip file" + text.nocolor + ". Install command expects t" +
+                                            "o receive a zip file and a hash file at the same location and file name.",
+                                    name : "biddle_hash_stat"
+                                });
+                            }
+                            return apps.errout({
+                                error: "filepath " + filepath + " is not a file.",
+                                name : "biddle_hash_stat"
+                            });
+                        }
+                        return apps.errout({
+                            error: er,
+                            name : "biddle_hash_stat"
+                        });
+                    }
+                    if (stat === undefined || stat.isFile() === false) {
                         if (data.command === "install") {
                             return apps.errout({
-                                error: filepath + " \u001b[31mdoes not appear to be a zip file\u001b[39m. Install command expects t" +
+                                error: filepath + " " + text.red + "does not appear to be a zip file" + text.nocolor + ". Install command expects t" +
                                         "o receive a zip file and a hash file at the same location and file name.",
-                                name : "biddle_hashCmd_stat"
+                                name : "biddle_hash_stat"
                             });
                         }
                         return apps.errout({
                             error: "filepath " + filepath + " is not a file.",
-                            name : "biddle_hashCmd_stat"
+                            name : "biddle_hash_stat"
                         });
                     }
-                    return apps.errout({
-                        error: er,
-                        name : "biddle_hashCmd_stat"
-                    });
-                }
-                if (stat === undefined || stat.isFile() === false) {
-                    if (data.command === "install") {
-                        return apps.errout({
-                            error: filepath + " \u001b[31mdoes not appear to be a zip file\u001b[39m. Install command expects t" +
-                                    "o receive a zip file and a hash file at the same location and file name.",
-                            name : "biddle_hashCmd_stat"
+                    node.fs.open(filepath, "r", function biddle_hash_stat_open(ero, fd) {
+                        var msize = (stat.size < 100)
+                                ? stat.size
+                                : 100,
+                            buff  = new Buffer(msize);
+                        if (ero !== null) {
+                            return apps.errout({error: ero, name: "biddle_hash_stat_open"});
+                        }
+                        node.fs.read(fd, buff, 0, msize, 1, function biddle_hash_stat_open_read(erra, bytesa, buffera) {
+                            var bstring  = "",
+                                hashExec = function biddle_hash_stat_open_read_hashExec(filedump) {
+                                    hash.on("readable", function biddle_hash_stat_open_read_readBinary_hash() {
+                                        var hashdata = hash.read(),
+                                            hashstr  = "";
+                                        if (hashdata !== null) {
+                                            hashstr = hashdata.toString("hex").replace(/\s+/g, "");
+                                            data[store] = hashstr;
+                                            callback(hashstr);
+                                        }
+                                    });
+                                    hash.write(filedump);
+                                    hash.end();
+                                };
+                            if (erra !== null) {
+                                return apps.errout({error: erra, name: "biddle_hash_stat_open_read"});
+                            }
+                            bstring = buffera.toString("utf8", 0, buffera.length);
+                            bstring = bstring.slice(2, bstring.length - 2);
+                            if ((/[\u0002-\u0008]|[\u000e-\u001f]/).test(bstring) === true) {
+                                buff = new Buffer(stat.size);
+                                node.fs.read(fd, buff, 0, stat.size, 0, function biddle_hash_stat_open_read_readBinary(errb, bytesb, bufferb) {
+                                    if (errb !== null) {
+                                        return apps.errout({error: errb, name: "biddle_hash_stat_open_read_readBinary"});
+                                    }
+                                    if (bytesb > 0) {
+                                        hashExec(bufferb);
+                                    }
+                                });
+                            } else {
+                                node.fs.readFile(filepath, {encoding: "utf8"}, function biddle_hash_stat_open_read_readFile(errc, dump) {
+                                    if (errc !== null && errc !== undefined) {
+                                        return apps.errout({error: errc, name: "biddle_hash_stat_open_read_readFile"});
+                                    }
+                                    hashExec(dump);
+                                });
+                            }
+                            return bytesa;
                         });
-                    }
-                    return apps.errout({
-                        error: "filepath " + filepath + " is not a file.",
-                        name : "biddle_hashCmd_stat"
                     });
-                }
-                node
-                    .child(cmds.hash(filepath), function biddle_hashCmd_stat_child(err, stdout, stderr) {
-                        if (err !== null) {
-                            return apps.errout({
-                                error: err,
-                                name : "biddle_hashCmd_stat_child"
-                            });
-                        }
-                        if (stderr !== null && stderr.replace(/\s+/, "") !== "") {
-                            return apps.errout({
-                                error: stderr,
-                                name : "biddle_hashCmd_stat_child"
-                            });
-                        }
-                        stdout      = stdout.replace(/\s+/g, "");
-                        stdout      = stdout.replace(filepath, "");
-                        stdout      = stdout.replace("SHA512hashoffile:", "");
-                        stdout      = stdout.replace("CertUtil:-hashfilecommandcompletedsuccessfully.", "");
-                        data[store] = stdout;
-                        callback(stdout);
-                    });
-            });
-    };
-    apps.help        = function biddle_help() {
-        var file = data.abspath + "readme.md",
-            size = data.input[2];
-        if (data.command === "markdown") {
-            file = data.input[2];
-            size = data.input[3];
+                });
         }
-        node
-            .fs
-            .readFile(file, "utf8", function biddle_help_readme(err, readme) {
-                var lines  = [],
-                    listly = [],
-                    output = [],
-                    ind    = "",
-                    listr  = "",
-                    b      = 0,
-                    len    = 0,
-                    bullet = "",
-                    ens    = "\u001b[0m", //end - text formatting
-                    bld    = "\u001b[1m", //text formatting - bold
-                    itl    = "\u001b[3m", //text formatting - italics
-                    und    = "\u001b[4m", //underline
-                    enu    = "\u001b[24m", //end - underline
-                    red    = "\u001b[31m", //color - red
-                    grn    = "\u001b[32m", //color - green
-                    tan    = "\u001b[33m", //color - tan
-                    cyn    = "\u001b[36m", //color - cyan
-                    enc    = "\u001b[39m", //end - color
-                    parse  = function biddle_help_readme_parse(item, listitem, cell) {
-                        var block = false,
-                            chars = [],
-                            final = 0,
-                            s     = (/\s/),
-                            x     = 0,
-                            y     = ind.length,
-                            start = 0,
-                            index = 0,
-                            math  = 0,
-                            endln = 0,
-                            quote = "",
-                            wrap  = function biddle_help_readme_parse_wrap(tick) {
-                                var z      = x,
-                                    format = function biddle_help_readme_parse_wrap_format(eol) {
-                                        if (block === true) {
-                                            chars[eol] = "\n" + ind + "| ";
-                                        } else {
-                                            chars[eol] = "\n" + ind;
-                                        }
-                                        index = 1 + y + eol;
-                                        if (chars[eol - 1] === " ") {
-                                            chars[eol - 1] = "";
-                                        } else if (chars[eol + 1] === " ") {
-                                            chars.splice(eol + 1,
-                                            1);
-                                            final -= 1;
-                                        }
-                                    };
-                                if (cell === true) {
-                                    return;
-                                }
-                                if (tick === true) {
-                                    do {
-                                        z -= 1;
-                                    } while (chars[z + 1].indexOf("\u001b[32m") < 0 && z > index);
-                                    if (z > index) {
-                                        format(z);
-                                    }
-                                } else if (s.test(chars[x]) === true) {
-                                    format(x);
-                                } else {
-                                    do {
-                                        z -= 1;
-                                    } while (s.test(chars[z]) === false && z > index);
-                                    if (z > index) {
-                                        format(z);
-                                    }
-                                }
-                            };
-                        if ((/\u0020{4}\S/).test(item) === true && listitem === false) {
-                            item = grn + item + enc;
-                            return item;
-                        }
-                        if (item.charAt(0) === ">") {
-                            block = true;
-                        }
-                        if (listitem === true) {
-                            item = item.replace(/^\s+/, "");
-                        }
-                        chars = item
-                            .replace(/^(\s*>\s*)/, ind + "| ")
-                            .replace(/`/g, "bix~")
-                            .split("");
-                        final = chars.length;
-                        if (cell === true) {
-                            start = 0;
-                        } else {
-                            if (block === true) {
-                                chars.splice(0, 0, "  ");
-                            }
-                            if (listitem === true || block === true) {
-                                x = listly.length;
-                                do {
-                                    x   -= 1;
-                                    y   += 2;
-                                    ind = ind + "  ";
-                                } while (x > 0);
-                            }
-                            if (block === false) {
-                                if (listitem === true) {
-                                    chars.splice(0, 0, ind.slice(2));
-                                } else {
-                                    chars.splice(0, 0, ind);
-                                }
-                            }
-                            start = y - 1;
-                        }
-                        endln = (isNaN(size) === false && size !== "")
-                            ? Number(size) - y
-                            : 100 - y;
-                        for (x = start; x < final; x += 1) {
-                            math = ((x + y) - (index - 1)) / endln;
-                            if (quote === "") {
-                                if (chars[x] === "*" && chars[x + 1] === "*") {
-                                    quote = "**";
-                                    chars.splice(x, 2);
-                                    chars[x] = bld + chars[x];
-                                    final    -= 2;
-                                } else if (chars[x] === "_" && chars[x + 1] === "_") {
-                                    quote = "__";
-                                    chars.splice(x, 2);
-                                    chars[x] = bld + chars[x];
-                                    final    -= 2;
-                                } else if (chars[x] === "*" && ((x === start && chars[x + 1] !== " ") || x > start)) {
-                                    quote = "*";
-                                    chars.splice(x, 1);
-                                    chars[x] = itl + tan + chars[x];
-                                    final    -= 1;
-                                } else if (chars[x] === "_" && ((x === start && chars[x + 1] !== " ") || x > start)) {
-                                    quote = "_";
-                                    chars.splice(x, 1);
-                                    chars[x] = itl + tan + chars[x];
-                                    final    -= 1;
-                                } else if (chars[x] === "b" && chars[x + 1] === "i" && chars[x + 2] === "x" && chars[x + 3] === "~") {
-                                    quote = "`";
-                                    chars.splice(x, 4);
-                                    chars[x] = grn + chars[x];
-                                    final    -= 4;
-                                } else if (chars[x - 2] === "," && chars[x - 1] === " " && chars[x] === "(") {
-                                    quote    = ")";
-                                    chars[x] = chars[x] + cyn;
-                                }
-                            } else if (chars[x] === "b" && chars[x + 1] === "i" && chars[x + 2] === "x" && chars[x + 3] === "~" && quote === "`") {
-                                quote = "";
-                                chars.splice(x, 4);
-                                if (chars[x] === undefined) {
-                                    x = chars.length - 1;
-                                }
-                                chars[x] = chars[x] + enc;
-                                final    -= 4;
-                                if (math > 1 && chars[x + 1] === " ") {
-                                    x += 1;
-                                    wrap(false);
-                                }
-                            } else if (chars[x] === ")" && quote === ")") {
-                                quote    = "";
-                                chars[x] = enc + chars[x];
-                                if (math > 1 && chars[x + 1] === " ") {
-                                    x += 1;
-                                    wrap(false);
-                                }
-                            } else if (chars[x] === "*" && chars[x + 1] === "*" && quote === "**") {
-                                quote = "";
-                                chars.splice(x, 2);
-                                chars[x - 1] = chars[x - 1] + ens;
-                                final        -= 2;
-                            } else if (chars[x] === "*" && quote === "*") {
-                                quote = "";
-                                chars.splice(x, 1);
-                                chars[x - 1] = chars[x - 1] + enc + ens;
-                                final        -= 1;
-                            } else if (chars[x] === "_" && chars[x + 1] === "_" && quote === "__") {
-                                quote = "";
-                                chars.splice(x, 2);
-                                chars[x - 1] = chars[x - 1] + ens;
-                                final        -= 2;
-                            } else if (chars[x] === "_" && quote === "_") {
-                                quote = "";
-                                chars.splice(x, 1);
-                                chars[x - 1] = chars[x - 1] + enc + ens;
-                                final        -= 1;
-                            }
-                            if (math > 1) {
-                                if (quote === "`") {
-                                    wrap(true);
-                                } else {
-                                    wrap(false);
-                                }
-                            }
-                            if (chars[x + 1] === undefined) {
-                                break;
-                            }
-                        }
-                        if (quote === "**") {
-                            chars.pop();
-                            chars[x - 1] = chars[x - 1] + ens;
-                        } else if (quote === "*") {
-                            chars.pop();
-                            chars[x - 1] = chars[x - 1] + enc + ens;
-                        } else if (quote === ")") {
-                            chars[x - 1] = chars[x - 1] + enc;
-                        } else if (quote === "`") {
-                            chars.pop();
-                            chars[x - 4] = chars[x - 4] + enc;
-                            chars[x - 3] = "";
-                            chars[x - 2] = "";
-                            chars[x - 1] = "";
-                            chars[x]     = "";
-                        }
-                        item = chars.join("");
-                        if (block === true) {
-                            ind = ind.slice(2);
-                        } else if (listitem === true) {
-                            ind = ind.slice(listly.length * 2);
-                        }
-                        return item;
-                    },
-                    table  = function biddle_help_readme_table() {
-                        var rows = [
-                                lines[b]
-                                    .replace(/^\|/, "")
-                                    .replace(/\|$/, "")
-                                    .split("|")
-                            ],
-                            lens = rows[0].length,
-                            cols = [],
-                            c    = 0,
-                            d    = 0,
-                            e    = 0,
-                            lend = 0,
-                            line = "";
-                        c    = b + 2;
-                        line = lines[c]
-                            .replace(/^\|/, "")
-                            .replace(/\|$/, "");
-                        d    = 0;
-                        do {
-                            rows[0][d] = parse(rows[0][d].replace(/\s+/g, " ").replace(/^\s/, "").replace(/\s$/, ""), false, true);
-                            lend         = rows[0][d]
-                                .replace(/\u001b\[\d+m/g, "")
-                                .length;
-                            cols.push(lend);
-                            d += 1;
-                        } while (d < lens);
-                        if (line.indexOf("|") > -1) {
-                            do {
-                                rows.push(line.split("|").slice(0, lens));
-                                d = 0;
-                                do {
-                                    rows[rows.length - 1][d] = parse(rows[rows.length - 1][d].replace(/\s+/g, " ").replace(/^\s/, "").replace(/\s$/, ""), false, true);
-                                    lend                       = rows[rows.length - 1][d]
-                                        .replace(/\u001b\[\d+m/g, "")
-                                        .length;
-                                    if (lend > cols[d]) {
-                                        cols[d] = lend;
-                                    }
-                                    if (rows[rows.length - 1][d] === "\u2713") {
-                                        rows[rows.length - 1][d] = "\u001b[1m\u001b[32m\u2713\u001b[39m\u001b[0m";
-                                    } else if (rows[rows.length - 1][d] === "X") {
-                                        rows[rows.length - 1][d] = "\u001b[1m\u001b[31mX\u001b[39m\u001b[0m";
-                                    } else if (rows[rows.length - 1][d] === "?") {
-                                        rows[rows.length - 1][d] = "\u001b[1m\u001b[33m?\u001b[39m\u001b[0m";
-                                    }
-                                    d += 1;
-                                } while (d < lens);
-                                c += 1;
-                                if (c === len) {
-                                    break;
-                                }
-                                line = lines[c]
-                                    .replace(/^\|/, "")
-                                    .replace(/\|$/, "");
-                            } while (line.indexOf("|") > -1);
-                        }
-                        c    = 0;
-                        lend = rows.length;
-                        do {
-                            d = 0;
-                            do {
-                                e = rows[c][d]
-                                    .replace(/\u001b\[\d+m/g, "")
-                                    .length;
-                                if (d === lens - 1 && rows[c][d].length < cols[d]) {
-                                    do {
-                                        e          += 1;
-                                        rows[c][d] = rows[c][d] + " ";
-                                    } while (e < cols[d]);
-                                } else {
-                                    do {
-                                        e          += 1;
-                                        rows[c][d] = rows[c][d] + " ";
-                                    } while (e < cols[d] + 1);
-                                }
-                                if (c === 0) {
-                                    if (d > 0) {
-                                        rows[c][d] = "\u001b[4m " + rows[c][d] + "\u001b[0m";
-                                    } else {
-                                        rows[c][d] = ind + "\u001b[4m" + rows[c][d] + "\u001b[0m";
-                                    }
-                                } else {
-                                    if (d > 0) {
-                                        rows[c][d] = " " + rows[c][d];
-                                    } else {
-                                        rows[c][d] = ind + rows[c][d];
-                                    }
-                                }
-                                d += 1;
-                            } while (d < lens);
-                            output.push(rows[c].join(""));
-                            c += 1;
-                            b += 1;
-                        } while (c < lend);
-                        b += 1;
-                    };
-                if (err !== null && err !== undefined) {
-                    return apps.errout({
-                        error: err,
-                        name : "biddle_help_readme"
-                    });
-                }
-                readme = (function biddle_help_readme_removeImages() {
-                    var readout = [],
-                        j       = readme.split(""),
-                        i       = 0,
-                        ilen    = j.length,
-                        brace   = "",
-                        code    = (j[0] === " " && j[1] === " " && j[2] === " " && j[3] === " ");
-                    for (i = 0; i < ilen; i += 1) {
-                        if (brace === "") {
-                            if (j[i] === "\r") {
-                                if (j[i + 1] === "\n") {
-                                    j[i] = "";
-                                } else {
-                                    j[i] = "\n";
-                                }
-                                if (j[i + 1] === " " && j[i + 2] === " " && j[i + 3] === " " && j[i + 4] === " ") {
-                                    code = true;
-                                } else {
-                                    code = false;
-                                }
-                            } else if (j[i] === "\n") {
-                                if (j[i + 1] === " " && j[i + 2] === " " && j[i + 3] === " " && j[i + 4] === " ") {
-                                    code = true;
-                                } else {
-                                    code = false;
-                                }
-                            } else if (j[i] === "`") {
-                                brace = "`";
-                                code  = true;
-                            } else if (j[i] === "!" && j[i + 1] === "[") {
-                                brace    = "]";
-                                j[i]     = "";
-                                j[i + 1] = "";
-                            } else if (j[i] === "]" && j[i + 1] === "(") {
-                                j[i] = ", ";
-                            } else if (j[i] === "[" && code === false) {
-                                j[i] = "";
-                            } else if (j[i] === ")" && j[i + 1] === " " && (/\s/).test(j[i + 2]) === false) {
-                                j[i] = "),";
-                            }
-                        } else if (brace === j[i]) {
-                            if (brace === "`") {
-                                code = false;
-                            } else {
-                                j[i] = "";
-                            }
-                            if (brace === "]" && j[i + 1] === "(") {
-                                brace = ")";
-                            } else {
-                                brace = "";
-                            }
-                        }
-                        if (brace !== ")") {
-                            readout.push(j[i]);
-                        }
-                    }
-                    return readout.join("");
-                }());
-                lines  = readme.split("\n");
-                len    = lines.length;
-                output.push("");
-                for (b = 0; b < len; b += 1) {
-                    if (lines[b].slice(1).indexOf("|") > -1 && (/---+\|---+/).test(lines[b + 1]) === true) {
-                        table();
-                    } else if (lines[b].indexOf("#### ") === 0) {
-                        listly   = [];
-                        ind      = "    ";
-                        lines[b] = ind + und + bld + tan + lines[b].slice(5) + enc + ens + enu;
-                        ind      = "      ";
-                    } else if (lines[b].indexOf("### ") === 0) {
-                        listly   = [];
-                        ind      = "  ";
-                        lines[b] = ind + und + bld + grn + lines[b].slice(4) + enc + ens + enu;
-                        ind      = "    ";
-                    } else if (lines[b].indexOf("## ") === 0) {
-                        listly   = [];
-                        ind      = "  ";
-                        lines[b] = und + bld + cyn + lines[b].slice(3) + enc + ens + enu;
-                    } else if (lines[b].indexOf("# ") === 0) {
-                        listly   = [];
-                        ind      = "";
-                        lines[b] = und + bld + red + lines[b].slice(2) + enc + ens + enu;
-                    } else if ((/^(\s*(\*|-)\s)/).test(lines[b]) === true) {
-                        listr = (/^(\s*)/).exec(lines[b])[0];
-                        if (listly.length === 0 || listly[listly.length - 1] < listr.length) {
-                            if ((/\s/).test(listr.charAt(0)) === true) {
-                                listly.push(listr.length);
-                            } else {
-                                listly = [listr.length];
-                            }
-                        } else if (listly.length > 1 && listr.length < listly[listly.length - 1]) {
-                            do {
-                                listly.pop();
-                            } while (listly.length > 1 && listr.length < listly[listly.length - 1]);
-                        }
-                        if (listly.length % 2 > 0) {
-                            bullet = "*";
-                        } else {
-                            bullet = "-";
-                        }
-                        lines[b] = parse(lines[b], true, false).replace(/\*|-/, bld + red + bullet + enc + ens);
-                    } else if ((/^\s*>/).test(lines[b]) === true) {
-                        listly   = [];
-                        lines[b] = parse(lines[b], false, false);
-                        if (b < len - 1 && (/^(\s*)$/).test(lines[b + 1]) === false) {
-                            lines[b + 1] = ">" + lines[b + 1];
-                        }
-                    } else {
-                        listly = [];
-                        if (lines[b].length > 0) {
-                            lines[b] = parse(lines[b], false, false);
-                        }
-                    }
-                    output.push(lines[b]);
-                }
-                if (data.platform === "win32") {
-                    ind = output.join("\r\n");
-                } else {
-                    ind = output.join("\n");
-                }
-                if ((data.command === "help" && data.input[3] === "test") || (data.command === "markdown" && data.input[4] === "test")) {
-                    ind = ind
-                        .replace(/\r\n/g, "\n")
-                        .slice(0, 8192)
-                        .replace(/(\\(\w+)?)$/, "")
-                        .replace(/\\(?!(\\))/g, "\\\\")
-                        .replace(/\u001b/g, "\\u001b")
-                        .replace(/\n/g, "\\n")
-                        .replace(/"/g, "\\\"")
-                        .replace(/\\\\"/g, "\\\"");
-                }
-                console.log(ind);
-                process.exit(0);
-            });
     };
     apps.install     = function biddle_install() {
         var flag        = {
@@ -1313,7 +888,7 @@
             }()),
             compareHash = function biddle_install_compareHash() {
                 apps
-                    .hashCmd(data.address.downloads + data.fileName, "hashZip", function biddle_install_compareHash_hashCmd() {
+                    .hash(data.address.downloads + data.fileName, "hashZip", function biddle_install_compareHash_hash() {
                         if (data.hashFile === data.hashZip) {
                             var location = "",
                                 puba     = [],
@@ -1333,21 +908,21 @@
                                             packjson: false,
                                             remove  : false
                                         },
-                                        complete = function biddle_install_compareHash_hashCmd_complete() {
-                                            console.log("Application \u001b[36m" + data.packjson.name + "\u001b[39m is installed to version: " + data.packjson.version);
+                                        complete = function biddle_install_compareHash_hash_complete() {
+                                            console.log("Application " + text.cyan + data.packjson.name + text.nocolor + "m is installed to version: " + data.packjson.version);
                                         };
                                     data.installed[data.packjson.name]           = {};
                                     data.installed[data.packjson.name].location  = data.address.target;
                                     data.installed[data.packjson.name].version   = data.packjson.version;
                                     data.installed[data.packjson.name].published = pubs;
                                     apps.writeFile(JSON.stringify(data.installed), data.abspath + "installed.json",
-                                    function biddle_install_compareHash_hashCmd_installedJSON() {
+                                    function biddle_install_compareHash_hash_installedJSON() {
                                         status.packjson = true;
                                         if (status.remove === true) {
                                             complete();
                                         }
                                     });
-                                    apps.rmrecurse(data.abspath + "downloads" + node.path.sep + data.fileName, function biddle_install_compareHash_hashCmd_remove() {
+                                    apps.rmrecurse(data.abspath + "downloads" + node.path.sep + data.fileName, function biddle_install_compareHash_hash_remove() {
                                         status.remove = true;
                                         if (status.packjson === true) {
                                             complete();
@@ -1358,7 +933,7 @@
                                     name    : ""
                                 });
                         } else {
-                            return apps.errout({error: "\u001b[31mHashes don't match\u001b[39m for " + data.input[2] + ". File is saved in the downloads directory and will not be installed.\r\nGenerated hash - " + data.hashZip + "\r\nRequested hash - " + data.hashFile, name: "biddle_install_compareHash"});
+                            return apps.errout({error: text.red + "Hashes don't match" + text.nocolor + " for " + data.input[2] + ". File is saved in the downloads directory and will not be installed.\r\nGenerated hash - " + data.hashZip + "\r\nRequested hash - " + data.hashFile, name: "biddle_install_compareHash"});
                         }
                     });
             };
@@ -1387,8 +962,8 @@
             name = dirs[dirs.length - 1];
             if (typeof data.installed[name] === "object" && data.installed[name].version === fileData) {
                 return apps.errout({
-                    error: "This application is already installed at version \u001b[36m" + fileData + "\u001b[39m. To continue uninstall the application and try again: \u001b[32mbiddl" +
-                            "e uninstall " + name + "\u001b[39m",
+                    error: "This application is already installed at version " + text.cyan + fileData + text.nocolor + ". To continue uninstall the application and try again: " + text.green + "biddl" +
+                            "e uninstall " + name + text.nocolor,
                     name : "biddle_install_getlate"
                 });
             }
@@ -1429,12 +1004,12 @@
                     };
                 listtype[type].sort();
                 if (listtype[type].length === 0) {
-                    console.log("\u001b[4m" + proper + " applications:\u001b[0m");
+                    console.log(text.underline + proper + " applications:" + text.normal);
                     console.log("");
                     console.log("No applications are " + type + " by biddle.");
                     console.log("");
                 } else {
-                    console.log("\u001b[4m" + proper + " applications:\u001b[0m");
+                    console.log(text.underline + proper + " applications:" + text.normal);
                     console.log("");
                     len          = listtype[type].length;
                     pads.name    = 0;
@@ -1451,7 +1026,7 @@
                     } while (a < len);
                     a = 0;
                     do {
-                        console.log("* \u001b[36m" + pad(listtype[type][a], "name") + "\u001b[39m - " + pad(data[type][listtype[type][a]][vert], "version") + " - " + data[type][listtype[type][a]][loct]);
+                        console.log("* " + text.cyan + pad(listtype[type][a], "name") + text.nocolor + " - " + pad(data[type][listtype[type][a]][vert], "version") + " - " + data[type][listtype[type][a]][loct]);
                         a += 1;
                     } while (a < len);
                     console.log("");
@@ -1536,6 +1111,473 @@
                     });
                 }
                 callback();
+            });
+    };
+    apps.markdown    = function biddle_markdown() {
+        var file = data.abspath + "readme.md",
+            size = data.input[2];
+        if (data.command === "markdown") {
+            file = data.input[2];
+            size = data.input[3];
+        }
+        node
+            .fs
+            .readFile(file, "utf8", function biddle_markdown_readme(err, readme) {
+                var lines  = [],
+                    listly = [],
+                    output = [],
+                    ind    = "",
+                    listr  = "",
+                    b      = 0,
+                    len    = 0,
+                    bullet = "",
+                    parse  = function biddle_markdown_readme_parse(item, listitem, cell) {
+                        var block = false,
+                            chars = [],
+                            final = 0,
+                            s     = (/\s/),
+                            x     = 0,
+                            y     = ind.length,
+                            start = 0,
+                            index = 0,
+                            math  = 0,
+                            endln = 0,
+                            quote = "",
+                            wrap  = function biddle_markdown_readme_parse_wrap(tick) {
+                                var z      = x,
+                                    format = function biddle_markdown_readme_parse_wrap_format(eol) {
+                                        if (block === true) {
+                                            chars[eol] = "\n" + ind + "| ";
+                                        } else {
+                                            chars[eol] = "\n" + ind;
+                                        }
+                                        index = 1 + y + eol;
+                                        if (chars[eol - 1] === " ") {
+                                            chars[eol - 1] = "";
+                                        } else if (chars[eol + 1] === " ") {
+                                            chars.splice(eol + 1,
+                                            1);
+                                            final -= 1;
+                                        }
+                                    };
+                                if (cell === true) {
+                                    return;
+                                }
+                                if (tick === true) {
+                                    do {
+                                        z -= 1;
+                                    } while (chars[z + 1].indexOf(text.green) < 0 && z > index);
+                                    if (z > index) {
+                                        format(z);
+                                    }
+                                } else if (s.test(chars[x]) === true) {
+                                    format(x);
+                                } else {
+                                    do {
+                                        z -= 1;
+                                    } while (s.test(chars[z]) === false && z > index);
+                                    if (z > index) {
+                                        format(z);
+                                    }
+                                }
+                            };
+                        if ((/\u0020{4}\S/).test(item) === true && listitem === false) {
+                            item = text.green + item + text.nocolor;
+                            return item;
+                        }
+                        if (item.charAt(0) === ">") {
+                            block = true;
+                        }
+                        if (listitem === true) {
+                            item = item.replace(/^\s+/, "");
+                        }
+                        chars = item
+                            .replace(/^(\s*>\s*)/, ind + "| ")
+                            .replace(/`/g, "bix~")
+                            .split("");
+                        final = chars.length;
+                        if (cell === true) {
+                            start = 0;
+                        } else {
+                            if (block === true) {
+                                chars.splice(0, 0, "  ");
+                            }
+                            if (listitem === true || block === true) {
+                                x = listly.length;
+                                do {
+                                    x   -= 1;
+                                    y   += 2;
+                                    ind = ind + "  ";
+                                } while (x > 0);
+                            }
+                            if (block === false) {
+                                if (listitem === true) {
+                                    chars.splice(0, 0, ind.slice(2));
+                                } else {
+                                    chars.splice(0, 0, ind);
+                                }
+                            }
+                            start = y - 1;
+                        }
+                        endln = (isNaN(size) === false && size !== "")
+                            ? Number(size) - y
+                            : 100 - y;
+                        for (x = start; x < final; x += 1) {
+                            math = ((x + y) - (index - 1)) / endln;
+                            if (quote === "") {
+                                if (chars[x] === "*" && chars[x + 1] === "*") {
+                                    quote = "**";
+                                    chars.splice(x, 2);
+                                    chars[x] = text.bold + chars[x];
+                                    final    -= 2;
+                                } else if (chars[x] === "_" && chars[x + 1] === "_") {
+                                    quote = "__";
+                                    chars.splice(x, 2);
+                                    chars[x] = text.bold + chars[x];
+                                    final    -= 2;
+                                } else if (chars[x] === "*" && ((x === start && chars[x + 1] !== " ") || x > start)) {
+                                    quote = "*";
+                                    chars.splice(x, 1);
+                                    chars[x] = text.yellow + chars[x];
+                                    final    -= 1;
+                                } else if (chars[x] === "_" && ((x === start && chars[x + 1] !== " ") || x > start)) {
+                                    quote = "_";
+                                    chars.splice(x, 1);
+                                    chars[x] = text.yellow + chars[x];
+                                    final    -= 1;
+                                } else if (chars[x] === "b" && chars[x + 1] === "i" && chars[x + 2] === "x" && chars[x + 3] === "~") {
+                                    quote = "`";
+                                    chars.splice(x, 4);
+                                    chars[x] = text.green + chars[x];
+                                    final    -= 4;
+                                } else if (chars[x - 2] === "," && chars[x - 1] === " " && chars[x] === "(") {
+                                    quote    = ")";
+                                    chars[x] = chars[x] + text.cyan;
+                                }
+                            } else if (chars[x] === "b" && chars[x + 1] === "i" && chars[x + 2] === "x" && chars[x + 3] === "~" && quote === "`") {
+                                quote = "";
+                                chars.splice(x, 4);
+                                if (chars[x] === undefined) {
+                                    x = chars.length - 1;
+                                }
+                                chars[x] = chars[x] + text.nocolor;
+                                final    -= 4;
+                                if (math > 1 && chars[x + 1] === " ") {
+                                    x += 1;
+                                    wrap(false);
+                                }
+                            } else if (chars[x] === ")" && quote === ")") {
+                                quote    = "";
+                                chars[x] = text.nocolor + chars[x];
+                                if (math > 1 && chars[x + 1] === " ") {
+                                    x += 1;
+                                    wrap(false);
+                                }
+                            } else if (chars[x] === "*" && chars[x + 1] === "*" && quote === "**") {
+                                quote = "";
+                                chars.splice(x, 2);
+                                chars[x - 1] = chars[x - 1] + text.normal;
+                                final        -= 2;
+                            } else if (chars[x] === "*" && quote === "*") {
+                                quote = "";
+                                chars.splice(x, 1);
+                                chars[x - 1] = chars[x - 1] + text.nocolor;
+                                final        -= 1;
+                            } else if (chars[x] === "_" && chars[x + 1] === "_" && quote === "__") {
+                                quote = "";
+                                chars.splice(x, 2);
+                                chars[x - 1] = chars[x - 1] + text.normal;
+                                final        -= 2;
+                            } else if (chars[x] === "_" && quote === "_") {
+                                quote = "";
+                                chars.splice(x, 1);
+                                chars[x - 1] = chars[x - 1] + text.nocolor;
+                                final        -= 1;
+                            }
+                            if (math > 1) {
+                                if (quote === "`") {
+                                    wrap(true);
+                                } else {
+                                    wrap(false);
+                                }
+                            }
+                            if (chars[x + 1] === undefined) {
+                                break;
+                            }
+                        }
+                        if (quote === "**") {
+                            chars.pop();
+                            chars[x - 1] = chars[x - 1] + text.normal;
+                        } else if (quote === "*") {
+                            chars.pop();
+                            chars[x - 1] = chars[x - 1] + text.none;
+                        } else if (quote === ")") {
+                            chars[x - 1] = chars[x - 1] + text.nocolor;
+                        } else if (quote === "`") {
+                            chars.pop();
+                            chars[x - 4] = chars[x - 4] + text.nocolor;
+                            chars[x - 3] = "";
+                            chars[x - 2] = "";
+                            chars[x - 1] = "";
+                            chars[x]     = "";
+                        }
+                        item = chars.join("");
+                        if (block === true) {
+                            ind = ind.slice(2);
+                        } else if (listitem === true) {
+                            ind = ind.slice(listly.length * 2);
+                        }
+                        return item;
+                    },
+                    table  = function biddle_markdown_readme_table() {
+                        var rows = [
+                                lines[b]
+                                    .replace(/^\|/, "")
+                                    .replace(/\|$/, "")
+                                    .split("|")
+                            ],
+                            lens = rows[0].length,
+                            cols = [],
+                            c    = 0,
+                            d    = 0,
+                            e    = 0,
+                            lend = 0,
+                            line = "";
+                        c    = b + 2;
+                        line = lines[c]
+                            .replace(/^\|/, "")
+                            .replace(/\|$/, "");
+                        d    = 0;
+                        do {
+                            rows[0][d] = parse(rows[0][d].replace(/\s+/g, " ").replace(/^\s/, "").replace(/\s$/, ""), false, true);
+                            lend         = rows[0][d]
+                                .replace(/\u001b\[\d+m/g, "")
+                                .length;
+                            cols.push(lend);
+                            d += 1;
+                        } while (d < lens);
+                        if (line.indexOf("|") > -1) {
+                            do {
+                                rows.push(line.split("|").slice(0, lens));
+                                d = 0;
+                                do {
+                                    rows[rows.length - 1][d] = parse(rows[rows.length - 1][d].replace(/\s+/g, " ").replace(/^\s/, "").replace(/\s$/, ""), false, true);
+                                    lend                       = rows[rows.length - 1][d]
+                                        .replace(/\u001b\[\d+m/g, "")
+                                        .length;
+                                    if (lend > cols[d]) {
+                                        cols[d] = lend;
+                                    }
+                                    if (rows[rows.length - 1][d] === "\u2713") {
+                                        rows[rows.length - 1][d] = text.bold + text.green + "\u2713" + text.none;
+                                    } else if (rows[rows.length - 1][d] === "X") {
+                                        rows[rows.length - 1][d] = text.bold + text.red + "X" + text.none;
+                                    } else if (rows[rows.length - 1][d] === "?") {
+                                        rows[rows.length - 1][d] = text.bold + text.yellow + "?" + text.none;
+                                    }
+                                    d += 1;
+                                } while (d < lens);
+                                c += 1;
+                                if (c === len) {
+                                    break;
+                                }
+                                line = lines[c]
+                                    .replace(/^\|/, "")
+                                    .replace(/\|$/, "");
+                            } while (line.indexOf("|") > -1);
+                        }
+                        c    = 0;
+                        lend = rows.length;
+                        do {
+                            d = 0;
+                            do {
+                                e = rows[c][d]
+                                    .replace(/\u001b\[\d+m/g, "")
+                                    .length;
+                                if (d === lens - 1 && rows[c][d].length < cols[d]) {
+                                    do {
+                                        e          += 1;
+                                        rows[c][d] = rows[c][d] + " ";
+                                    } while (e < cols[d]);
+                                } else {
+                                    do {
+                                        e          += 1;
+                                        rows[c][d] = rows[c][d] + " ";
+                                    } while (e < cols[d] + 1);
+                                }
+                                if (c === 0) {
+                                    if (d > 0) {
+                                        rows[c][d] = text.underline + " " + rows[c][d] + text.normal;
+                                    } else {
+                                        rows[c][d] = ind + text.underline + rows[c][d] + text.normal;
+                                    }
+                                } else {
+                                    if (d > 0) {
+                                        rows[c][d] = " " + rows[c][d];
+                                    } else {
+                                        rows[c][d] = ind + rows[c][d];
+                                    }
+                                }
+                                d += 1;
+                            } while (d < lens);
+                            output.push(rows[c].join(""));
+                            c += 1;
+                            b += 1;
+                        } while (c < lend);
+                        b += 1;
+                    };
+                if (err !== null && err !== undefined) {
+                    return apps.errout({
+                        error: err,
+                        name : "biddle_markdown_readme"
+                    });
+                }
+                readme = (function biddle_markdown_readme_removeImages() {
+                    var readout = [],
+                        j       = readme.split(""),
+                        i       = 0,
+                        ilen    = j.length,
+                        brace   = "",
+                        code    = (j[0] === " " && j[1] === " " && j[2] === " " && j[3] === " ");
+                    for (i = 0; i < ilen; i += 1) {
+                        if (brace === "") {
+                            if (j[i] === "\r") {
+                                if (j[i + 1] === "\n") {
+                                    j[i] = "";
+                                } else {
+                                    j[i] = "\n";
+                                }
+                                if (j[i + 1] === " " && j[i + 2] === " " && j[i + 3] === " " && j[i + 4] === " ") {
+                                    code = true;
+                                } else {
+                                    code = false;
+                                }
+                            } else if (j[i] === "\n") {
+                                if (j[i + 1] === " " && j[i + 2] === " " && j[i + 3] === " " && j[i + 4] === " ") {
+                                    code = true;
+                                } else {
+                                    code = false;
+                                }
+                            } else if (j[i] === "`") {
+                                brace = "`";
+                                code  = true;
+                            } else if (j[i] === "!" && j[i + 1] === "[") {
+                                brace    = "]";
+                                j[i]     = "";
+                                j[i + 1] = "";
+                            } else if (j[i] === "]" && j[i + 1] === "(") {
+                                j[i] = ", ";
+                            } else if (j[i] === "[" && code === false) {
+                                j[i] = "";
+                            } else if (j[i] === ")" && j[i + 1] === " " && (/\s/).test(j[i + 2]) === false) {
+                                j[i] = "),";
+                            }
+                        } else if (brace === j[i]) {
+                            if (brace === "`") {
+                                code = false;
+                            } else {
+                                j[i] = "";
+                            }
+                            if (brace === "]" && j[i + 1] === "(") {
+                                brace = ")";
+                            } else {
+                                brace = "";
+                            }
+                        }
+                        if (brace !== ")") {
+                            readout.push(j[i]);
+                        }
+                    }
+                    return readout.join("");
+                }());
+                lines  = readme.split("\n");
+                len    = lines.length;
+                output.push("");
+                for (b = 0; b < len; b += 1) {
+                    if (lines[b].slice(1).indexOf("|") > -1 && (/---+\|---+/).test(lines[b + 1]) === true) {
+                        table();
+                    } else if (lines[b].indexOf("#### ") === 0) {
+                        listly   = [];
+                        ind      = "    ";
+                        lines[b] = ind + text.underline + text.bold + text.yellow + lines[b].slice(5) + text.none;
+                        ind      = "      ";
+                    } else if (lines[b].indexOf("### ") === 0) {
+                        listly   = [];
+                        ind      = "  ";
+                        lines[b] = ind + text.underline + text.bold + text.green + lines[b].slice(4) + text.none;
+                        ind      = "    ";
+                    } else if (lines[b].indexOf("## ") === 0) {
+                        listly   = [];
+                        ind      = "  ";
+                        lines[b] = text.underline + text.bold + text.cyan + lines[b].slice(3) + text.none;
+                    } else if (lines[b].indexOf("# ") === 0) {
+                        listly   = [];
+                        ind      = "";
+                        lines[b] = text.underline + text.bold + text.red + lines[b].slice(2) + text.none;
+                    } else if ((/^(\s*(\*|-)\s)/).test(lines[b]) === true) {
+                        listr = (/^(\s*)/).exec(lines[b])[0];
+                        if (listly.length === 0 || listly[listly.length - 1] < listr.length) {
+                            if ((/\s/).test(listr.charAt(0)) === true) {
+                                listly.push(listr.length);
+                            } else {
+                                listly = [listr.length];
+                            }
+                        } else if (listly.length > 1 && listr.length < listly[listly.length - 1]) {
+                            do {
+                                listly.pop();
+                            } while (listly.length > 1 && listr.length < listly[listly.length - 1]);
+                        }
+                        if (listly.length % 2 > 0) {
+                            bullet = "*";
+                        } else {
+                            bullet = "-";
+                        }
+                        lines[b] = parse(lines[b], true, false).replace(/\*|-/, text.bold + text.red + bullet + text.none);
+                    } else if ((/^\s*>/).test(lines[b]) === true) {
+                        listly   = [];
+                        lines[b] = parse(lines[b], false, false);
+                        if (b < len - 1 && (/^(\s*)$/).test(lines[b + 1]) === false) {
+                            lines[b + 1] = ">" + lines[b + 1];
+                        }
+                    } else {
+                        listly = [];
+                        if (lines[b].length > 0) {
+                            lines[b] = parse(lines[b], false, false);
+                        }
+                    }
+                    output.push(lines[b]);
+                }
+                if (data.platform === "win32") {
+                    ind = output.join("\r\n");
+                } else {
+                    ind = output.join("\n");
+                }
+                if ((data.command === "help" && data.input[3] === "test") || (data.command === "markdown" && data.input[4] === "test")) {
+                    ind = "\"" + ind
+                        .replace(/\r\n/g, "\n")
+                        .slice(0, 8192)
+                        .replace(/(\\(\w+)?)$/, "")
+                        .replace(/\\(?!(\\))/g, "\\\\")
+                        .replace(/\n/g, "\\n")
+                        .replace(/"/g, "\\\"")
+                        .replace(/\\\\"/g, "\\\"")
+                        .replace(/(\s+)$/, "")
+                        .replace(/(\\n)$/, "")
+                        .replace(/\u001b\[39m\u001b\[0m/g, "\" + text.none + \"")
+                        .replace(/\u001b\[0m/g, "\" + text.normal + \"")
+                        .replace(/\u001b\[1m/g, "\" + text.bold + \"")
+                        .replace(/\u001b\[4m/g, "\" + text.underline + \"")
+                        .replace(/\u001b\[31m/g, "\" + text.red + \"")
+                        .replace(/\u001b\[32m/g, "\" + text.green + \"")
+                        .replace(/\u001b\[33m/g, "\" + text.yellow + \"")
+                        .replace(/\u001b\[34m/g, "\" + text.blue + \"")
+                        .replace(/\u001b\[35m/g, "\" + text.purple + \"")
+                        .replace(/\u001b\[36m/g, "\" + text.cyan + \"")
+                        .replace(/\u001b\[39m/g, "\" + text.nocolor + \"")
+                        .replace(/\u0020\+\u0020""\u0020\+\u0020/g, " + ") + "\"";
+                }
+                console.log(ind);
+                process.exit(0);
             });
     };
     apps.publish     = function biddle_publish() {
@@ -1743,7 +1785,7 @@
                                         });
                                 }
                             });
-                        apps.hashCmd(zipfilename, "hashFile", function biddle_publish_zippy_zip_hash() {
+                        apps.hash(zipfilename, "hashFile", function biddle_publish_zippy_zip_hash() {
                             apps
                                 .writeFile(data.hashFile, zipfilename.replace(".zip", ".hash"), function biddle_publish_zippy_zip_hash_writehash() {
                                     return true;
@@ -1807,15 +1849,15 @@
                                             .child(varobj.tasks[0], function biddle_publish_execution_variantsDir_each_copy_tasks_child(ert, stdoutt, stdert) {
                                                 var len = varobj.tasks.length - 1;
                                                 if (ert !== null) {
-                                                    console.log("\u001b[1m\u001b[31mError:\u001b[39m\u001b[0m with variant " + value + " on publish task");
+                                                    console.log(text.bold + text.red + "Error:" + text.none + " with variant " + value + " on publish task");
                                                     console.log(varobj.tasks[0]);
                                                     console.log(ert);
                                                 } else if (stdert !== null && stdert !== "") {
-                                                    console.log("\u001b[1m\u001b[31mError:\u001b[39m\u001b[0m with variant " + value + " on publish task");
+                                                    console.log(text.bold + text.red + "Error:" + text.none + " with variant " + value + " on publish task");
                                                     console.log(varobj.tasks[0]);
                                                     console.log(stdert);
                                                 } else {
-                                                    console.log("\u001b[1m\u001b[32mComplete:\u001b[39m\u001b[0m with variant " + value + " on publish task");
+                                                    console.log(text.bold + text.green + "Complete:" + text.none + " with variant " + value + " on publish task");
                                                     console.log(varobj.tasks[0]);
                                                     console.log(stdoutt);
                                                 }
@@ -2170,9 +2212,9 @@
                 keys.sort();
                 do {
                     if (data.installed[keys[k]].version === versions[keys[k]]) {
-                        currents.push("* " + keys[k] + " matches published version \u001b[36m" + versions[keys[k]] + "\u001b[39m");
+                        currents.push("* " + keys[k] + " matches published version " + text.cyan + versions[keys[k]] + text.nocolor);
                     } else {
-                        outs.push("* " + keys[k] + " is installed at version \u001b[1m\u001b[31m" + data.installed[keys[k]].version + "\u001b[39m\u001b[0m but published version is \u001b[36m" + versions[keys[k]] + "\u001b[39m");
+                        outs.push("* " + keys[k] + " is installed at version " + text.bold + text.red + data.installed[keys[k]].version + text.none + " but published version is " + text.cyan + versions[keys[k]] + text.nocolor);
                     }
                     k += 1;
                 } while (k < klen);
@@ -2181,9 +2223,9 @@
                     if (single === false) {
                         console.log("");
                         if (currents.length < 1) {
-                            console.log("\u001b[4m\u001b[31mAll Applications Outdated:\u001b[39m\u001b[0m");
+                            console.log(text.underline + text.red + "All Applications Outdated:" + text.none);
                         } else {
-                            console.log("\u001b[4mOutdated Applications:\u001b[0m");
+                            console.log(text.underline + "Outdated Applications:" + text.normal);
                         }
                     }
                     console.log("");
@@ -2198,9 +2240,9 @@
                     if (single === false) {
                         console.log("");
                         if (outs.length < 1) {
-                            console.log("\u001b[4m\u001b[32mAll Applications Are Current:\u001b[39m\u001b[0m");
+                            console.log(text.underline + text.green + "All Applications Are Current:" + text.none);
                         } else {
-                            console.log("\u001b[4mCurrent Applications:\u001b[0m");
+                            console.log(text.underline + "Current Applications:" + text.normal);
                         }
                     }
                     console.log("");
@@ -2319,7 +2361,8 @@
             order     = [
                 "moduleInstall",
                 "lint",
-                "hash",
+                "hashString",
+                "hashFile",
                 "copy",
                 "remove",
                 "markdown",
@@ -2515,7 +2558,7 @@
                 if ((/^([0-9]\.)/).test(secondString) === true) {
                     secondString = "0" + secondString;
                 }
-                return "\u001b[36m[" + hourString + ":" + minuteString + ":" + secondString + "]\u001b[39m ";
+                return text.cyan + "[" + hourString + ":" + minuteString + ":" + secondString + "]" + text.nocolor + " ";
             },
             diffFiles = function biddle_test_diffFiles(sampleName, sampleSource, sampleDiff) {
                 var aa     = 0,
@@ -2524,25 +2567,7 @@
                     count  = 0,
                     diffs  = 0,
                     lcount = 0,
-                    report = [],
-                    colors = {
-                        del     : {
-                            charEnd  : "\u001b[22m",
-                            charStart: "\u001b[1m",
-                            lineEnd  : "\u001b[39m",
-                            lineStart: "\u001b[31m"
-                        },
-                        filepath: {
-                            end  : "\u001b[39m",
-                            start: "\u001b[36m"
-                        },
-                        ins     : {
-                            charEnd  : "\u001b[22m",
-                            charStart: "\u001b[1m",
-                            lineEnd  : "\u001b[39m",
-                            lineStart: "\u001b[32m"
-                        }
-                    };
+                    report = [];
                 options.mode    = "diff";
                 options.source  = sampleSource.replace(/\u001b/g, "\\u001b");
                 options.diff    = sampleDiff.replace(/\u001b/g, "\\u001b");
@@ -2555,22 +2580,22 @@
                 pdlen           = report[0].length;
                 if (report.length < 3) {
                     console.log("");
-                    console.log(colors.del.lineStart + "Test diff operation provided a bad code sample:" + colors.del.lineEnd);
+                    console.log(text.red + "Test diff operation provided a bad code sample:" + text.nocolor);
                     console.log(report[0]);
                     return apps.errout({
-                        error: colors.del.lineStart + "bad test" + colors.del.lineEnd,
+                        error: text.red + "bad test" + text.nocolor,
                         name : sampleName,
                         time : humantime(true)
                     });
                 }
-                console.log("\u001b[31mTest Failure with Comparison\u001b[39m");
-                console.log("\u001b[4mFirst Sample\u001b[0m");
+                console.log(text.red + "Test Failure with Comparison" + text.nocolor);
+                console.log(text.underline + "First Sample" + text.normal);
                 console.log(sampleSource);
                 console.log("");
-                console.log("\u001b[4mSecond Sample\u001b[0m");
+                console.log(text.underline + "Second Sample" + text.normal);
                 console.log(sampleDiff);
                 console.log("");
-                console.log("\u001b[4mComparison\u001b[0m");
+                console.log(text.underline + "Comparison" + text.normal);
                 // report indexes from diffcli feature of diffview.js
                 // 0. source line number
                 // 1. source code line
@@ -2581,8 +2606,8 @@
                 if (sampleName !== "phases.simulations" && report[0][0] < 2) {
                     diffs += 1;
                     console.log("");
-                    console.log(colors.filepath.start + sampleName);
-                    console.log("Line: 1" + colors.filepath.end);
+                    console.log(text.cyan + sampleName + text.nocolor);
+                    console.log(text.cyan + "Line: 1" + text.nocolor);
                 }
                 for (aa = 0; aa < pdlen; aa += 1) {
                     if (report[4][aa] === "equal" && report[4][aa + 1] === "equal" && report[4][aa + 2] !== undefined && report[4][aa + 2] !== "equal") {
@@ -2594,8 +2619,8 @@
                         lcount = 0;
                         diffs  += 1;
                         console.log("");
-                        console.log(colors.filepath.start + sampleName);
-                        console.log("Line: " + line + colors.filepath.end);
+                        console.log(text.cyan + sampleName + text.nocolor);
+                        console.log(text.cyan + "Line: " + line + text.nocolor);
                         if (aa === 0) {
                             console.log(report[3][aa]);
                             console.log(report[3][aa + 1]);
@@ -2609,26 +2634,26 @@
                             } else if (report[1][aa].replace(/\u0020+/g, "") === "") {
                                 report[1][aa] = "(indentation)";
                             }
-                            console.log(colors.del.lineStart + report[1][aa].replace(/<p(d)>/g, colors.del.charStart).replace(/<\/pd>/g, colors.del.charEnd) + colors.del.lineEnd);
+                            console.log(text.red + report[1][aa].replace(/<p(d)>/g, text.bold).replace(/<\/pd>/g, text.normal) + text.nocolor);
                         } else if (report[4][aa] === "insert" && report[2][aa] !== report[2][aa + 1]) {
                             if (report[3][aa] === "") {
                                 report[3][aa] = "(empty line)";
                             } else if (report[3][aa].replace(/\u0020+/g, "") === "") {
                                 report[3][aa] = "(indentation)";
                             }
-                            console.log(colors.ins.lineStart + report[3][aa].replace(/<p(d)>/g, colors.ins.charStart).replace(/<\/pd>/g, colors.ins.charEnd) + colors.ins.lineEnd);
+                            console.log(text.green + report[3][aa].replace(/<p(d)>/g, text.bold).replace(/<\/pd>/g, text.normal) + text.nocolor);
                         } else if (report[4][aa] === "equal" && aa > 1) {
                             console.log(report[3][aa]);
                         } else if (report[4][aa] === "replace") {
-                            console.log(colors.del.lineStart + report[1][aa].replace(/<p(d)>/g, colors.del.charStart).replace(/<\/pd>/g, colors.del.charEnd) + colors.del.lineEnd);
-                            console.log(colors.ins.lineStart + report[3][aa].replace(/<p(d)>/g, colors.ins.charStart).replace(/<\/pd>/g, colors.ins.charEnd) + colors.ins.lineEnd);
+                            console.log(text.red + report[1][aa].replace(/<p(d)>/g, text.bold).replace(/<\/pd>/g, text.normal) + text.nocolor);
+                            console.log(text.green + report[3][aa].replace(/<p(d)>/g, text.bold).replace(/<\/pd>/g, text.normal) + text.nocolor);
                         }
                     }
                 }
                 console.log("");
-                console.log(diffs + colors.filepath.start + " differences counted." + colors.filepath.end);
+                console.log(diffs + text.cyan + " differences counted." + text.nocolor);
                 apps.errout({
-                    error: "Pretty Diff " + colors.del.lineStart + "failed" + colors.del.lineEnd + " in function: " + colors.filepath.start + sampleName + colors.filepath.end,
+                    error: "Pretty Diff " + text.red + "failed" + text.nocolor + " in function: " + text.cyan + sampleName + text.nocolor,
                     name : sampleName,
                     time : humantime(true)
                 });
@@ -2694,21 +2719,27 @@
                                     time  : humantime(true)
                                 });
                             }
-                            console.log(humantime(false) + " \u001b[32mcopy test passed.\u001b[39m");
+                            console.log(humantime(false) + " " + text.green + "copy test passed." + text.nocolor);
                             next();
                         });
                 });
         };
         phases.get           = function biddle_test_get() {
+            var flag = {
+                text  : false,
+                binary: false
+            };
             node
-                .child(childcmd + "get http://www.google.com " + data.abspath + "unittest childtest", {
+                .child(childcmd + "get https://s0.2mdn.net/879366/express_html_inpage_rendering_lib_200_150.js " + data.abspath + "unittest childtest", {
                     cwd: data.abspath
-                }, function biddle_test_get_child(er, stdout, stder) {
-                    var size = "";
+                }, function biddle_test_get_childText(er, stdout, stder) {
+                    var size     = "",
+                        sizenumb = "",
+                        sizetest = " \u001b[1m\u001b[32m111,805\u001b[39m\u001b[0m";
                     if (er !== null) {
                         return apps.errout({
                             error : er,
-                            name  : "biddle_test_get_child",
+                            name  : "biddle_test_get_childText",
                             stdout: stdout,
                             time  : humantime(true)
                         });
@@ -2716,7 +2747,7 @@
                     if (stder !== null && stder !== "") {
                         return apps.errout({
                             error : stder,
-                            name  : "biddle_test_get_child",
+                            name  : "biddle_test_get_childText",
                             stdout: stdout,
                             time  : humantime(true)
                         });
@@ -2724,26 +2755,33 @@
                     size = stdout.slice(stdout.indexOf("written at") + 10).replace(/(\s+)$/, "");
                     if ((/^(((File)|(\d{3}))\u0020)/).test(stdout) === false || stdout.indexOf("File\u0020") < 0 || stdout.indexOf(" 0 bytes") > 0 || size.replace(" bytes.", "").length < 4) {
                         return apps.errout({
-                            error: "Unexpected output for test 'get':\r\n\u001b[31m" + stdout + "\u001b[39m",
-                            name : "biddle_test_get_child",
+                            error: "Unexpected output for test 'get':\r\n" + text.red + stdout + text.nocolor,
+                            name : "biddle_test_get_childText",
                             time : humantime(true)
                         });
                     }
-                    console.log(humantime(false) + " \u001b[32mget test passed.\u001b[39m File written at" + size);
-                    next();
+                    size     = size.replace("\r\n", "\n").slice(0, size.indexOf("\n"));
+                    sizenumb = size.replace(/\sbytes\.?/, "");
+                    if (sizenumb !== sizetest) {
+                        return diffFiles("biddle_test_get_childText", sizenumb, sizetest);
+                    }
+                    console.log(humantime(false) + " " + text.green + "get text test passed." + text.nocolor + " File written at" + size);
+                    flag.text = true;
+                    if (flag.binary === true) {
+                        next();
+                    }
                 });
-        };
-        phases.hash          = function biddle_test_hash() {
             node
-                .child(childcmd + "hash " + data.abspath + "LICENSE childtest", {
+                .child(childcmd + "get https://www.google.com/images/nav_logo242.png " + data.abspath + "unittest childtest", {
                     cwd: data.abspath
-                }, function biddle_test_hash_child(er, stdout, stder) {
-                    var hashtest = "be09a71a2cda28b74e9dd206f46c1621aebe29182723f191d8109db4705ced014de469043c397fee" +
-                            "4d8f3483e396007ca739717af4bf43fed4c2e3dd14f3dc0c";
+                }, function biddle_test_get_childBinary(er, stdout, stder) {
+                    var size     = "",
+                        sizenumb = "",
+                        sizetest = " \u001b[1m\u001b[32m21,909\u001b[39m\u001b[0m";
                     if (er !== null) {
                         return apps.errout({
                             error : er,
-                            name  : "biddle_test_hash_child",
+                            name  : "biddle_test_get_childBinary",
                             stdout: stdout,
                             time  : humantime(true)
                         });
@@ -2751,16 +2789,89 @@
                     if (stder !== null && stder !== "") {
                         return apps.errout({
                             error : stder,
-                            name  : "biddle_test_hash_child",
+                            name  : "biddle_test_get_childBinary",
                             stdout: stdout,
                             time  : humantime(true)
                         });
                     }
-                    stdout = stdout.replace(/(\r?\n)$/, "");
-                    if (stdout !== hashtest) {
-                        return diffFiles("biddle_test_hash_child", stdout, hashtest);
+                    size = stdout.slice(stdout.indexOf("written at") + 10).replace(/(\s+)$/, "");
+                    if ((/^(((File)|(\d{3}))\u0020)/).test(stdout) === false || stdout.indexOf("File\u0020") < 0 || stdout.indexOf(" 0 bytes") > 0 || size.replace(" bytes.", "").length < 4) {
+                        return apps.errout({
+                            error: "Unexpected output for test 'get':\r\n" + text.red + stdout + text.nocolor,
+                            name : "biddle_test_get_childBinary",
+                            time : humantime(true)
+                        });
                     }
-                    console.log(humantime(false) + " \u001b[32mhash test passed.\u001b[39m");
+                    size     = size.replace("\r\n", "\n").slice(0, size.indexOf("\n"));
+                    sizenumb = size.replace(/\sbytes\.?/, "");
+                    if (sizenumb !== sizetest) {
+                        return diffFiles("biddle_test_get_childBinary", sizenumb, sizetest);
+                    }
+                    console.log(humantime(false) + " " + text.green + "get binary test passed." + text.nocolor + " File written at" + size);
+                    flag.binary = true;
+                    if (flag.text === true) {
+                        next();
+                    }
+                });
+        };
+        phases.hashFile      = function biddle_test_hashFile() {
+            node
+                .child(childcmd + "hash " + data.abspath + "LICENSE childtest", {
+                    cwd: data.abspath
+                }, function biddle_test_hashFile_child(er, stdout, stder) {
+                    var hashtest = "be09a71a2cda28b74e9dd206f46c1621aebe29182723f191d8109db4705ced014de469043c397fee" +
+                            "4d8f3483e396007ca739717af4bf43fed4c2e3dd14f3dc0c";
+                    if (er !== null) {
+                        return apps.errout({
+                            error : er,
+                            name  : "biddle_test_hashFile_child",
+                            stdout: stdout,
+                            time  : humantime(true)
+                        });
+                    }
+                    if (stder !== null && stder !== "") {
+                        return apps.errout({
+                            error : stder,
+                            name  : "biddle_test_hashFile_child",
+                            stdout: stdout,
+                            time  : humantime(true)
+                        });
+                    }
+                    stdout = stdout.replace(/((\r?\n)+)$/, "");
+                    if (stdout !== hashtest) {
+                        return diffFiles("biddle_test_hashFile_child", stdout, hashtest);
+                    }
+                    console.log(humantime(false) + " " + text.green + "hash file test passed." + text.nocolor);
+                    next();
+                });
+        };
+        phases.hashString    = function biddle_test_hashString() {
+            node
+                .child(childcmd + "hash string \"a moderately long string to hash and test in the unit tests of biddle\" childtest", {
+                    cwd: data.abspath
+                }, function biddle_test_hashString_child(er, stdout, stder) {
+                    var hashtest = "d18faf161f06a2362ba0efbc4a66f8e85f500b6281c848f6775c587362808e3f51ff557a20a544c41660f5d92fc018020c74b035d1eef4954828bc4125c2a11d";
+                    if (er !== null) {
+                        return apps.errout({
+                            error : er,
+                            name  : "biddle_test_hashString_child",
+                            stdout: stdout,
+                            time  : humantime(true)
+                        });
+                    }
+                    if (stder !== null && stder !== "") {
+                        return apps.errout({
+                            error : stder,
+                            name  : "biddle_test_hashString_child",
+                            stdout: stdout,
+                            time  : humantime(true)
+                        });
+                    }
+                    stdout = stdout.replace(/((\r?\n)+)$/, "");
+                    if (stdout !== hashtest) {
+                        return diffFiles("biddle_test_hashString_child", stdout, hashtest);
+                    }
+                    console.log(humantime(false) + " " + text.green + "hash string test passed." + text.nocolor);
                     next();
                 });
         };
@@ -2773,7 +2884,7 @@
                     if (er !== null) {
                         return apps.errout({
                             error : er,
-                            name  : "biddle_test_hash_child",
+                            name  : "biddle_test_install_child",
                             stdout: stdout,
                             time  : humantime(true)
                         });
@@ -2781,14 +2892,14 @@
                     if (stder !== null && stder !== "") {
                         return apps.errout({
                             error : stder,
-                            name  : "biddle_test_hash_child",
+                            name  : "biddle_test_install_child",
                             stdout: stdout,
                             time  : humantime(true)
                         });
                     }
-                    if (stdout.indexOf("is missing the \u001b[36mhttp(s)\u001b[39m scheme, treating as a local path...") < 7) {
+                    if (stdout.indexOf("is missing the " + text.cyan + "http(s)" + text.nocolor + " scheme, treating as a local path...") < 7) {
                         return apps.errout({
-                            error : "Expected output to contain: is missing the \u001b[36mhttp(s)\u001b[39m scheme, t" +
+                            error : "Expected output to contain: is missing the " + text.cyan + "http(s)" + text.nocolor + " scheme, t" +
                                        "reating as a local path...",
                             name  : "biddle_test_install_child",
                             stdout: stdout,
@@ -2801,7 +2912,7 @@
                             if (err !== null) {
                                 return apps.errout({
                                     error : err,
-                                    name  : "biddle_test_hash_child_stat",
+                                    name  : "biddle_test_install_child_stat",
                                     stdout: stdout,
                                     time  : humantime(true)
                                 });
@@ -2809,12 +2920,12 @@
                             if (typeof stats !== "object" || stats.isFile() === false) {
                                 return apps.errout({
                                     error : instfile + " does not exist.",
-                                    name  : "biddle_test_hash_child_stat",
+                                    name  : "biddle_test_install_child_stat",
                                     stdout: stdout,
                                     time  : humantime(true)
                                 });
                             }
-                            console.log(humantime(false) + " \u001b[32mFile from install is present:\u001b[39m " + instfile);
+                            console.log(humantime(false) + " " + text.green + "File from install is present:" + text.nocolor + " " + instfile);
                             node
                                 .fs
                                 .readFile(data.abspath + "installed.json",
@@ -2823,7 +2934,7 @@
                                     if (era !== null && era !== undefined) {
                                         return apps.errout({
                                             error : instfile + " does not exist.",
-                                            name  : "biddle_test_hash_child_stat_readJSON",
+                                            name  : "biddle_test_install_child_stat_readJSON",
                                             stdout: stdout,
                                             time  : humantime(true)
                                         });
@@ -2832,7 +2943,7 @@
                                     if (inst.biddletesta === undefined) {
                                         return apps.errout({
                                             error : "biddletesta is absent from installed.json",
-                                            name  : "biddle_test_hash_child_stat_readJSON",
+                                            name  : "biddle_test_install_child_stat_readJSON",
                                             stdout: stdout,
                                             time  : humantime(true)
                                         });
@@ -2840,13 +2951,13 @@
                                     if (inst.biddletesta.version !== "99.99.1234") {
                                         return apps.errout({
                                             error : "Expected biddletesta.version of installed.json to be '99.99.1234'.",
-                                            name  : "biddle_test_hash_child_stat_readJSON",
+                                            name  : "biddle_test_install_child_stat_readJSON",
                                             stdout: stdout,
                                             time  : humantime(true)
                                         });
                                     }
-                                    console.log(humantime(false) + " \u001b[32minstalled.json contains biddletesta.\u001b[39m");
-                                    console.log(humantime(false) + " \u001b[32minstall test passed.\u001b[39m");
+                                    console.log(humantime(false) + " " + text.green + "installed.json contains biddletesta." + text.nocolor);
+                                    console.log(humantime(false) + " " + text.green + "install test passed." + text.nocolor);
                                     next();
                                 });
                         });
@@ -2883,7 +2994,7 @@
                                 }
                                 failed = true;
                                 if (ecount === 0) {
-                                    console.log("\u001b[31mJSLint errors on\u001b[39m " + val[0]);
+                                    console.log(text.red + "JSLint errors on" + text.nocolor + " " + val[0]);
                                     console.log("");
                                 }
                                 ecount += 1;
@@ -2898,9 +3009,9 @@
                                 "for": true
                             });
                         if (result.ok === true) {
-                            console.log(humantime(false) + "\u001b[32mLint is good for file " + (ind + 1) + ":\u001b[39m " + val[0]);
+                            console.log(humantime(false) + text.green + "Lint is good for file " + (ind + 1) + ":" + text.nocolor + " " + val[0]);
                             if (ind === arr.length - 1) {
-                                console.log("\u001b[32mLint operation complete!\u001b[39m");
+                                console.log(text.green + "Lint operation complete!" + text.nocolor);
                                 return next();
                             }
                         } else {
@@ -2909,14 +3020,14 @@
                                 .forEach(report);
                             if (failed === true) {
                                 return apps.errout({
-                                    error: "\u001b[31mLint fail\u001b[39m :(",
+                                    error: text.red + "Lint fail" + text.nocolor + " :(",
                                     name : "biddle_test_lint_lintrun_lintit",
                                     time : humantime(true)
                                 });
                             }
-                            console.log(humantime(false) + "\u001b[32mLint is good for file " + (ind + 1) + ":\u001b[39m " + val[0]);
+                            console.log(humantime(false) + text.green + "Lint is good for file " + (ind + 1) + ":" + text.nocolor + " " + val[0]);
                             if (ind === arr.length - 1) {
-                                console.log("\u001b[32mLint operation complete!\u001b[39m");
+                                console.log(text.green + "Lint operation complete!" + text.nocolor);
                                 next();
                             }
                         }
@@ -2938,7 +3049,7 @@
                     };
                     files.forEach(lintit);
                 };
-            console.log("\u001b[36mBeautifying and Linting\u001b[39m");
+            console.log(text.cyan + "Beautifying and Linting" + text.nocolor);
             console.log("** Note that line numbers of error messaging reflects beautified code line.");
             ignoreDirectory.forEach(function biddle_test_lint_absignore(value, index, array) {
                 array[index] = data.abspath + value;
@@ -3050,23 +3161,23 @@
                         .child(childcmd + listcmds[0] + " childtest", {
                             cwd: data.abspath
                         }, function biddle_test_listStatus_childWrapper_child(er, stdout, stder) {
-                            var listout = "\u001b[4minstalled applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[39m -" +
-                                        " 99.99.1234 - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* \u001b[36mbiddletestb\u001b[39m - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep + "\n\n\u001b[4mpublished applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[3" +
-                                        "9m - 99.99.1234 - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* \u001b[36mbiddletestb\u001b[39m - 98.98.1234 - " + data.abspath + "publications" + node.path.sep + "biddletestb" + node.path.sep,
-                                listpub = "\u001b[4mpublished applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[39m -" +
-                                        " 99.99.1234 - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* \u001b[36mbiddletestb\u001b[39m - 98.98.1234 - " + data.abspath + "publications" + node.path.sep + "biddletestb" + node.path.sep,
-                                listist = "\u001b[4minstalled applications:\u001b[0m\n\n* \u001b[36mbiddletesta\u001b[39m -" +
-                                        " 99.99.1234 - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* \u001b[36mbiddletestb\u001b[39m - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep,
-                                statout = "\n\u001b[4m\u001b[32mall applications are current:\u001b[39m\u001b[0m\n\n* biddl" +
-                                        "etesta matches published version \u001b[36m99.99.1234\u001b[39m\n* biddletestb m" +
-                                        "atches published version \u001b[36m98.98.1234\u001b[39m",
-                                statpba = "\n* biddletesta matches published version \u001b[36m99.99.1234\u001b[39m",
-                                statpbb = "\n\u001b[4moutdated applications:\u001b[0m\n\n* biddletesta is installed at vers" +
-                                        "ion \u001b[1m\u001b[31m99.99.1234\u001b[39m\u001b[0m but published version is " +
-                                        "\u001b[36m11.22.6789\u001b[39m\n\n\u001b[4mcurrent applications:\u001b[0m\n\n* b" +
-                                        "iddletestb matches published version \u001b[36m98.98.1234\u001b[39m",
-                                statpbc = "\n* biddletesta is installed at version \u001b[1m\u001b[31m99.99.1234\u001b[39m" +
-                                        "\u001b[0m but published version is \u001b[36m11.22.6789\u001b[39m";
+                            var listout = text.underline + "installed applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " -" +
+                                        " 99.99.1234 - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep + "\n\n" + text.underline + "published applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor +
+                                        " - 99.99.1234 - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "publications" + node.path.sep + "biddletestb" + node.path.sep,
+                                listpub = text.underline + "published applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " -" +
+                                        " 99.99.1234 - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "publications" + node.path.sep + "biddletestb" + node.path.sep,
+                                listist = text.underline + "installed applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " -" +
+                                        " 99.99.1234 - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep,
+                                statout = "\n" + text.underline + text.green + "all applications are current:" + text.none + "\n\n* biddl" +
+                                        "etesta matches published version " + text.cyan + "99.99.1234" + text.nocolor + "\n* biddletestb m" +
+                                        "atches published version " + text.cyan + "98.98.1234" + text.nocolor,
+                                statpba = "\n* biddletesta matches published version " + text.cyan + "99.99.1234" + text.nocolor,
+                                statpbb = "\n" + text.underline + "outdated applications:" + text.normal + "\n\n* biddletesta is installed at vers" +
+                                        "ion " + text.bold + text.red + "99.99.1234" + text.none + " but published version is " +
+                                        text.cyan + "11.22.6789" + text.nocolor + "\n\n" + text.underline + "current applications:" + text.normal + "\n\n* b" +
+                                        "iddletestb matches published version " + text.cyan + "98.98.1234" + text.nocolor,
+                                statpbc = "\n* biddletesta is installed at version " + text.bold + text.red + "99.99.1234" + text.none +
+                                        " but published version is " + text.cyan + "11.22.6789" + text.nocolor;
                             if (er !== null) {
                                 return apps.errout({
                                     error : er,
@@ -3092,49 +3203,49 @@
                                     return diffFiles("biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")",
                                     stdout, listout);
                                 }
-                                console.log(humantime(false) + " \u001b[32mlist output passed.\u001b[39m");
+                                console.log(humantime(false) + " " + text.green + "mlist output passed." + text.nocolor);
                             }
                             if (changed === false && listcmds[0] === "list published") {
                                 if (stdout !== listpub) {
                                     return diffFiles("biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")",
                                     stdout, listpub);
                                 }
-                                console.log(humantime(false) + " \u001b[32mlist published output passed.\u001b[39m");
+                                console.log(humantime(false) + " " + text.green + "list published output passed." + text.nocolor);
                             }
                             if (changed === false && listcmds[0] === "list installed") {
                                 if (stdout !== listist) {
                                     return diffFiles("biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")",
                                     stdout, listist);
                                 }
-                                console.log(humantime(false) + " \u001b[32mlist installed output passed.\u001b[39m");
+                                console.log(humantime(false) + " " + text.green + "list installed output passed." + text.nocolor);
                             }
                             if (changed === false && listcmds[0] === "status") {
                                 if (stdout !== statout) {
                                     return diffFiles("biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")",
                                     stdout, statout);
                                 }
-                                console.log(humantime(false) + " \u001b[32mstatus output passed.\u001b[39m");
+                                console.log(humantime(false) + " " + text.green + "status output passed." + text.nocolor);
                             }
                             if (changed === true && listcmds[0] === "status") {
                                 if (stdout !== statpbb) {
                                     return diffFiles("biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")",
                                     stdout, statpbb);
                                 }
-                                console.log(humantime(false) + " \u001b[32mstatus outdated output passed.\u001b[39m");
+                                console.log(humantime(false) + " " + text.green + "status outdated output passed." + text.nocolor);
                             }
                             if (changed === true && listcmds[0] === "status biddletesta") {
                                 if (stdout !== statpbc) {
                                     return diffFiles("biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")",
                                     stdout, statpbc);
                                 }
-                                console.log(humantime(false) + " \u001b[32mstatus outdated biddletesta output passed.\u001b[39m");
+                                console.log(humantime(false) + " " + text.green + "status outdated biddletesta output passed." + text.nocolor);
                             }
                             if (changed === false && listcmds[0] === "status biddletesta") {
                                 if (stdout !== statpba) {
                                     return diffFiles("biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")",
                                     stdout, statpba);
                                 }
-                                console.log(humantime(false) + " \u001b[32mstatus biddletesta output passed.\u001b[39m");
+                                console.log(humantime(false) + " " + text.green + "status biddletesta output passed." + text.nocolor);
                                 apps.writeFile("11.22.6789", data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "latest.txt",
                                 function biddle_test_listStatus_childWrapper_child_changeVersion() {
                                     changed = true;
@@ -3146,7 +3257,7 @@
                             if (listcmds.length > 0) {
                                 biddle_test_listStatus_childWrapper();
                             } else {
-                                console.log(humantime(false) + " \u001b[32mlist and status tests passed.\u001b[39m");
+                                console.log(humantime(false) + " " + text.green + "list and status tests passed." + text.nocolor);
                                 next();
                             }
                         });
@@ -3162,117 +3273,7 @@
             node.child(childcmd + "markdown " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "READMEa.md 60 childtest", {
                 cwd: data.abspath
             }, function biddle_test_markdown_60(er, stdout, stder) {
-                var markdowntest = "\n\u001b[4m\u001b[1m\u001b[31mtest README\u001b[39m\u001b[0m\u001b[24m\nsome dum" +
-                                 "my subtext\n\n\u001b[4m\u001b[1m\u001b[36mFirst Secondary Heading\u001b[39m" +
-                                 "\u001b[0m\u001b[24m\n    | a big block quote lives here. This is where I\n    | " +
-                                 "am going to experience with wrapping a block quote a bit\n    | differently from" +
-                                 " other content.  I need enough text in\n    | this quote to wrap a couple of tim" +
-                                 "es, so I will continue\n    | adding some nonsense and as long as it takes to en" +
-                                 "sure I\n    | have a fully qualified test.\n    | New line in a block quote\n   " +
-                                 " | More block\n\n  This is a regular paragraph that needs to be long\n  enough t" +
-                                 "o wrap a couple times.  This text will be unique\n  from the text in the block q" +
-                                 "uote because uniqueness saves\n  time when debugging test failures.  I am now wr" +
-                                 "iting a\n  bunch of wrapping paragraph gibberish, such as\n  f324fasdaowkefsdva." +
-                                 "  That one isn't even a word.  It isn't\n  cool if it doesn't contain a hyperlin" +
-                                 "k,\n  (\u001b[36mhttp://tonowhwere.nothing\u001b[39m), in some text.\n\n  \u001b" +
-                                 "[1m\u001b[31m*\u001b[39m\u001b[0m list item 1 these also need to wrap like a\n  " +
-                                 "  paragraph. So blah blah wrapping some madness into a\n    list item right gosh" +
-                                 " darn here and let's see what shakes\n    out of the coolness.\n  \u001b[1m" +
-                                 "\u001b[31m*\u001b[39m\u001b[0m list item 2 these also need to wrap like a\n    p" +
-                                 "aragraph. So blah blah wrapping some madness into a\n    list item right gosh da" +
-                                 "rn here and let's see what shakes\n    out of the coolness.\n    \u001b[1m\u001b" +
-                                 "[31m-\u001b[39m\u001b[0m sublist item 1 these also need to wrap like a\n      pa" +
-                                 "ragraph. So blah blah wrapping some madness into a\n      list item right gosh d" +
-                                 "arn here and let's see what\n      shakes out of the coolness.\n    \u001b[1m" +
-                                 "\u001b[31m-\u001b[39m\u001b[0m sublist item 2 these also need to wrap like a\n  " +
-                                 "    paragraph. So blah blah wrapping some madness into a\n      list item right " +
-                                 "gosh darn here and let's see what\n      shakes out of the coolness.\n      " +
-                                 "\u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 1 these also need to wra" +
-                                 "p\n        like a paragraph. So blah blah wrapping some madness\n        into a " +
-                                 "list item right gosh darn here and let's see\n        what shakes out of the coo" +
-                                 "lness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 2 these al" +
-                                 "so need to wrap\n        like a paragraph. So blah blah wrapping some madness\n " +
-                                 "       into a list item right gosh darn here and let's see\n        what shakes " +
-                                 "out of the coolness.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 3 thes" +
-                                 "e also need to wrap like a\n    paragraph. So blah blah wrapping some madness in" +
-                                 "to a\n    list item right gosh darn here and let's see what shakes\n    out of t" +
-                                 "he coolness.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m boo these also need to" +
-                                 " wrap like a paragraph.\n      So blah blah wrapping some madness into a list it" +
-                                 "em\n      right gosh darn here and let's see what shakes out of\n      the cooln" +
-                                 "ess.\n\n  \u001b[4m\u001b[1m\u001b[32mFirst Tertiary Heading\u001b[39m\u001b[0m" +
-                                 "\u001b[24m\n    This text should be extra indented.\n\n    \u001b[1m\u001b[31m*" +
-                                 "\u001b[39m\u001b[0m list item 1\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m lis" +
-                                 "t item 2\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 1\n      " +
-                                 "\u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 2\n        \u001b[1m\u001b[" +
-                                 "31m*\u001b[39m\u001b[0m subsublist item 1\n        \u001b[1m\u001b[31m*\u001b[39" +
-                                 "m\u001b[0m subsublist item 2\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list i" +
-                                 "tem 3\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m boo\n\n    \u001b[4m\u001b[" +
-                                 "1m\u001b[33mGettin Deep with the Headings\u001b[39m\u001b[0m\u001b[24m\n\n      " +
-                                 "  | a big block quote lives here. This\n        | is where I am going to experie" +
-                                 "nce with wrapping a\n        | block quote a bit differently from other content." +
-                                 "  I\n        | need enough text in this quote to wrap a couple of\n        | tim" +
-                                 "es, so I will continue adding some nonsense and\n        | as long as it takes t" +
-                                 "o ensure I have a fully\n        | qualified test.\n        | New line in a bloc" +
-                                 "k quote\n        | More block\n\n      Images get converted to their alt text\n " +
-                                 "     description.\n\n      This is a regular paragraph that needs to be\n      l" +
-                                 "ong enough to wrap a couple times.  This text will be\n      unique from the tex" +
-                                 "t in the block quote because\n      uniqueness saves time when debugging test fa" +
-                                 "ilures.  I\n      am now writing a bunch of wrapping paragraph\n      gibberish," +
-                                 " such as f324fasdaowkefsdva.  That one isn't\n      even a word.\n\n      \u001b" +
-                                 "[1m\u001b[31m*\u001b[39m\u001b[0m list item 1 these also need to wrap like\n    " +
-                                 "    a paragraph. So blah blah wrapping some madness into\n        a list item ri" +
-                                 "ght gosh darn here and let's see what\n        shakes out of the coolness.\n    " +
-                                 "  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 2 these also need to wrap li" +
-                                 "ke\n        a paragraph. So blah blah wrapping some madness into\n        a list" +
-                                 " item right gosh darn here and let's see what\n        shakes out of the coolnes" +
-                                 "s.\n        \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 1 these also ne" +
-                                 "ed to\n          wrap like a paragraph. So blah blah wrapping some\n          ma" +
-                                 "dness into a list item right gosh darn here and\n          let's see what shakes" +
-                                 " out of the coolness.\n        \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist i" +
-                                 "tem 2 these also need to\n          wrap like a paragraph. So blah blah wrapping" +
-                                 " some\n          madness into a list item right gosh darn here and\n          le" +
-                                 "t's see what shakes out of the coolness.\n          \u001b[1m\u001b[31m*\u001b[3" +
-                                 "9m\u001b[0m subsublist item 1 these also need\n            to wrap like a paragr" +
-                                 "aph. So blah blah wrapping\n            some madness into a list item right gosh" +
-                                 " darn\n            here and let's see what shakes out of the\n            coolne" +
-                                 "ss.\n          \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 2 these a" +
-                                 "lso need\n            to wrap like a paragraph. So blah blah wrapping\n         " +
-                                 "   some madness into a list item right gosh darn\n            here and let's see" +
-                                 " what shakes out of the\n            coolness.\n      \u001b[1m\u001b[31m*\u001b" +
-                                 "[39m\u001b[0m list item 3 these also need to wrap like\n        a paragraph. So " +
-                                 "blah blah wrapping some madness into\n        a list item right gosh darn here a" +
-                                 "nd let's see what\n        shakes out of the coolness.\n        \u001b[1m\u001b[" +
-                                 "31m-\u001b[39m\u001b[0m boo these also need to wrap like a\n          paragraph." +
-                                 " So blah blah wrapping some madness into\n          a list item right gosh darn " +
-                                 "here and let's see\n          what shakes out of the coolness.\n\n      \u001b[4" +
-                                 "mCommand   \u001b[0m\u001b[4m Local \u001b[0m\u001b[4m Argument Type            " +
-                                 "   \u001b[0m\u001b[4m Second Argument \u001b[0m\n      copy       \u001b[1m" +
-                                 "\u001b[32m✓\u001b[39m\u001b[0m      file path or directory path  directory path " +
-                                 "\n      get        \u001b[1m\u001b[33m?\u001b[39m\u001b[0m      file path       " +
-                                 "             none           \n      global     \u001b[1m\u001b[32m✓\u001b[39m" +
-                                 "\u001b[0m      none                         none           \n      hash       " +
-                                 "\u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path                    none  " +
-                                 "         \n      help       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      number " +
-                                 "                      none           \n      install    \u001b[1m\u001b[33m?" +
-                                 "\u001b[39m\u001b[0m      zip file                     directory path \n      lis" +
-                                 "t       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      \"\u001b[3m\u001b[33minstal" +
-                                 "led\u001b[39m\u001b[0m\" or \"\u001b[3m\u001b[33mpublished\u001b[39m\u001b[0m\" " +
-                                 "  none           \n      markdown   \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m     " +
-                                 " path to markdown file        number         \n      publish    \u001b[1m\u001b[" +
-                                 "32m✓\u001b[39m\u001b[0m      directory path               directory path \n     " +
-                                 " remove     \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path or directory " +
-                                 "path  none           \n      status     \u001b[1m\u001b[33m?\u001b[39m\u001b[0m " +
-                                 "     none or application name     none           \n      test       \u001b[1m" +
-                                 "\u001b[31mX\u001b[39m\u001b[0m      none                         none           " +
-                                 "\n      uninstall  \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      application name" +
-                                 "             none           \n      unpublish  \u001b[1m\u001b[32m✓\u001b[39m" +
-                                 "\u001b[0m      application name             none           \n      unzip      " +
-                                 "\u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      path to zip file             direct" +
-                                 "ory path \n      zip        \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file pa" +
-                                 "th or directory path  directory path \n\n\u001b[4m\u001b[1m\u001b[36mNew big Hea" +
-                                 "ding\u001b[39m\u001b[0m\u001b[24m\n  paragraph here to see if indentation is lar" +
-                                 "gely reset\n  appropriate to the current heading that is bigger than the\n  prev" +
-                                 "ious headings",
+                var markdowntest = "\n" + text.underline + text.bold + text.red + "test README" + text.none + "\nsome dummy subtext\n\n" + text.underline + text.bold + text.cyan + "First Secondary Heading" + text.none + "\n    | a big block quote lives here. This is where I\n    | am going to experience with wrapping a block quote a bit\n    | differently from other content.  I need enough text in\n    | this quote to wrap a couple of times, so I will continue\n    | adding some nonsense and as long as it takes to ensure I\n    | have a fully qualified test.\n    | New line in a block quote\n    | More block\n\n  This is a regular paragraph that needs to be long\n  enough to wrap a couple times.  This text will be unique\n  from the text in the block quote because uniqueness saves\n  time when debugging test failures.  I am now writing a\n  bunch of wrapping paragraph gibberish, such as\n  f324fasdaowkefsdva.  That one isn't even a word.  It isn't\n  cool if it doesn't contain a hyperlink,\n  (" + text.cyan + "http://tonowhwere.nothing" + text.nocolor + "), in some text.\n\n  " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like a\n    paragraph. So blah blah wrapping some madness into a\n    list item right gosh darn here and let's see what shakes\n    out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like a\n    paragraph. So blah blah wrapping some madness into a\n    list item right gosh darn here and let's see what shakes\n    out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to wrap like a\n      paragraph. So blah blah wrapping some madness into a\n      list item right gosh darn here and let's see what\n      shakes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to wrap like a\n      paragraph. So blah blah wrapping some madness into a\n      list item right gosh darn here and let's see what\n      shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need to wrap\n        like a paragraph. So blah blah wrapping some madness\n        into a list item right gosh darn here and let's see\n        what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need to wrap\n        like a paragraph. So blah blah wrapping some madness\n        into a list item right gosh darn here and let's see\n        what shakes out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like a\n    paragraph. So blah blah wrapping some madness into a\n    list item right gosh darn here and let's see what shakes\n    out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a paragraph.\n      So blah blah wrapping some madness into a list item\n      right gosh darn here and let's see what shakes out of\n      the coolness.\n\n  " + text.underline + text.bold + text.green + "First Tertiary Heading" + text.none + "\n    This text should be extra indented.\n\n    " + text.bold + text.red + "*" + text.none + " list item 1\n    " + text.bold + text.red + "*" + text.none + " list item 2\n      " + text.bold + text.red + "-" + text.none + " sublist item 1\n      " + text.bold + text.red + "-" + text.none + " sublist item 2\n        " + text.bold + text.red + "*" + text.none + " subsublist item 1\n        " + text.bold + text.red + "*" + text.none + " subsublist item 2\n    " + text.bold + text.red + "*" + text.none + " list item 3\n      " + text.bold + text.red + "-" + text.none + " boo\n\n    " + text.underline + text.bold + text.yellow + "Gettin Deep with the Headings" + text.none + "\n\n        | a big block quote lives here. This\n        | is where I am going to experience with wrapping a\n        | block quote a bit differently from other content.  I\n        | need enough text in this quote to wrap a couple of\n        | times, so I will continue adding some nonsense and\n        | as long as it takes to ensure I have a fully\n        | qualified test.\n        | New line in a block quote\n        | More block\n\n      Images get converted to their alt text\n      description.\n\n      This is a regular paragraph that needs to be\n      long enough to wrap a couple times.  This text will be\n      unique from the text in the block quote because\n      uniqueness saves time when debugging test failures.  I\n      am now writing a bunch of wrapping paragraph\n      gibberish, such as f324fasdaowkefsdva.  That one isn't\n      even a word.\n\n      " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like\n        a paragraph. So blah blah wrapping some madness into\n        a list item right gosh darn here and let's see what\n        shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like\n        a paragraph. So blah blah wrapping some madness into\n        a list item right gosh darn here and let's see what\n        shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to\n          wrap like a paragraph. So blah blah wrapping some\n          madness into a list item right gosh darn here and\n          let's see what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to\n          wrap like a paragraph. So blah blah wrapping some\n          madness into a list item right gosh darn here and\n          let's see what shakes out of the coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need\n            to wrap like a paragraph. So blah blah wrapping\n            some madness into a list item right gosh darn\n            here and let's see what shakes out of the\n            coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need\n            to wrap like a paragraph. So blah blah wrapping\n            some madness into a list item right gosh darn\n            here and let's see what shakes out of the\n            coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like\n        a paragraph. So blah blah wrapping some madness into\n        a list item right gosh darn here and let's see what\n        shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a\n          paragraph. So blah blah wrapping some madness into\n          a list item right gosh darn here and let's see\n          what shakes out of the coolness.\n\n      " + text.underline + "Command   " + text.normal + text.underline + " Local " + text.normal + text.underline + " Argument Type               " + text.normal + text.underline + " Second Argument " + text.normal + "\n      copy       " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n      get        " + text.bold + text.yellow + "?" + text.none + "      file path                    none           \n      global     " + text.bold + text.green + "✓" + text.none + "      none                         none           \n      hash       " + text.bold + text.green + "✓" + text.none + "      file path                    none           \n      help       " + text.bold + text.green + "✓" + text.none + "      number                       none           \n      install    " + text.bold + text.yellow + "?" + text.none + "      zip file                     directory path \n      list       " + text.bold + text.green + "✓" + text.none + "      \"" + text.yellow + "installed" + text.nocolor + "\" or \"" + text.yellow + "published" + text.nocolor + "\"   none           \n      markdown   " + text.bold + text.green + "✓" + text.none + "      path to markdown file        number         \n      publish    " + text.bold + text.green + "✓" + text.none + "      directory path               directory path \n      remove     " + text.bold + text.green + "✓" + text.none + "      file path or directory path  none           \n      status     " + text.bold + text.yellow + "?" + text.none + "      none or application name     none           \n      test       " + text.bold + text.red + "X" + text.none + "      none                         none           \n      uninstall  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unpublish  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unzip      " + text.bold + text.green + "✓" + text.none + "      path to zip file             directory path \n      zip        " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n\n" + text.underline + text.bold + text.cyan + "New big Heading" + text.none + "\n  paragraph here to see if indentation is largely reset\n  appropriate to the current heading that is bigger than the\n  previous headings",
                     name         = "biddle_test_markdown_60";
                 if (er !== null) {
                     return apps.errout({
@@ -3298,7 +3299,7 @@
                 if (stdout !== markdowntest) {
                     return diffFiles(name, stdout, markdowntest);
                 }
-                console.log(humantime(false) + " \u001b[32mmarkdown 60 test passed.\u001b[39m");
+                console.log(humantime(false) + " " + text.green + "markdown 60 test passed." + text.nocolor);
                 flag["60"] = true;
                 if (flag["80"] === true && flag["120"] === true) {
                     next();
@@ -3307,114 +3308,7 @@
             node.child(childcmd + "markdown " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "READMEa.md 80 childtest", {
                 cwd: data.abspath
             }, function biddle_test_markdown_80(er, stdout, stder) {
-                var markdowntest = "\n\u001b[4m\u001b[1m\u001b[31mtest README\u001b[39m\u001b[0m\u001b[24m\nsome dum" +
-                                 "my subtext\n\n\u001b[4m\u001b[1m\u001b[36mFirst Secondary Heading\u001b[39m" +
-                                 "\u001b[0m\u001b[24m\n    | a big block quote lives here. This is where I am goin" +
-                                 "g to\n    | experience with wrapping a block quote a bit differently from other " +
-                                 "content.\n    | I need enough text in this quote to wrap a couple of times, so I" +
-                                 " will\n    | continue adding some nonsense and as long as it takes to ensure I h" +
-                                 "ave a\n    | fully qualified test.\n    | New line in a block quote\n    | More " +
-                                 "block\n\n  This is a regular paragraph that needs to be long enough to wrap a co" +
-                                 "uple\n  times.  This text will be unique from the text in the block quote becaus" +
-                                 "e\n  uniqueness saves time when debugging test failures.  I am now writing a bun" +
-                                 "ch\n  of wrapping paragraph gibberish, such as f324fasdaowkefsdva.  That one isn" +
-                                 "'t\n  even a word.  It isn't cool if it doesn't contain a hyperlink,\n  (\u001b[" +
-                                 "36mhttp://tonowhwere.nothing\u001b[39m), in some text.\n\n  \u001b[1m\u001b[31m*" +
-                                 "\u001b[39m\u001b[0m list item 1 these also need to wrap like a paragraph. So bla" +
-                                 "h blah\n    wrapping some madness into a list item right gosh darn here and let'" +
-                                 "s see\n    what shakes out of the coolness.\n  \u001b[1m\u001b[31m*\u001b[39m" +
-                                 "\u001b[0m list item 2 these also need to wrap like a paragraph. So blah blah\n  " +
-                                 "  wrapping some madness into a list item right gosh darn here and let's see\n   " +
-                                 " what shakes out of the coolness.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m s" +
-                                 "ublist item 1 these also need to wrap like a paragraph. So blah\n      blah wrap" +
-                                 "ping some madness into a list item right gosh darn here and let's\n      see wha" +
-                                 "t shakes out of the coolness.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m subli" +
-                                 "st item 2 these also need to wrap like a paragraph. So blah\n      blah wrapping" +
-                                 " some madness into a list item right gosh darn here and let's\n      see what sh" +
-                                 "akes out of the coolness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsubl" +
-                                 "ist item 1 these also need to wrap like a paragraph.\n        So blah blah wrapp" +
-                                 "ing some madness into a list item right gosh darn here\n        and let's see wh" +
-                                 "at shakes out of the coolness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m su" +
-                                 "bsublist item 2 these also need to wrap like a paragraph.\n        So blah blah " +
-                                 "wrapping some madness into a list item right gosh darn here\n        and let's s" +
-                                 "ee what shakes out of the coolness.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m l" +
-                                 "ist item 3 these also need to wrap like a paragraph. So blah blah\n    wrapping " +
-                                 "some madness into a list item right gosh darn here and let's see\n    what shake" +
-                                 "s out of the coolness.\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m boo these al" +
-                                 "so need to wrap like a paragraph. So blah blah\n      wrapping some madness into" +
-                                 " a list item right gosh darn here and let's see\n      what shakes out of the co" +
-                                 "olness.\n\n  \u001b[4m\u001b[1m\u001b[32mFirst Tertiary Heading\u001b[39m\u001b[" +
-                                 "0m\u001b[24m\n    This text should be extra indented.\n\n    \u001b[1m\u001b[31m" +
-                                 "*\u001b[39m\u001b[0m list item 1\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m li" +
-                                 "st item 2\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 1\n      " +
-                                 "\u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 2\n        \u001b[1m\u001b[" +
-                                 "31m*\u001b[39m\u001b[0m subsublist item 1\n        \u001b[1m\u001b[31m*\u001b[39" +
-                                 "m\u001b[0m subsublist item 2\n    \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list i" +
-                                 "tem 3\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m boo\n\n    \u001b[4m\u001b[" +
-                                 "1m\u001b[33mGettin Deep with the Headings\u001b[39m\u001b[0m\u001b[24m\n\n      " +
-                                 "  | a big block quote lives here. This is where I am going\n        | to experie" +
-                                 "nce with wrapping a block quote a bit differently from other\n        | content." +
-                                 "  I need enough text in this quote to wrap a couple of times, so\n        | I wi" +
-                                 "ll continue adding some nonsense and as long as it takes to ensure I\n        | " +
-                                 "have a fully qualified test.\n        | New line in a block quote\n        | Mor" +
-                                 "e block\n\n      Images get converted to their alt text description.\n\n      Th" +
-                                 "is is a regular paragraph that needs to be long enough to wrap a\n      couple t" +
-                                 "imes.  This text will be unique from the text in the block quote\n      because " +
-                                 "uniqueness saves time when debugging test failures.  I am now\n      writing a b" +
-                                 "unch of wrapping paragraph gibberish, such as\n      f324fasdaowkefsdva.  That o" +
-                                 "ne isn't even a word.\n\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item" +
-                                 " 1 these also need to wrap like a paragraph. So blah\n        blah wrapping some" +
-                                 " madness into a list item right gosh darn here and\n        let's see what shake" +
-                                 "s out of the coolness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item " +
-                                 "2 these also need to wrap like a paragraph. So blah\n        blah wrapping some " +
-                                 "madness into a list item right gosh darn here and\n        let's see what shakes" +
-                                 " out of the coolness.\n        \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist i" +
-                                 "tem 1 these also need to wrap like a paragraph.\n          So blah blah wrapping" +
-                                 " some madness into a list item right gosh darn\n          here and let's see wha" +
-                                 "t shakes out of the coolness.\n        \u001b[1m\u001b[31m-\u001b[39m\u001b[0m s" +
-                                 "ublist item 2 these also need to wrap like a paragraph.\n          So blah blah " +
-                                 "wrapping some madness into a list item right gosh darn\n          here and let's" +
-                                 " see what shakes out of the coolness.\n          \u001b[1m\u001b[31m*\u001b[39m" +
-                                 "\u001b[0m subsublist item 1 these also need to wrap like a\n            paragrap" +
-                                 "h. So blah blah wrapping some madness into a list item right\n            gosh d" +
-                                 "arn here and let's see what shakes out of the coolness.\n          \u001b[1m" +
-                                 "\u001b[31m*\u001b[39m\u001b[0m subsublist item 2 these also need to wrap like a" +
-                                 "\n            paragraph. So blah blah wrapping some madness into a list item rig" +
-                                 "ht\n            gosh darn here and let's see what shakes out of the coolness.\n " +
-                                 "     \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 3 these also need to wrap" +
-                                 " like a paragraph. So blah\n        blah wrapping some madness into a list item " +
-                                 "right gosh darn here and\n        let's see what shakes out of the coolness.\n  " +
-                                 "      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m boo these also need to wrap like a" +
-                                 " paragraph. So blah\n          blah wrapping some madness into a list item right" +
-                                 " gosh darn here and\n          let's see what shakes out of the coolness.\n\n   " +
-                                 "   \u001b[4mCommand   \u001b[0m\u001b[4m Local \u001b[0m\u001b[4m Argument Type " +
-                                 "              \u001b[0m\u001b[4m Second Argument \u001b[0m\n      copy       " +
-                                 "\u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path or directory path  direct" +
-                                 "ory path \n      get        \u001b[1m\u001b[33m?\u001b[39m\u001b[0m      file pa" +
-                                 "th                    none           \n      global     \u001b[1m\u001b[32m✓" +
-                                 "\u001b[39m\u001b[0m      none                         none           \n      has" +
-                                 "h       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path                  " +
-                                 "  none           \n      help       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m     " +
-                                 " number                       none           \n      install    \u001b[1m\u001b[" +
-                                 "33m?\u001b[39m\u001b[0m      zip file                     directory path \n     " +
-                                 " list       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      \"\u001b[3m\u001b[33min" +
-                                 "stalled\u001b[39m\u001b[0m\" or \"\u001b[3m\u001b[33mpublished\u001b[39m\u001b[0" +
-                                 "m\"   none           \n      markdown   \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m " +
-                                 "     path to markdown file        number         \n      publish    \u001b[1m" +
-                                 "\u001b[32m✓\u001b[39m\u001b[0m      directory path               directory path " +
-                                 "\n      remove     \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path or dir" +
-                                 "ectory path  none           \n      status     \u001b[1m\u001b[33m?\u001b[39m" +
-                                 "\u001b[0m      none or application name     none           \n      test       " +
-                                 "\u001b[1m\u001b[31mX\u001b[39m\u001b[0m      none                         none  " +
-                                 "         \n      uninstall  \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      applica" +
-                                 "tion name             none           \n      unpublish  \u001b[1m\u001b[32m✓" +
-                                 "\u001b[39m\u001b[0m      application name             none           \n      unz" +
-                                 "ip      \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      path to zip file           " +
-                                 "  directory path \n      zip        \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m     " +
-                                 " file path or directory path  directory path \n\n\u001b[4m\u001b[1m\u001b[36mNew" +
-                                 " big Heading\u001b[39m\u001b[0m\u001b[24m\n  paragraph here to see if indentatio" +
-                                 "n is largely reset appropriate to the\n  current heading that is bigger than the" +
-                                 " previous headings",
+                var markdowntest = "\n" + text.underline + text.bold + text.red + "test README" + text.none + "\nsome dummy subtext\n\n" + text.underline + text.bold + text.cyan + "First Secondary Heading" + text.none + "\n    | a big block quote lives here. This is where I am going to\n    | experience with wrapping a block quote a bit differently from other content.\n    | I need enough text in this quote to wrap a couple of times, so I will\n    | continue adding some nonsense and as long as it takes to ensure I have a\n    | fully qualified test.\n    | New line in a block quote\n    | More block\n\n  This is a regular paragraph that needs to be long enough to wrap a couple\n  times.  This text will be unique from the text in the block quote because\n  uniqueness saves time when debugging test failures.  I am now writing a bunch\n  of wrapping paragraph gibberish, such as f324fasdaowkefsdva.  That one isn't\n  even a word.  It isn't cool if it doesn't contain a hyperlink,\n  (" + text.cyan + "http://tonowhwere.nothing" + text.nocolor + "), in some text.\n\n  " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like a paragraph. So blah blah\n    wrapping some madness into a list item right gosh darn here and let's see\n    what shakes out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like a paragraph. So blah blah\n    wrapping some madness into a list item right gosh darn here and let's see\n    what shakes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to wrap like a paragraph. So blah\n      blah wrapping some madness into a list item right gosh darn here and let's\n      see what shakes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to wrap like a paragraph. So blah\n      blah wrapping some madness into a list item right gosh darn here and let's\n      see what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need to wrap like a paragraph.\n        So blah blah wrapping some madness into a list item right gosh darn here\n        and let's see what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need to wrap like a paragraph.\n        So blah blah wrapping some madness into a list item right gosh darn here\n        and let's see what shakes out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like a paragraph. So blah blah\n    wrapping some madness into a list item right gosh darn here and let's see\n    what shakes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a paragraph. So blah blah\n      wrapping some madness into a list item right gosh darn here and let's see\n      what shakes out of the coolness.\n\n  " + text.underline + text.bold + text.green + "First Tertiary Heading" + text.none + "\n    This text should be extra indented.\n\n    " + text.bold + text.red + "*" + text.none + " list item 1\n    " + text.bold + text.red + "*" + text.none + " list item 2\n      " + text.bold + text.red + "-" + text.none + " sublist item 1\n      " + text.bold + text.red + "-" + text.none + " sublist item 2\n        " + text.bold + text.red + "*" + text.none + " subsublist item 1\n        " + text.bold + text.red + "*" + text.none + " subsublist item 2\n    " + text.bold + text.red + "*" + text.none + " list item 3\n      " + text.bold + text.red + "-" + text.none + " boo\n\n    " + text.underline + text.bold + text.yellow + "Gettin Deep with the Headings" + text.none + "\n\n        | a big block quote lives here. This is where I am going\n        | to experience with wrapping a block quote a bit differently from other\n        | content.  I need enough text in this quote to wrap a couple of times, so\n        | I will continue adding some nonsense and as long as it takes to ensure I\n        | have a fully qualified test.\n        | New line in a block quote\n        | More block\n\n      Images get converted to their alt text description.\n\n      This is a regular paragraph that needs to be long enough to wrap a\n      couple times.  This text will be unique from the text in the block quote\n      because uniqueness saves time when debugging test failures.  I am now\n      writing a bunch of wrapping paragraph gibberish, such as\n      f324fasdaowkefsdva.  That one isn't even a word.\n\n      " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like a paragraph. So blah\n        blah wrapping some madness into a list item right gosh darn here and\n        let's see what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like a paragraph. So blah\n        blah wrapping some madness into a list item right gosh darn here and\n        let's see what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to wrap like a paragraph.\n          So blah blah wrapping some madness into a list item right gosh darn\n          here and let's see what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to wrap like a paragraph.\n          So blah blah wrapping some madness into a list item right gosh darn\n          here and let's see what shakes out of the coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need to wrap like a\n            paragraph. So blah blah wrapping some madness into a list item right\n            gosh darn here and let's see what shakes out of the coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need to wrap like a\n            paragraph. So blah blah wrapping some madness into a list item right\n            gosh darn here and let's see what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like a paragraph. So blah\n        blah wrapping some madness into a list item right gosh darn here and\n        let's see what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a paragraph. So blah\n          blah wrapping some madness into a list item right gosh darn here and\n          let's see what shakes out of the coolness.\n\n      " + text.underline + "Command   " + text.normal + text.underline + " Local " + text.normal + text.underline + " Argument Type               " + text.normal + text.underline + " Second Argument " + text.normal + "\n      copy       " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n      get        " + text.bold + text.yellow + "?" + text.none + "      file path                    none           \n      global     " + text.bold + text.green + "✓" + text.none + "      none                         none           \n      hash       " + text.bold + text.green + "✓" + text.none + "      file path                    none           \n      help       " + text.bold + text.green + "✓" + text.none + "      number                       none           \n      install    " + text.bold + text.yellow + "?" + text.none + "      zip file                     directory path \n      list       " + text.bold + text.green + "✓" + text.none + "      \"" + text.yellow + "installed" + text.nocolor + "\" or \"" + text.yellow + "published" + text.nocolor + "\"   none           \n      markdown   " + text.bold + text.green + "✓" + text.none + "      path to markdown file        number         \n      publish    " + text.bold + text.green + "✓" + text.none + "      directory path               directory path \n      remove     " + text.bold + text.green + "✓" + text.none + "      file path or directory path  none           \n      status     " + text.bold + text.yellow + "?" + text.none + "      none or application name     none           \n      test       " + text.bold + text.red + "X" + text.none + "      none                         none           \n      uninstall  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unpublish  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unzip      " + text.bold + text.green + "✓" + text.none + "      path to zip file             directory path \n      zip        " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n\n" + text.underline + text.bold + text.cyan + "New big Heading" + text.none + "\n  paragraph here to see if indentation is largely reset appropriate to the\n  current heading that is bigger than the previous headings",
                     name         = "biddle_test_markdown_80";
                 if (er !== null) {
                     return apps.errout({
@@ -3440,7 +3334,7 @@
                 if (stdout !== markdowntest) {
                     return diffFiles(name, stdout, markdowntest);
                 }
-                console.log(humantime(false) + " \u001b[32mmarkdown 80 test passed.\u001b[39m");
+                console.log(humantime(false) + " " + text.green + "markdown 80 test passed." + text.nocolor);
                 flag["80"] = true;
                 if (flag["60"] === true && flag["120"] === true) {
                     next();
@@ -3449,112 +3343,7 @@
             node.child(childcmd + "markdown " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "READMEa.md 120 childtest", {
                 cwd: data.abspath
             }, function biddle_test_markdown_120(er, stdout, stder) {
-                var markdowntest = "\n\u001b[4m\u001b[1m\u001b[31mtest README\u001b[39m\u001b[0m\u001b[24m\nsome dum" +
-                                 "my subtext\n\n\u001b[4m\u001b[1m\u001b[36mFirst Secondary Heading\u001b[39m" +
-                                 "\u001b[0m\u001b[24m\n    | a big block quote lives here. This is where I am goin" +
-                                 "g to experience with wrapping a block quote a bit\n    | differently from other " +
-                                 "content.  I need enough text in this quote to wrap a couple of times, so I will " +
-                                 "continue\n    | adding some nonsense and as long as it takes to ensure I have a " +
-                                 "fully qualified test.\n    | New line in a block quote\n    | More block\n\n  Th" +
-                                 "is is a regular paragraph that needs to be long enough to wrap a couple times.  " +
-                                 "This text will be unique from the\n  text in the block quote because uniqueness " +
-                                 "saves time when debugging test failures.  I am now writing a bunch of\n  wrappin" +
-                                 "g paragraph gibberish, such as f324fasdaowkefsdva.  That one isn't even a word. " +
-                                 " It isn't cool if it doesn't\n  contain a hyperlink, (\u001b[36mhttp://tonowhwer" +
-                                 "e.nothing\u001b[39m), in some text.\n\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m" +
-                                 " list item 1 these also need to wrap like a paragraph. So blah blah wrapping som" +
-                                 "e madness into a list item\n    right gosh darn here and let's see what shakes o" +
-                                 "ut of the coolness.\n  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 2 these" +
-                                 " also need to wrap like a paragraph. So blah blah wrapping some madness into a l" +
-                                 "ist item\n    right gosh darn here and let's see what shakes out of the coolness" +
-                                 ".\n    \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 1 these also need to" +
-                                 " wrap like a paragraph. So blah blah wrapping some madness into a list\n      it" +
-                                 "em right gosh darn here and let's see what shakes out of the coolness.\n    " +
-                                 "\u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 2 these also need to wrap l" +
-                                 "ike a paragraph. So blah blah wrapping some madness into a list\n      item righ" +
-                                 "t gosh darn here and let's see what shakes out of the coolness.\n      \u001b[1m" +
-                                 "\u001b[31m*\u001b[39m\u001b[0m subsublist item 1 these also need to wrap like a " +
-                                 "paragraph. So blah blah wrapping some madness into a\n        list item right go" +
-                                 "sh darn here and let's see what shakes out of the coolness.\n      \u001b[1m" +
-                                 "\u001b[31m*\u001b[39m\u001b[0m subsublist item 2 these also need to wrap like a " +
-                                 "paragraph. So blah blah wrapping some madness into a\n        list item right go" +
-                                 "sh darn here and let's see what shakes out of the coolness.\n  \u001b[1m\u001b[3" +
-                                 "1m*\u001b[39m\u001b[0m list item 3 these also need to wrap like a paragraph. So " +
-                                 "blah blah wrapping some madness into a list item\n    right gosh darn here and l" +
-                                 "et's see what shakes out of the coolness.\n    \u001b[1m\u001b[31m-\u001b[39m" +
-                                 "\u001b[0m boo these also need to wrap like a paragraph. So blah blah wrapping so" +
-                                 "me madness into a list item right\n      gosh darn here and let's see what shake" +
-                                 "s out of the coolness.\n\n  \u001b[4m\u001b[1m\u001b[32mFirst Tertiary Heading" +
-                                 "\u001b[39m\u001b[0m\u001b[24m\n    This text should be extra indented.\n\n    " +
-                                 "\u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 1\n    \u001b[1m\u001b[31m*" +
-                                 "\u001b[39m\u001b[0m list item 2\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m s" +
-                                 "ublist item 1\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 2\n   " +
-                                 "     \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 1\n        \u001b[1" +
-                                 "m\u001b[31m*\u001b[39m\u001b[0m subsublist item 2\n    \u001b[1m\u001b[31m*" +
-                                 "\u001b[39m\u001b[0m list item 3\n      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m b" +
-                                 "oo\n\n    \u001b[4m\u001b[1m\u001b[33mGettin Deep with the Headings\u001b[39m" +
-                                 "\u001b[0m\u001b[24m\n\n        | a big block quote lives here. This is where I a" +
-                                 "m going to experience with wrapping a block\n        | quote a bit differently f" +
-                                 "rom other content.  I need enough text in this quote to wrap a couple of times, " +
-                                 "so I\n        | will continue adding some nonsense and as long as it takes to en" +
-                                 "sure I have a fully qualified test.\n        | New line in a block quote\n      " +
-                                 "  | More block\n\n      Images get converted to their alt text description.\n\n " +
-                                 "     This is a regular paragraph that needs to be long enough to wrap a couple t" +
-                                 "imes.  This text will be unique\n      from the text in the block quote because " +
-                                 "uniqueness saves time when debugging test failures.  I am now writing a\n      b" +
-                                 "unch of wrapping paragraph gibberish, such as f324fasdaowkefsdva.  That one isn'" +
-                                 "t even a word.\n\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 1 thes" +
-                                 "e also need to wrap like a paragraph. So blah blah wrapping some madness into a " +
-                                 "list\n        item right gosh darn here and let's see what shakes out of the coo" +
-                                 "lness.\n      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 2 these also nee" +
-                                 "d to wrap like a paragraph. So blah blah wrapping some madness into a list\n    " +
-                                 "    item right gosh darn here and let's see what shakes out of the coolness.\n  " +
-                                 "      \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 1 these also need to " +
-                                 "wrap like a paragraph. So blah blah wrapping some madness into\n          a list" +
-                                 " item right gosh darn here and let's see what shakes out of the coolness.\n     " +
-                                 "   \u001b[1m\u001b[31m-\u001b[39m\u001b[0m sublist item 2 these also need to wra" +
-                                 "p like a paragraph. So blah blah wrapping some madness into\n          a list it" +
-                                 "em right gosh darn here and let's see what shakes out of the coolness.\n        " +
-                                 "  \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 1 these also need to w" +
-                                 "rap like a paragraph. So blah blah wrapping some\n            madness into a lis" +
-                                 "t item right gosh darn here and let's see what shakes out of the coolness.\n    " +
-                                 "      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m subsublist item 2 these also need " +
-                                 "to wrap like a paragraph. So blah blah wrapping some\n            madness into a" +
-                                 " list item right gosh darn here and let's see what shakes out of the coolness.\n" +
-                                 "      \u001b[1m\u001b[31m*\u001b[39m\u001b[0m list item 3 these also need to wra" +
-                                 "p like a paragraph. So blah blah wrapping some madness into a list\n        item" +
-                                 " right gosh darn here and let's see what shakes out of the coolness.\n        " +
-                                 "\u001b[1m\u001b[31m-\u001b[39m\u001b[0m boo these also need to wrap like a parag" +
-                                 "raph. So blah blah wrapping some madness into a list item\n          right gosh " +
-                                 "darn here and let's see what shakes out of the coolness.\n\n      \u001b[4mComma" +
-                                 "nd   \u001b[0m\u001b[4m Local \u001b[0m\u001b[4m Argument Type               " +
-                                 "\u001b[0m\u001b[4m Second Argument \u001b[0m\n      copy       \u001b[1m\u001b[3" +
-                                 "2m✓\u001b[39m\u001b[0m      file path or directory path  directory path \n      " +
-                                 "get        \u001b[1m\u001b[33m?\u001b[39m\u001b[0m      file path               " +
-                                 "     none           \n      global     \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m  " +
-                                 "    none                         none           \n      hash       \u001b[1m" +
-                                 "\u001b[32m✓\u001b[39m\u001b[0m      file path                    none           " +
-                                 "\n      help       \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      number          " +
-                                 "             none           \n      install    \u001b[1m\u001b[33m?\u001b[39m" +
-                                 "\u001b[0m      zip file                     directory path \n      list       " +
-                                 "\u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      \"\u001b[3m\u001b[33minstalled" +
-                                 "\u001b[39m\u001b[0m\" or \"\u001b[3m\u001b[33mpublished\u001b[39m\u001b[0m\"   n" +
-                                 "one           \n      markdown   \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      pa" +
-                                 "th to markdown file        number         \n      publish    \u001b[1m\u001b[32m" +
-                                 "✓\u001b[39m\u001b[0m      directory path               directory path \n      re" +
-                                 "move     \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path or directory pat" +
-                                 "h  none           \n      status     \u001b[1m\u001b[33m?\u001b[39m\u001b[0m    " +
-                                 "  none or application name     none           \n      test       \u001b[1m\u001b" +
-                                 "[31mX\u001b[39m\u001b[0m      none                         none           \n    " +
-                                 "  uninstall  \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      application name      " +
-                                 "       none           \n      unpublish  \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m" +
-                                 "      application name             none           \n      unzip      \u001b[1m" +
-                                 "\u001b[32m✓\u001b[39m\u001b[0m      path to zip file             directory path " +
-                                 "\n      zip        \u001b[1m\u001b[32m✓\u001b[39m\u001b[0m      file path or dir" +
-                                 "ectory path  directory path \n\n\u001b[4m\u001b[1m\u001b[36mNew big Heading" +
-                                 "\u001b[39m\u001b[0m\u001b[24m\n  paragraph here to see if indentation is largely" +
-                                 " reset appropriate to the current heading that is bigger than the\n  previous he" +
-                                 "adings",
+                var markdowntest = "\n" + text.underline + text.bold + text.red + "test README" + text.none + "\nsome dummy subtext\n\n" + text.underline + text.bold + text.cyan + "First Secondary Heading" + text.none + "\n    | a big block quote lives here. This is where I am going to experience with wrapping a block quote a bit\n    | differently from other content.  I need enough text in this quote to wrap a couple of times, so I will continue\n    | adding some nonsense and as long as it takes to ensure I have a fully qualified test.\n    | New line in a block quote\n    | More block\n\n  This is a regular paragraph that needs to be long enough to wrap a couple times.  This text will be unique from the\n  text in the block quote because uniqueness saves time when debugging test failures.  I am now writing a bunch of\n  wrapping paragraph gibberish, such as f324fasdaowkefsdva.  That one isn't even a word.  It isn't cool if it doesn't\n  contain a hyperlink, (" + text.cyan + "http://tonowhwere.nothing" + text.nocolor + "), in some text.\n\n  " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list item\n    right gosh darn here and let's see what shakes out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list item\n    right gosh darn here and let's see what shakes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list\n      item right gosh darn here and let's see what shakes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list\n      item right gosh darn here and let's see what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need to wrap like a paragraph. So blah blah wrapping some madness into a\n        list item right gosh darn here and let's see what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need to wrap like a paragraph. So blah blah wrapping some madness into a\n        list item right gosh darn here and let's see what shakes out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list item\n    right gosh darn here and let's see what shakes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a paragraph. So blah blah wrapping some madness into a list item right\n      gosh darn here and let's see what shakes out of the coolness.\n\n  " + text.underline + text.bold + text.green + "First Tertiary Heading" + text.none + "\n    This text should be extra indented.\n\n    " + text.bold + text.red + "*" + text.none + " list item 1\n    " + text.bold + text.red + "*" + text.none + " list item 2\n      " + text.bold + text.red + "-" + text.none + " sublist item 1\n      " + text.bold + text.red + "-" + text.none + " sublist item 2\n        " + text.bold + text.red + "*" + text.none + " subsublist item 1\n        " + text.bold + text.red + "*" + text.none + " subsublist item 2\n    " + text.bold + text.red + "*" + text.none + " list item 3\n      " + text.bold + text.red + "-" + text.none + " boo\n\n    " + text.underline + text.bold + text.yellow + "Gettin Deep with the Headings" + text.none + "\n\n        | a big block quote lives here. This is where I am going to experience with wrapping a block\n        | quote a bit differently from other content.  I need enough text in this quote to wrap a couple of times, so I\n        | will continue adding some nonsense and as long as it takes to ensure I have a fully qualified test.\n        | New line in a block quote\n        | More block\n\n      Images get converted to their alt text description.\n\n      This is a regular paragraph that needs to be long enough to wrap a couple times.  This text will be unique\n      from the text in the block quote because uniqueness saves time when debugging test failures.  I am now writing a\n      bunch of wrapping paragraph gibberish, such as f324fasdaowkefsdva.  That one isn't even a word.\n\n      " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list\n        item right gosh darn here and let's see what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list\n        item right gosh darn here and let's see what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to wrap like a paragraph. So blah blah wrapping some madness into\n          a list item right gosh darn here and let's see what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to wrap like a paragraph. So blah blah wrapping some madness into\n          a list item right gosh darn here and let's see what shakes out of the coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need to wrap like a paragraph. So blah blah wrapping some\n            madness into a list item right gosh darn here and let's see what shakes out of the coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need to wrap like a paragraph. So blah blah wrapping some\n            madness into a list item right gosh darn here and let's see what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list\n        item right gosh darn here and let's see what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a paragraph. So blah blah wrapping some madness into a list item\n          right gosh darn here and let's see what shakes out of the coolness.\n\n      " + text.underline + "Command   " + text.normal + text.underline + " Local " + text.normal + text.underline + " Argument Type               " + text.normal + text.underline + " Second Argument " + text.normal + "\n      copy       " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n      get        " + text.bold + text.yellow + "?" + text.none + "      file path                    none           \n      global     " + text.bold + text.green + "✓" + text.none + "      none                         none           \n      hash       " + text.bold + text.green + "✓" + text.none + "      file path                    none           \n      help       " + text.bold + text.green + "✓" + text.none + "      number                       none           \n      install    " + text.bold + text.yellow + "?" + text.none + "      zip file                     directory path \n      list       " + text.bold + text.green + "✓" + text.none + "      \"" + text.yellow + "installed" + text.nocolor + "\" or \"" + text.yellow + "published" + text.nocolor + "\"   none           \n      markdown   " + text.bold + text.green + "✓" + text.none + "      path to markdown file        number         \n      publish    " + text.bold + text.green + "✓" + text.none + "      directory path               directory path \n      remove     " + text.bold + text.green + "✓" + text.none + "      file path or directory path  none           \n      status     " + text.bold + text.yellow + "?" + text.none + "      none or application name     none           \n      test       " + text.bold + text.red + "X" + text.none + "      none                         none           \n      uninstall  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unpublish  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unzip      " + text.bold + text.green + "✓" + text.none + "      path to zip file             directory path \n      zip        " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n\n" + text.underline + text.bold + text.cyan + "New big Heading" + text.none + "\n  paragraph here to see if indentation is largely reset appropriate to the current heading that is bigger than the\n  previous headings",
                     name         = "biddle_test_markdown_120";
                 if (er !== null) {
                     return apps.errout({
@@ -3580,7 +3369,7 @@
                 if (stdout !== markdowntest) {
                     return diffFiles(name, stdout, markdowntest);
                 }
-                console.log(humantime(false) + " \u001b[32mmarkdown 120 test passed.\u001b[39m");
+                console.log(humantime(false) + " " + text.green + "mmarkdown 120 test passed." + text.nocolor);
                 flag["120"] = true;
                 if (flag["60"] === true && flag["80"] === true) {
                     next();
@@ -3609,7 +3398,7 @@
                 },
                 handler  = function biddle_test_moduleInstall_handler() {
                     var mod = keys[ind];
-                    modules[mod].name = "\u001b[32m" + modules[mod].name + "\u001b[39m";
+                    modules[mod].name = text.green + modules[mod].name + text.nocolor;
                     if (modules[mod].name.length > longname) {
                         longname = modules[mod].name.length;
                     }
@@ -3927,23 +3716,25 @@
                 .child(childcmd + "publish " + data.abspath + "test" + node.path.sep + "biddletesta childtest", {
                     cwd: data.abspath
                 }, function biddle_test_publish_child(er, stdout, stder) {
-                    var publishtest = "File publications/biddletesta/biddlesort.js written at \u001b[1m\u001b[32mxxx" +
-                                "\u001b[39m\u001b[0m bytes.\nFile publications/biddletesta/biddletesta_\u001b[1m" +
-                                "\u001b[36mxxx.zip\u001b[39m\u001b[0m written at \u001b[1m\u001b[32mxxx\u001b[39m" +
-                                "\u001b[0m bytes.\nFile publications/biddletesta/biddletesta_\u001b[1m\u001b[36ml" +
-                                "atest.zip\u001b[39m\u001b[0m written at \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0" +
-                                "m bytes.\nFile publications/biddletesta/biddletesta_\u001b[1m\u001b[36mmin_xxx.z" +
-                                "ip\u001b[39m\u001b[0m written at \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes" +
-                                ".\nFile publications/biddletesta/biddletesta_\u001b[1m\u001b[36mmin_latest.zip" +
-                                "\u001b[39m\u001b[0m written at \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes." +
-                                "\nFile publications/biddletesta/biddletesta_\u001b[1m\u001b[36mprod_xxx.zip" +
-                                "\u001b[39m\u001b[0m written at \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes." +
-                                "\nFile publications/biddletesta/biddletesta_\u001b[1m\u001b[36mprod_latest.zip" +
-                                "\u001b[39m\u001b[0m written at \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes." +
-                                "\nFile publications/biddletesta/filedata.json written at \u001b[1m\u001b[32mxxx" +
-                                "\u001b[39m\u001b[0m bytes.\nFile publications/biddletesta/index.xhtml written at" +
-                                " \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes.\nFile publications/biddletesta" +
-                                "/latest.txt written at \u001b[1m\u001b[32mxxx\u001b[39m\u001b[0m bytes.",
+                    var bgreen = text.bold + text.green,
+                        bcyan = text.bold + text.cyan,
+                        publishtest = "File publications/biddletesta/biddlesort.js written at " + bgreen + "xxx" +
+                                text.none + " bytes.\nFile publications/biddletesta/biddletesta_" +
+                                bcyan + "xxx.zip" + text.none + " written at " + bgreen + "xxx" + text.none +
+                                " bytes.\nFile publications/biddletesta/biddletesta_" + bcyan + "l" +
+                                "atest.zip" + text.none + " written at " + bgreen + "xxx" + text.none +
+                                " bytes.\nFile publications/biddletesta/biddletesta_" + bcyan + "min_xxx.z" +
+                                "ip" + text.none + " written at " + bgreen + "xxx" + text.none + " bytes" +
+                                ".\nFile publications/biddletesta/biddletesta_" + bcyan + "min_latest.zip" +
+                                text.none + " written at " + bgreen + "xxx" + text.none + " bytes." +
+                                "\nFile publications/biddletesta/biddletesta_" + bcyan + "prod_xxx.zip" +
+                                text.none + " written at " + bgreen + "xxx" + text.none + " bytes." +
+                                "\nFile publications/biddletesta/biddletesta_" + bcyan + "prod_latest.zip" +
+                                text.none + " written at " + bgreen + "xxx" + text.none + " bytes." +
+                                "\nFile publications/biddletesta/filedata.json written at " + bgreen + "xxx" +
+                                text.none + " bytes.\nFile publications/biddletesta/index.xhtml written at" +
+                                " " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletesta" +
+                                "/latest.txt written at " + bgreen + "xxx" + text.none + " bytes.",
                         outputs     = stdout
                             .replace(/(\s+)$/, "")
                             .replace("\r\n", "\n")
@@ -3999,12 +3790,12 @@
                             output = output.replace(/\\/g, "/");
                             output = output
                                 .replace(/\d+\.\d+\.\d+\.zip/g, "xxx.zip")
-                                .replace(/\u001b\[32m\d+(,\d+)*/g, "\u001b[32mxxx")
+                                .replace(/\u001b\[32m\d+(,\d+)*/g, text.green + "xxx")
                                 .replace(abspath, "");
                             if (output !== publishtest) {
                                 return diffFiles("biddle_test_publish_child_statTemp", output, publishtest);
                             }
-                            console.log(humantime(false) + " \u001b[32mThe stdout for publish is correct.\u001b[39m");
+                            console.log(humantime(false) + " " + text.green + "The stdout for publish is correct." + text.nocolor);
                             node
                                 .fs
                                 .readFile(data.abspath + "published.json",
@@ -4036,7 +3827,7 @@
                                             time  : humantime(true)
                                         });
                                     }
-                                    console.log(humantime(false) + " \u001b[32mFile published.json contains biddletesta\u001b[39m");
+                                    console.log(humantime(false) + " " + text.green + "File published.json contains biddletesta" + text.nocolor);
                                     node
                                         .fs
                                         .readdir(pub, function biddle_test_publish_child_statTemp_readJSON_readdir(errr, files) {
@@ -4088,15 +3879,15 @@
                                                                     time  : humantime(true)
                                                                 });
                                                             }
-                                                            console.log(humantime(false) + " " + files[index] + " present at size " + apps.commas(statobj.size) + " bytes.");
+                                                            console.log(humantime(false) + " " + files[index] + " present at size " + text.bold + text.green + apps.commas(statobj.size) + text.none + " bytes.");
                                                             stats[files[index]] = true;
                                                             if (stats[files[0]] === true && stats[files[1]] === true && stats[files[2]] === true && stats[files[3]] === true && stats[files[4]] === true && stats[files[5]] === true && stats[files[6]] === true && stats[files[7]] === true && stats[files[8]] === true && stats[files[9]] === true && stats[files[10]] === true && stats[files[11]] === true) {
-                                                                console.log(humantime(false) + " \u001b[32mpublish test passed.\u001b[39m");
+                                                                console.log(humantime(false) + " " + text.green + "publish test passed." + text.nocolor);
                                                                 node.child(childcmd + "publish " + data.abspath + "test" + node.path.sep + "biddletesta childtest", {
                                                                     cwd: data.abspath
                                                                 }, function biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish(erx, stdoutx, stderx) {
-                                                                    var publishagain = "\u001b[1m\u001b[36mFunction:\u001b[39m\u001b[0m biddle_publish_execution\n\u001b" +
-                                                                                     "[1m\u001b[31mError:\u001b[39m\u001b[0m Attempted to publish biddletesta over exi" +
+                                                                    var publishagain = text.bold + text.cyan + "Function:" + text.none + " biddle_publish_execution\n" +
+                                                                                     text.bold + text.red + "Error:" + text.none + " Attempted to publish biddletesta over exi" +
                                                                                      "sting version",
                                                                         stack        = [];
                                                                     if (erx !== null) {
@@ -4148,7 +3939,7 @@
                                                                                     time : humantime(true)
                                                                                 });
                                                                             }
-                                                                            console.log(humantime(false) + " \u001b[32mRedundant publish test (error messaging) passed.\u001b[39m");
+                                                                            console.log(humantime(false) + " " + text.green + "Redundant publish test (error messaging) passed." + text.nocolor);
                                                                             next();
                                                                         });
                                                                 });
@@ -4166,7 +3957,7 @@
                                             if (filelist !== filetest) {
                                                 return diffFiles("biddle_test_publish_child_statTemp_readJSON_readdir", filelist, filetest);
                                             }
-                                            console.log(humantime(false) + " \u001b[32mList of files generated by publish is correct.\u001b[39m");
+                                            console.log(humantime(false) + " " + text.green + "List of files generated by publish is correct." + text.nocolor);
                                             statfile(0);
                                             statfile(1);
                                             statfile(2);
@@ -4223,7 +4014,7 @@
                                     time  : humantime(true)
                                 });
                             }
-                            console.log(humantime(false) + " \u001b[32mremove test passed.\u001b[39m");
+                            console.log(humantime(false) + " " + text.green + "remove test passed." + text.nocolor);
                             next();
                         });
                 });
@@ -4233,7 +4024,7 @@
                 .child(childcmd + "uninstall biddletesta childtest", {
                     cwd: data.abspath
                 }, function biddle_test_uninstall_child(er, stdout, stder) {
-                    var uninsttest = "App \u001b[36mbiddletesta\u001b[39m is uninstalled.";
+                    var uninsttest = "App " + text.cyan + "biddletesta" + text.nocolor + " is uninstalled.";
                     if (er !== null) {
                         return apps.errout({
                             error : er,
@@ -4262,7 +4053,7 @@
                             time  : humantime(true)
                         });
                     }
-                    console.log(humantime(false) + " \u001b[32mbiddletesta removed from installed.json.\u001b[39m");
+                    console.log(humantime(false) + " " + text.green + "biddletesta removed from installed.json." + text.nocolor);
                     node
                         .fs
                         .stat(data.abspath + "applications" + node.path.sep + "biddletesta",
@@ -4305,13 +4096,13 @@
                                                 time  : humantime(true)
                                             });
                                         }
-                                        console.log(humantime(false) + " \u001b[32muninstall test passed.\u001b[39m");
+                                        console.log(humantime(false) + " " + text.green + "uninstall test passed." + text.nocolor);
                                         node.child(childcmd + "uninstall biddletesta childtest", {
                                             cwd: data.abspath
                                         }, function biddle_test_uninstall_child_stat_readfile_again(erx, stdoutx, stderx) {
-                                            var uninstagain = "Attempted to uninstall \u001b[36mbiddletesta\u001b[39m which is \u001b[1m\u001b[" +
-                                                            "31mabsent\u001b[39m\u001b[0m from the list of installed applications. Try using " +
-                                                            "the command \u001b[32mbiddle list installed\u001b[39m.",
+                                            var uninstagain = "Attempted to uninstall " + text.cyan + "biddletesta" + text.nocolor + " which is " +
+                                                            text.bold + text.red + "absent" + text.none + " from the list of installed applications. Try using " +
+                                                            "the command " + text.green + "biddle list installed" + text.nocolor + ".",
                                                 stack       = [];
                                             if (erx !== null) {
                                                 if (typeof erx.stack === "string") {
@@ -4340,7 +4131,7 @@
                                             if (stdoutx !== uninstagain) {
                                                 return diffFiles("biddle_test_uninstall_child_stat_readfile_again", stdoutx, uninstagain);
                                             }
-                                            console.log(humantime(false) + " \u001b[32mRedundant uninstall test (error messaging) passed.\u001b[39m");
+                                            console.log(humantime(false) + " " + text.green + "Redundant uninstall test (error messaging) passed." + text.nocolor);
                                             next();
                                         });
                                     });
@@ -4360,7 +4151,7 @@
                 .child(childcmd + "unpublish biddletesta childtest", {
                     cwd: data.abspath
                 }, function biddle_test_unpublish_child(er, stdout, stder) {
-                    var unpubtest = "App \u001b[36mbiddletesta\u001b[39m is unpublished.";
+                    var unpubtest = "App " + text.cyan + "biddletesta" + text.nocolor + " is unpublished.";
                     if (er !== null) {
                         return apps.errout({
                             error : er,
@@ -4389,7 +4180,7 @@
                             time  : humantime(true)
                         });
                     }
-                    console.log(humantime(false) + " \u001b[32mbiddletesta removed from published.json.\u001b[39m");
+                    console.log(humantime(false) + " " + text.green + "biddletesta removed from published.json." + text.nocolor);
                     node
                         .fs
                         .stat(data.abspath + "publications" + node.path.sep + "biddletesta",
@@ -4432,13 +4223,13 @@
                                                 time  : humantime(true)
                                             });
                                         }
-                                        console.log(humantime(false) + " \u001b[32munpublish test passed.\u001b[39m");
+                                        console.log(humantime(false) + " " + text.green + "unpublish test passed." + text.nocolor);
                                         node.child(childcmd + "unpublish biddletesta childtest", {
                                             cwd: data.abspath
                                         }, function biddle_test_unpublish_child_stat_readfile_again(erx, stdoutx, stderx) {
-                                            var unpubagain = "Attempted to unpublish \u001b[36mbiddletesta\u001b[39m which is \u001b[1m\u001b[" +
-                                                           "31mabsent\u001b[39m\u001b[0m from the list of published applications. Try using " +
-                                                           "the command \u001b[32mbiddle list published\u001b[39m.",
+                                            var unpubagain = "Attempted to unpublish " + text.cyan + "biddletesta" + text.nocolor + " which is " +
+                                                           text.bold + text.red + "absent" + text.none + " from the list of published applications. Try using " +
+                                                           "the command " + text.green + "biddle list published" + text.nocolor + ".",
                                                 stack      = [];
                                             if (erx !== null) {
                                                 if (typeof erx.stack === "string") {
@@ -4467,7 +4258,7 @@
                                             if (stdoutx !== unpubagain) {
                                                 return diffFiles("biddle_test_unpublish_child_stat_readfile_again", stdoutx, unpubagain);
                                             }
-                                            console.log(humantime(false) + " \u001b[32mRedundant unpublish test (error messaging) passed.\u001b[39m");
+                                            console.log(humantime(false) + " " + text.green + "Redundant unpublish test (error messaging) passed." + text.nocolor);
                                             next();
                                         });
                                     });
@@ -4517,13 +4308,13 @@
                             }
                             if (stat.size < 10000) {
                                 return apps.errout({
-                                    error : "\u001b[31munzip test failed.\u001b[39m.",
+                                    error : text.red + "unzip test failed." + text.nocolor,
                                     name  : "biddle_test_unzip_child_stat",
                                     stdout: stdout,
                                     time  : humantime(true)
                                 });
                             }
-                            console.log(humantime(false) + " \u001b[32mbiddletesta.js unzipped.\u001b[39m");
+                            console.log(humantime(false) + " " + text.green + "biddletesta.js unzipped." + text.nocolor);
                             node
                                 .fs
                                 .readdir(testpath + node.path.sep + "unzip",
@@ -4545,8 +4336,8 @@
                                             time  : humantime(true)
                                         });
                                     }
-                                    console.log(humantime(false) + " \u001b[32m" + count + " items unzipped.\u001b[39m");
-                                    console.log(humantime(false) + " \u001b[32munzip test passed.\u001b[39m");
+                                    console.log(humantime(false) + " " + text.green + count + " items unzipped." + text.nocolor);
+                                    console.log(humantime(false) + " " + text.green + "unzip test passed." + text.nocolor);
                                     next();
                                 });
                             return stdout;
@@ -4601,7 +4392,7 @@
                                     time  : humantime(true)
                                 });
                             }
-                            console.log(humantime(false) + " \u001b[32mzip test passed.\u001b[39m File " + data.abspath + "unittest" + node.path.sep + "biddletesta.zip written at " + apps.commas(stat.size) + " bytes.");
+                            console.log(humantime(false) + " " + text.green + "zip test passed." + text.nocolor + " File " + data.abspath + "unittest" + node.path.sep + "biddletesta.zip written at " + text.bold + text.green + apps.commas(stat.size) + text.none + " bytes.");
                             next();
                         });
                 });
@@ -4611,9 +4402,9 @@
     apps.uninstall   = function biddle_uninstall(fromTest) {
         var app = data.installed[data.input[2]];
         if (app === undefined && fromTest === false) {
-            return console.log("Attempted to uninstall \u001b[36m" + data.input[2] + "\u001b[39m which is \u001b[1m\u001b[31mabsent\u001b[39m\u001b[0m from the list o" +
-                    "f installed applications. Try using the command \u001b[32mbiddle list installed" +
-                    "\u001b[39m.");
+            return console.log("Attempted to uninstall " + text.cyan + data.input[2] + text.nocolor + " which is " + text.bold + text.red + "absent" + text.none + " from the list o" +
+                    "f installed applications. Try using the command " + text.green + "biddle list installed" +
+                    text.nocolor + ".");
         }
         if (fromTest === true) {
             delete data.installed.biddletestb;
@@ -4635,7 +4426,7 @@
                         apps.global(loc + node.path.sep);
                     }
                     if (fromTest === false) {
-                        console.log("App \u001b[36m" + data.input[2] + "\u001b[39m is uninstalled.");
+                        console.log("App " + text.cyan + data.input[2] + text.nocolor + " is uninstalled.");
                     }
                 });
             });
@@ -4643,9 +4434,9 @@
     apps.unpublish   = function biddle_unpublish(fromTest) {
         var app = data.published[data.input[2]];
         if (app === undefined && fromTest === false) {
-            return console.log("Attempted to unpublish \u001b[36m" + data.input[2] + "\u001b[39m which is \u001b[1m\u001b[31mabsent\u001b[39m\u001b[0m from the list o" +
-                    "f published applications. Try using the command \u001b[32mbiddle list published" +
-                    "\u001b[39m.");
+            return console.log("Attempted to unpublish " + text.cyan + data.input[2] + text.nocolor + " which is " + text.bold + text.red + "absent" + text.none + " from the list o" +
+                    "f published applications. Try using the command " + text.green + "biddle list published" +
+                    text.nocolor + ".");
         }
         if (fromTest === true) {
             delete data.published.biddletestb;
@@ -4662,7 +4453,7 @@
                 apps.writeFile(str, data.abspath + "published.json",
                 function biddle_unpublish_rmrecurse_writeFile() {
                     if (fromTest === false) {
-                        console.log("App \u001b[36m" + data.input[2] + "\u001b[39m is unpublished.");
+                        console.log("App " + text.cyan + data.input[2] + text.nocolor + " is unpublished.");
                     }
                 });
             });
@@ -4672,11 +4463,11 @@
                 var colored = [];
                 if (size > 0 && fileName.replace(data.abspath, "") !== "published.json" && fileName.replace(data.abspath, "") !== "installed.json") {
                     colored                     = fileName.split(node.path.sep);
-                    colored[colored.length - 1] = colored[colored.length - 1].replace("_", "_\u001b[1m\u001b[36m");
+                    colored[colored.length - 1] = colored[colored.length - 1].replace("_", "_" + text.bold + text.cyan);
                     if ((/((\.zip)|(\.hash))$/).test(fileName) === true) {
-                        console.log("File " + colored.join(node.path.sep) + "\u001b[39m\u001b[0m written at \u001b[1m\u001b[32m" + apps.commas(size) + "\u001b[39m\u001b[0m bytes.");
+                        console.log("File " + colored.join(node.path.sep) + text.none + " written at " + text.bold + text.green + apps.commas(size) + text.none + " bytes.");
                     } else {
-                        console.log("File " + colored.join(node.path.sep) + " written at \u001b[1m\u001b[32m" + apps.commas(size) + "\u001b[39m\u001b[0m bytes.");
+                        console.log("File " + colored.join(node.path.sep) + " written at " + text.bold + text.green + apps.commas(size) + text.none + " bytes.");
                     }
                 }
                 callback(fileData);
@@ -4690,7 +4481,7 @@
                 if (err !== null) {
                     if (data.platform !== "win32" && data.command === "global" && err.toString().indexOf("EACCES: permission denied")) {
                         return apps.errout({
-                            error: err.toString() + "\n\u001b[31m\u001b[1mThis command requires sudo access.\u001b[0m\u001b[39m Pleas" +
+                            error: err.toString() + "\n" + text.bold + text.red + "This command requires sudo access." + text.none + " Pleas" +
                                     "e try 'sudo node biddle global'.",
                             name : "biddle_writeFile_callback"
                         });
@@ -4864,15 +4655,15 @@
                     }
                 }());
                 if (data.command === "help" || data.command === "" || data.command === undefined || data.command === "?") {
-                    apps.help();
+                    apps.markdown();
                 } else if (isNaN(data.command) === false) {
-                    data.input[1] = "help";
+                    data.input[1] = "markdown";
                     data.input[2] = data.command;
-                    data.command  = "help";
-                    apps.help();
+                    data.command  = "markdown";
+                    apps.markdown();
                 } else if (commands[data.command] === undefined) {
                     apps.errout({
-                        error: "Unrecognized command: \u001b[31m" + data.command + "\u001b[39m.  Currently these commands are recognized:\r\n\r\n" + Object
+                        error: "Unrecognized command: " + text.red + data.command + text.nocolor + ".  Currently these commands are recognized:\r\n\r\n" + Object
                             .keys(commands)
                             .join("\r\n") + "\r\n",
                         name : "biddle_init_start"
@@ -4887,13 +4678,13 @@
                             valuetype = "known application name";
                         }
                         return apps.errout({
-                            error: "Command \u001b[32m" + data.command + "\u001b[39m requires a " + valuetype + ".",
+                            error: "Command " + text.green + data.command + text.nocolor + " requires a " + valuetype + ".",
                             name : "biddle_init_start"
                         });
                     }
                     if (data.input[3] === undefined && data.command === "copy") {
                         return apps.errout({
-                            error: "Command \u001b[32m" + data.command + "\u001b[39m requires a destination directory.",
+                            error: "Command " + text.green + data.command + text.nocolor + " requires a destination directory.",
                             name : "biddle_init_start"
                         });
                     }
@@ -4916,7 +4707,7 @@
                         apps.global(data.abspath);
                     } else if (data.command === "hash") {
                         apps
-                            .hashCmd(data.input[2], "hashFile", function biddle_init_start_hash() {
+                            .hash(data.input[2], "hashFile", function biddle_init_start_hash() {
                                 console.log(data.hashFile);
                             });
                     } else if (data.command === "install") {
@@ -4924,7 +4715,7 @@
                     } else if (data.command === "list") {
                         apps.list();
                     } else if (data.command === "markdown") {
-                        apps.help();
+                        apps.markdown();
                     } else if (data.command === "publish") {
                         apps.publish();
                     } else if (data.command === "remove") {
