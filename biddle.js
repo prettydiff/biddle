@@ -10,18 +10,18 @@
             https : require("https"),
             path  : require("path")
         },
-        text     = { // List of ANSI formatting instructions
-            normal   : "\u001b[0m",
-            bold     : "\u001b[1m",
-            underline: "\u001b[4m",
-            red      : "\u001b[31m",
-            green    : "\u001b[32m",
-            yellow   : "\u001b[33m",
+        text     = {
             blue     : "\u001b[34m",
-            purple   : "\u001b[35m",
+            bold     : "\u001b[1m",
             cyan     : "\u001b[36m",
+            green    : "\u001b[32m",
             nocolor  : "\u001b[39m",
-            none     : "\u001b[39m\u001b[0m"
+            none     : "\u001b[39m\u001b[0m", // List of ANSI formatting instructions
+            normal   : "\u001b[0m",
+            purple   : "\u001b[35m",
+            red      : "\u001b[31m",
+            underline: "\u001b[4m",
+            yellow   : "\u001b[33m"
         },
         commands = { // The list of supported biddle commands.
             commands : "List the supported commands to the console.",
@@ -173,10 +173,7 @@
         util.eout     = function biddle_copy_eout(er, name) {
             var filename = target.split(node.path.sep);
             apps.rmrecurse(destination + node.path.sep + filename[filename.length - 1], function biddle_copy_eout_rmrecurse() {
-                apps.errout({
-                    error: er,
-                    name : name
-                });
+                apps.errout({error: er, name: name});
             });
         };
         util.dir      = function biddle_copy_dir(item, dest) {
@@ -190,8 +187,7 @@
                         if (files.length > 0) {
                             numb.end += 1;
                             files.forEach(function biddle_copy_dir_readdir_callback_each(value) {
-                                util.stat(item + node.path.sep + value,
-                                dest);
+                                util.stat(item + node.path.sep + value, dest);
                             });
                         } else {
                             util.complete(item);
@@ -206,9 +202,7 @@
                     .createReadStream(item),
                 writeStream = node
                     .fs
-                    .createWriteStream(dest, {
-                        mode: prop.mode
-                    }),
+                    .createWriteStream(dest, {mode: prop.mode}),
                 errorflag   = false;
             readStream.on("error", function biddle_copy_file_readError(error) {
                 errorflag = true;
@@ -221,10 +215,9 @@
             if (errorflag === true) {
                 return;
             }
-            writeStream
-                .on("open", function biddle_copy_file_write() {
-                    readStream.pipe(writeStream);
-                });
+            writeStream.on("open", function biddle_copy_file_write() {
+                readStream.pipe(writeStream);
+            });
             writeStream.once("finish", function biddle_copy_file_finish() {
                 var filename = item.split(node.path.sep);
                 node
@@ -250,8 +243,7 @@
                                 return util.eout(ers, "biddle_copy_link_readlink_stat");
                             }
                             if (stats === undefined || stats.isFile === undefined) {
-                                return util.eout("Error in performing stat against " + item,
-                                "biddle_copy_link_readlink_stat");
+                                return util.eout("Error in performing stat against " + item, "biddle_copy_link_readlink_stat");
                             }
                             if (stats.isDirectory() === true) {
                                 type = "junction";
@@ -293,8 +285,7 @@
                     a += 1;
                 } while (a < exlen);
             }
-            node.fs[func](item,
-            function biddle_copy_stat_statIt(er, stats) {
+            node.fs[func](item, function biddle_copy_stat_statIt(er, stats) {
                 var action = function biddle_copy_stat_statIt_action() {
                     if (stats.isFile() === true) {
                         numb.files += 1;
@@ -315,10 +306,7 @@
                     util.complete(item);
                 };
                 if (er !== null) {
-                    return apps.errout({
-                        error: er,
-                        name : "biddle_copy_stat_statIt"
-                    });
+                    return apps.errout({error: er, name: "biddle_copy_stat_statIt"});
                 }
                 if (stats === undefined || stats.isFile === undefined) {
                     return apps.errout({
@@ -369,39 +357,33 @@
                 apps.unpublish(true);
                 apps.uninstall(true);
             }
-            apps
-                .rmrecurse(data.abspath + "unittest",
-                function biddle_errout_dataClean() {
-                    apps
-                        .rmrecurse(data.abspath + "temp",
-                        function biddle_errout_dataClean_tempTestClean() {
-                            console.log(text.red + "Unit test failure." + text.nocolor);
-                            if (errData.stdout !== undefined) {
-                                console.log(errData.stdout);
-                            }
-                            console.log(text.bold + text.cyan + "Function:" + text.none + " " + errData.name);
-                            console.log(error);
-                            console.log("");
-                            console.log(stack);
-                            console.log("");
-                            console.log(errData.time);
-                            process.exit(1);
-                        });
-                });
-        } else {
-            apps
-                .rmrecurse(data.abspath + "temp",
-                function biddle_errout_dataClean_tempNontestClean() {
+            apps.rmrecurse(data.abspath + "unittest", function biddle_errout_dataClean() {
+                apps.rmrecurse(data.abspath + "temp", function biddle_errout_dataClean_tempTestClean() {
+                    console.log(text.red + "Unit test failure." + text.nocolor);
+                    if (errData.stdout !== undefined) {
+                        console.log(errData.stdout);
+                    }
                     console.log(text.bold + text.cyan + "Function:" + text.none + " " + errData.name);
                     console.log(error);
-                    if (data.childtest === false) {
-                        console.log("");
-                        console.log(stack);
-                        console.log("");
-                        console.log("Please report defects to https://github.com/prettydiff/biddle/issues");
-                    }
+                    console.log("");
+                    console.log(stack);
+                    console.log("");
+                    console.log(errData.time);
                     process.exit(1);
                 });
+            });
+        } else {
+            apps.rmrecurse(data.abspath + "temp", function biddle_errout_dataClean_tempNontestClean() {
+                console.log(text.bold + text.cyan + "Function:" + text.none + " " + errData.name);
+                console.log(error);
+                if (data.childtest === false) {
+                    console.log("");
+                    console.log(stack);
+                    console.log("");
+                    console.log("Please report defects to https://github.com/prettydiff/biddle/issues");
+                }
+                process.exit(1);
+            });
         }
     };
     apps.get         = function biddle_get(url, callback) {
@@ -426,21 +408,17 @@
                             biddle_get(res.headers.location, callback);
                         }
                     } else if ((data.command !== "install" && (/[\u0002-\u0008]|[\u000e-\u001f]/).test(file[0]) === true) || zippy === true) {
-                        apps
-                            .makedir(addy, function biddle_get_getcall_end_complete() {
-                                apps.writeFile(Buffer.concat(file), addy + data.fileName, function biddle_get_getcall_end_complete_writeFile(data) {
-                                    callback(data);
-                                });
+                        apps.makedir(addy, function biddle_get_getcall_end_complete() {
+                            apps.writeFile(Buffer.concat(file), addy + data.fileName, function biddle_get_getcall_end_complete_writeFile(data) {
+                                callback(data);
                             });
+                        });
                     } else {
                         callback(file.join(""));
                     }
                 });
                 res.on("error", function biddle_get_getcall_error(error) {
-                    return apps.errout({
-                        error: error,
-                        name : "biddle_get_getcall_error"
-                    });
+                    return apps.errout({error: error, name: "biddle_get_getcall_error"});
                 });
             };
         if ((/^(https?:\/\/)/).test(url) === false) {
@@ -450,15 +428,13 @@
                     apps.copy(data.input[2], "downloads", [], callback);
                 });
             } else if (data.command === "status") {
-                apps
-                    .readBinary(url, function biddle_get_readLocal(filedata, filepath) {
-                        callback(filedata, filepath);
-                    });
+                apps.readBinary(url, function biddle_get_readLocal(filedata, filepath) {
+                    callback(filedata, filepath);
+                });
             } else {
-                apps
-                    .readBinary(url, function biddle_get_readLocal(filedata) {
-                        callback(filedata);
-                    });
+                apps.readBinary(url, function biddle_get_readLocal(filedata) {
+                    callback(filedata);
+                });
             }
         } else if (a > 0 && a < 10) {
             node
@@ -517,10 +493,7 @@
                             name : "biddle_getpjson_readFile"
                         });
                     }
-                    return apps.errout({
-                        error: err,
-                        name : "biddle_getpjson_readFile"
-                    });
+                    return apps.errout({error: err, name: "biddle_getpjson_readFile"});
                 }
                 data.packjson = JSON.parse(fileData);
                 if (typeof data.packjson.name !== "string" || data.packjson.name.length < 1) {
@@ -531,8 +504,7 @@
                 }
                 if (typeof data.packjson.version !== "string" || data.packjson.version.length < 1) {
                     return apps.errout({
-                        error: "The package.json file is missing the required " + text.red + "version" + text.nocolor + " proper" +
-                                  "ty.",
+                        error: "The package.json file is missing the required " + text.red + "version" + text.nocolor + " property.",
                         name : "biddle_getpjson_readfile"
                     });
                 }
@@ -575,35 +547,22 @@
             return node.child(cmds.pathRead(), function biddle_global_winRead(er, stdout, stder) {
                 var remove = "";
                 if (er !== null) {
-                    return apps.errout({
-                        error: er,
-                        name : "biddle_global_winRead"
-                    });
+                    return apps.errout({error: er, name: "biddle_global_winRead"});
                 }
                 if (stder !== null && stder !== "") {
-                    return apps.errout({
-                        error: stder,
-                        name : "biddle_global_winRead"
-                    });
+                    return apps.errout({error: stder, name: "biddle_global_winRead"});
                 }
                 if (stdout.indexOf(bin) > -1) {
                     if (data.input[3] === "remove") {
                         remove = stdout
-                            .replace(";" + loc + "cmd",
-                        "")
+                            .replace(";" + loc + "cmd", "")
                             .replace(/(\s+)$/, "");
                         return node.child(cmds.pathRemove(remove), function biddle_global_winRead_winRemovePath(erw, stdoutw, stderw) {
                             if (erw !== null) {
-                                return apps.errout({
-                                    error: erw,
-                                    name : "biddle_global_winRead_winRemovePath"
-                                });
+                                return apps.errout({error: erw, name: "biddle_global_winRead_winRemovePath"});
                             }
                             if (stderw !== null && stderw !== "") {
-                                return apps.errout({
-                                    error: stderw,
-                                    name : "biddle_global_winRead_winRemovePath"
-                                });
+                                return apps.errout({error: stderw, name: "biddle_global_winRead_winRemovePath"});
                             }
                             if (data.command === "global") {
                                 console.log(loc + "cmd removed from %PATH%.");
@@ -624,87 +583,44 @@
                         name : "biddle_global_winRead"
                     });
                 }
-                node
-                    .child(cmds.pathSet(loc), function biddle_global_winRead_winWritePath(erw, stdoutw, stderw) {
-                        if (erw !== null) {
-                            return apps.errout({
-                                error: erw,
-                                name : "biddle_global_winRead_winWritePath"
-                            });
-                        }
-                        if (stderw !== null && stderw !== "") {
-                            return apps.errout({
-                                error: stderw,
-                                name : "biddle_global_winRead_winWritePath"
-                            });
-                        }
-                        if (data.command === "global") {
-                            console.log(loc + "cmd added to %PATH%.");
-                        }
-                        return stdoutw;
-                    });
+                node.child(cmds.pathSet(loc), function biddle_global_winRead_winWritePath(erw, stdoutw, stderw) {
+                    if (erw !== null) {
+                        return apps.errout({error: erw, name: "biddle_global_winRead_winWritePath"});
+                    }
+                    if (stderw !== null && stderw !== "") {
+                        return apps.errout({error: stderw, name: "biddle_global_winRead_winWritePath"});
+                    }
+                    if (data.command === "global") {
+                        console.log(loc + "cmd added to %PATH%.");
+                    }
+                    return stdoutw;
+                });
             });
         }
-        node
-            .child("echo ~", function biddle_global_findHome(erh, stdouth, stderh) {
-                var flag     = {
-                        bash_profile: false,
-                        profile     : false
-                    },
-                    terminal = function biddle_global_findHome_terminal() {
-                        if (data.input[3] === "remove" && data.command === "global") {
-                            return console.log(bin + " removed from $PATH but will remain available until the terminal is restarted.");
-                        }
-                        if (data.command === "global") {
-                            console.log("Restart the terminal or execute:  export PATH=" + bin + ":$PATH");
-                        }
-                    },
-                    readPath = function biddle_global_findHome_readPath(dotfile) {
-                        node
-                            .fs
-                            .readFile(dotfile, "utf8", function biddle_global_findHome_readPath_nixRead(err, filedata) {
-                                var pathStatement = "\nexport PATH=\"" + bin + ":$PATH\"\n";
-                                if (err !== null && err !== undefined) {
-                                    return apps.errout({
-                                        error: err,
-                                        name : "biddle_global_findHome_nixStat_nixRead"
-                                    });
-                                }
-                                if (filedata.indexOf(bin) > -1) {
-                                    if (data.input[3] === "remove") {
-                                        return apps.writeFile(filedata.replace(pathStatement, ""), dotfile, function biddle_global_findHome_readPath_nixRead_nixRemove() {
-                                            if (data.command === "global") {
-                                                console.log("Path updated in " + dotfile);
-                                            }
-                                            if (dotfile.indexOf("bash_profile") > 0) {
-                                                flag.bash_profile = true;
-                                                if (flag.profile === true) {
-                                                    terminal();
-                                                }
-                                            } else {
-                                                flag.profile = true;
-                                                if (flag.bash_profile === true) {
-                                                    terminal();
-                                                }
-                                            }
-                                        });
-                                    }
-                                    if (data.command === "global") {
-                                        return apps.errout({
-                                            error: bin + " is already in $PATH",
-                                            name : "biddle_global_findHome_readPath_nixRead"
-                                        });
-                                    }
-                                }
-                                if (data.input[3] === "remove" && data.command !== "uninstall") {
-                                    return apps.errout({
-                                        error: bin + " is not present in $PATH",
-                                        name : "biddle_global_findHome_readPath_nixRead"
-                                    });
-                                }
-                                apps
-                                    .writeFile(filedata + pathStatement,
-                                    dotfile, function biddle_global_findHome_readPath_nixRead_nixRemove() {
+        node.child("echo ~", function biddle_global_findHome(erh, stdouth, stderh) {
+            var flag     = {
+                    bash_profile: false,
+                    profile     : false
+                },
+                terminal = function biddle_global_findHome_terminal() {
+                    if (data.input[3] === "remove" && data.command === "global") {
+                        return console.log(bin + " removed from $PATH but will remain available until the terminal is restarted.");
+                    }
+                    if (data.command === "global") {
+                        console.log("Restart the terminal or execute:  export PATH=" + bin + ":$PATH");
+                    }
+                },
+                readPath = function biddle_global_findHome_readPath(dotfile) {
+                    node
+                        .fs
+                        .readFile(dotfile, "utf8", function biddle_global_findHome_readPath_nixRead(err, filedata) {
+                            var pathStatement = "\nexport PATH=\"" + bin + ":$PATH\"\n";
+                            if (err !== null && err !== undefined) {
+                                return apps.errout({error: err, name: "biddle_global_findHome_nixStat_nixRead"});
+                            }
+                            if (filedata.indexOf(bin) > -1) {
+                                if (data.input[3] === "remove") {
+                                    return apps.writeFile(filedata.replace(pathStatement, ""), dotfile, function biddle_global_findHome_readPath_nixRead_nixRemove() {
                                         if (data.command === "global") {
                                             console.log("Path updated in " + dotfile);
                                         }
@@ -720,65 +636,83 @@
                                             }
                                         }
                                     });
+                                }
+                                if (data.command === "global") {
+                                    return apps.errout({
+                                        error: bin + " is already in $PATH",
+                                        name : "biddle_global_findHome_readPath_nixRead"
+                                    });
+                                }
+                            }
+                            if (data.input[3] === "remove" && data.command !== "uninstall") {
+                                return apps.errout({
+                                    error: bin + " is not present in $PATH",
+                                    name : "biddle_global_findHome_readPath_nixRead"
+                                });
+                            }
+                            apps.writeFile(filedata + pathStatement, dotfile, function biddle_global_findHome_readPath_nixRead_nixRemove() {
+                                if (data.command === "global") {
+                                    console.log("Path updated in " + dotfile);
+                                }
+                                if (dotfile.indexOf("bash_profile") > 0) {
+                                    flag.bash_profile = true;
+                                    if (flag.profile === true) {
+                                        terminal();
+                                    }
+                                } else {
+                                    flag.profile = true;
+                                    if (flag.bash_profile === true) {
+                                        terminal();
+                                    }
+                                }
                             });
-                    };
-                if (erh !== null) {
-                    return apps.errout({
-                        error: erh,
-                        name : "biddle_global_findHome"
-                    });
-                }
-                if (stderh !== null && stderh !== "") {
-                    return apps.errout({
-                        error: stderh,
-                        name : "biddle_global_findHome"
-                    });
-                }
-                stdouth = stdouth.replace(/\s+/g, "") + "/.";
-                node
-                    .fs
-                    .stat(stdouth + "profile",
-                    function biddle_cmds_global_findHome_nixStatProfile(er) {
-                        if (er !== null) {
-                            if (er.toString().indexOf("no such file or directory") > 1) {
-                                flag.profile = true;
-                                if (flag.bash_profile === true) {
-                                    terminal();
-                                }
-                            } else {
-                                return apps.errout({
-                                    error: er,
-                                    name : "biddle_cmds_global_findHome_nixStatProfile"
-                                });
+                        });
+                };
+            if (erh !== null) {
+                return apps.errout({error: erh, name: "biddle_global_findHome"});
+            }
+            if (stderh !== null && stderh !== "") {
+                return apps.errout({error: stderh, name: "biddle_global_findHome"});
+            }
+            stdouth = stdouth.replace(/\s+/g, "") + "/.";
+            node
+                .fs
+                .stat(stdouth + "profile", function biddle_cmds_global_findHome_nixStatProfile(er) {
+                    if (er !== null) {
+                        if (er.toString().indexOf("no such file or directory") > 1) {
+                            flag.profile = true;
+                            if (flag.bash_profile === true) {
+                                terminal();
                             }
                         } else {
-                            readPath(stdouth + "profile");
+                            return apps.errout({error: er, name: "biddle_cmds_global_findHome_nixStatProfile"});
                         }
-                    });
-                node
-                    .fs
-                    .stat(stdouth + "bash_profile",
-                    function biddle_cmds_global_findHome_nixStatBash(er) {
-                        if (er !== null) {
-                            if (er.toString().indexOf("no such file or directory") > 1) {
-                                flag.bash_profile = true;
-                                if (flag.profile === true) {
-                                    terminal();
-                                }
-                            } else {
-                                return apps.errout({
-                                    error: er,
-                                    name : "biddle_cmds_global_findHome_nixStatBash"
-                                });
+                    } else {
+                        readPath(stdouth + "profile");
+                    }
+                });
+            node
+                .fs
+                .stat(stdouth + "bash_profile", function biddle_cmds_global_findHome_nixStatBash(er) {
+                    if (er !== null) {
+                        if (er.toString().indexOf("no such file or directory") > 1) {
+                            flag.bash_profile = true;
+                            if (flag.profile === true) {
+                                terminal();
                             }
                         } else {
-                            readPath(stdouth + "bash_profile");
+                            return apps.errout({error: er, name: "biddle_cmds_global_findHome_nixStatBash"});
                         }
-                    });
-            });
+                    } else {
+                        readPath(stdouth + "bash_profile");
+                    }
+                });
+        });
     };
     apps.hash        = function biddle_hash(filepath, store, callback) {
-        var hash = node.crypto.createHash("sha512");
+        var hash = node
+            .crypto
+            .createHash("sha512");
         if (filepath === "string" && data.input[3] !== undefined) {
             hash.update(data.input[3]);
             console.log(hash.digest("hex"));
@@ -790,8 +724,8 @@
                         if (er.toString().indexOf("no such file or directory") > 0) {
                             if (data.command === "install") {
                                 return apps.errout({
-                                    error: filepath + " " + text.red + "does not appear to be a zip file" + text.nocolor + ". Install command expects t" +
-                                            "o receive a zip file and a hash file at the same location and file name.",
+                                    error: filepath + " " + text.red + "does not appear to be a zip file" + text.nocolor + ". Install command expects to receive a zip file and a hash file at the same loca" +
+                                            "tion and file name.",
                                     name : "biddle_hash_stat"
                                 });
                             }
@@ -800,16 +734,13 @@
                                 name : "biddle_hash_stat"
                             });
                         }
-                        return apps.errout({
-                            error: er,
-                            name : "biddle_hash_stat"
-                        });
+                        return apps.errout({error: er, name: "biddle_hash_stat"});
                     }
                     if (stat === undefined || stat.isFile() === false) {
                         if (data.command === "install") {
                             return apps.errout({
-                                error: filepath + " " + text.red + "does not appear to be a zip file" + text.nocolor + ". Install command expects t" +
-                                        "o receive a zip file and a hash file at the same location and file name.",
+                                error: filepath + " " + text.red + "does not appear to be a zip file" + text.nocolor + ". Install command expects to receive a zip file and a hash file at the same loca" +
+                                        "tion and file name.",
                                 name : "biddle_hash_stat"
                             });
                         }
@@ -818,55 +749,67 @@
                             name : "biddle_hash_stat"
                         });
                     }
-                    node.fs.open(filepath, "r", function biddle_hash_stat_open(ero, fd) {
-                        var msize = (stat.size < 100)
-                                ? stat.size
-                                : 100,
-                            buff  = new Buffer(msize);
-                        if (ero !== null) {
-                            return apps.errout({error: ero, name: "biddle_hash_stat_open"});
-                        }
-                        node.fs.read(fd, buff, 0, msize, 1, function biddle_hash_stat_open_read(erra, bytesa, buffera) {
-                            var bstring  = "",
-                                hashExec = function biddle_hash_stat_open_read_hashExec(filedump) {
-                                    hash.on("readable", function biddle_hash_stat_open_read_readBinary_hash() {
-                                        var hashdata = hash.read(),
-                                            hashstr  = "";
-                                        if (hashdata !== null) {
-                                            hashstr = hashdata.toString("hex").replace(/\s+/g, "");
-                                            data[store] = hashstr;
-                                            callback(hashstr);
-                                        }
-                                    });
-                                    hash.write(filedump);
-                                    hash.end();
-                                };
-                            if (erra !== null) {
-                                return apps.errout({error: erra, name: "biddle_hash_stat_open_read"});
+                    node
+                        .fs
+                        .open(filepath, "r", function biddle_hash_stat_open(ero, fd) {
+                            var msize = (stat.size < 100)
+                                    ? stat.size
+                                    : 100,
+                                buff  = new Buffer(msize);
+                            if (ero !== null) {
+                                return apps.errout({error: ero, name: "biddle_hash_stat_open"});
                             }
-                            bstring = buffera.toString("utf8", 0, buffera.length);
-                            bstring = bstring.slice(2, bstring.length - 2);
-                            if ((/[\u0002-\u0008]|[\u000e-\u001f]/).test(bstring) === true) {
-                                buff = new Buffer(stat.size);
-                                node.fs.read(fd, buff, 0, stat.size, 0, function biddle_hash_stat_open_read_readBinary(errb, bytesb, bufferb) {
-                                    if (errb !== null) {
-                                        return apps.errout({error: errb, name: "biddle_hash_stat_open_read_readBinary"});
+                            node
+                                .fs
+                                .read(fd, buff, 0, msize, 1, function biddle_hash_stat_open_read(erra, bytesa, buffera) {
+                                    var bstring  = "",
+                                        hashExec = function biddle_hash_stat_open_read_hashExec(filedump) {
+                                            hash.on("readable", function biddle_hash_stat_open_read_readBinary_hash() {
+                                                var hashdata = hash.read(),
+                                                    hashstr  = "";
+                                                if (hashdata !== null) {
+                                                    hashstr     = hashdata
+                                                        .toString("hex")
+                                                        .replace(/\s+/g, "");
+                                                    data[store] = hashstr;
+                                                    callback(hashstr);
+                                                }
+                                            });
+                                            hash.write(filedump);
+                                            hash.end();
+                                        };
+                                    if (erra !== null) {
+                                        return apps.errout({error: erra, name: "biddle_hash_stat_open_read"});
                                     }
-                                    if (bytesb > 0) {
-                                        hashExec(bufferb);
+                                    bstring = buffera.toString("utf8", 0, buffera.length);
+                                    bstring = bstring.slice(2, bstring.length - 2);
+                                    if ((/[\u0002-\u0008]|[\u000e-\u001f]/).test(bstring) === true) {
+                                        buff = new Buffer(stat.size);
+                                        node
+                                            .fs
+                                            .read(fd, buff, 0, stat.size, 0, function biddle_hash_stat_open_read_readBinary(errb, bytesb, bufferb) {
+                                                if (errb !== null) {
+                                                    return apps.errout({error: errb, name: "biddle_hash_stat_open_read_readBinary"});
+                                                }
+                                                if (bytesb > 0) {
+                                                    hashExec(bufferb);
+                                                }
+                                            });
+                                    } else {
+                                        node
+                                            .fs
+                                            .readFile(filepath, {
+                                                encoding: "utf8"
+                                            }, function biddle_hash_stat_open_read_readFile(errc, dump) {
+                                                if (errc !== null && errc !== undefined) {
+                                                    return apps.errout({error: errc, name: "biddle_hash_stat_open_read_readFile"});
+                                                }
+                                                hashExec(dump);
+                                            });
                                     }
+                                    return bytesa;
                                 });
-                            } else {
-                                node.fs.readFile(filepath, {encoding: "utf8"}, function biddle_hash_stat_open_read_readFile(errc, dump) {
-                                    if (errc !== null && errc !== undefined) {
-                                        return apps.errout({error: errc, name: "biddle_hash_stat_open_read_readFile"});
-                                    }
-                                    hashExec(dump);
-                                });
-                            }
-                            return bytesa;
                         });
-                    });
                 });
         }
     };
@@ -887,55 +830,67 @@
                 return dirs.join(sep) + sep + "latest.txt";
             }()),
             compareHash = function biddle_install_compareHash() {
-                apps
-                    .hash(data.address.downloads + data.fileName, "hashZip", function biddle_install_compareHash_hash() {
-                        if (data.hashFile === data.hashZip) {
-                            var location = "",
-                                puba     = [],
-                                pubs     = "";
-                            if ((/^(https?:\/\/)/i).test(data.input[2]) === true) {
-                                location = data.address.downloads + data.input[2].split("/").pop();
-                                puba     = data.input[2].split("/");
-                                puba.pop();
-                                pubs     = puba.join("/");
-                            } else {
-                                location = apps.relToAbs(data.input[2], data.cwd);
-                                pubs     = apps.relToAbs(data.input[2].slice(0, data.input[2].lastIndexOf(node.path.sep) + 1), data.cwd);
-                            }
-                            apps
-                                .zip(function biddle_install_callback() {
-                                    var status   = {
-                                            packjson: false,
-                                            remove  : false
-                                        },
-                                        complete = function biddle_install_compareHash_hash_complete() {
-                                            console.log("Application " + text.cyan + data.packjson.name + text.nocolor + "m is installed to version: " + data.packjson.version);
-                                        };
-                                    data.installed[data.packjson.name]           = {};
-                                    data.installed[data.packjson.name].location  = data.address.target;
-                                    data.installed[data.packjson.name].version   = data.packjson.version;
-                                    data.installed[data.packjson.name].published = pubs;
-                                    apps.writeFile(JSON.stringify(data.installed), data.abspath + "installed.json",
-                                    function biddle_install_compareHash_hash_installedJSON() {
-                                        status.packjson = true;
-                                        if (status.remove === true) {
-                                            complete();
-                                        }
-                                    });
-                                    apps.rmrecurse(data.abspath + "downloads" + node.path.sep + data.fileName, function biddle_install_compareHash_hash_remove() {
-                                        status.remove = true;
-                                        if (status.packjson === true) {
-                                            complete();
-                                        }
-                                    });
-                                }, {
-                                    location: location,
-                                    name    : ""
-                                });
+                apps.hash(data.address.downloads + data.fileName, "hashZip", function biddle_install_compareHash_hash() {
+                    if (data.hashFile === data.hashZip) {
+                        var location = "",
+                            puba     = [],
+                            pubs     = "";
+                        if ((/^(https?:\/\/)/i).test(data.input[2]) === true) {
+                            location = data.address.downloads + data
+                                .input[2]
+                                .split("/")
+                                .pop();
+                            puba     = data
+                                .input[2]
+                                .split("/");
+                            puba.pop();
+                            pubs = puba.join("/");
                         } else {
-                            return apps.errout({error: text.red + "Hashes don't match" + text.nocolor + " for " + data.input[2] + ". File is saved in the downloads directory and will not be installed.\r\nGenerated hash - " + data.hashZip + "\r\nRequested hash - " + data.hashFile, name: "biddle_install_compareHash"});
+                            location = apps.relToAbs(data.input[2], data.cwd);
+                            pubs     = apps.relToAbs(data.input[2].slice(0, data.input[2].lastIndexOf(node.path.sep) + 1), data.cwd);
                         }
-                    });
+                        apps.zip(function biddle_install_callback() {
+                            var status   = {
+                                    packjson: false,
+                                    remove  : false
+                                },
+                                complete = function biddle_install_compareHash_hash_complete() {
+                                    console.log("Application " + text.cyan + data.packjson.name + text.nocolor + "m is installed to version: " + data.packjson.version);
+                                };
+                            data.installed[data.packjson.name] = {};
+                            data
+                                .installed[data.packjson.name]
+                                .location                      = data.address.target;
+                            data
+                                .installed[data.packjson.name]
+                                .version                       = data.packjson.version;
+                            data
+                                .installed[data.packjson.name]
+                                .published                     = pubs;
+                            apps.writeFile(JSON.stringify(data.installed), data.abspath + "installed.json", function biddle_install_compareHash_hash_installedJSON() {
+                                status.packjson = true;
+                                if (status.remove === true) {
+                                    complete();
+                                }
+                            });
+                            apps.rmrecurse(data.abspath + "downloads" + node.path.sep + data.fileName, function biddle_install_compareHash_hash_remove() {
+                                status.remove = true;
+                                if (status.packjson === true) {
+                                    complete();
+                                }
+                            });
+                        }, {
+                            location: location,
+                            name    : ""
+                        });
+                    } else {
+                        return apps.errout({
+                            error: text.red + "Hashes don't match" + text.nocolor + " for " + data.input[2] + ". File is saved in the downloads directory and will not be installed.\r\nGenerat" +
+                                    "ed hash - " + data.hashZip + "\r\nRequested hash - " + data.hashFile,
+                            name : "biddle_install_compareHash"
+                        });
+                    }
+                });
             };
         apps.get(data.input[2], function biddle_install_getzip() {
             flag.zip = true;
@@ -944,7 +899,7 @@
             }
         });
         apps.get(data.input[2].replace(".zip", ".hash"), function biddle_install_gethash(fileData) {
-            flag.hash = true;
+            flag.hash     = true;
             data.hashFile = fileData;
             if (flag.zip === true && flag.late === true) {
                 compareHash();
@@ -962,8 +917,7 @@
             name = dirs[dirs.length - 1];
             if (typeof data.installed[name] === "object" && data.installed[name].version === fileData) {
                 return apps.errout({
-                    error: "This application is already installed at version " + text.cyan + fileData + text.nocolor + ". To continue uninstall the application and try again: " + text.green + "biddl" +
-                            "e uninstall " + name + text.nocolor,
+                    error: "This application is already installed at version " + text.cyan + fileData + text.nocolor + ". To continue uninstall the application and try again: " + text.green + "biddle uninstall " + name + text.nocolor,
                     name : "biddle_install_getlate"
                 });
             }
@@ -1059,10 +1013,7 @@
                                         .fs
                                         .mkdir(dirs.slice(0, ind).join(node.path.sep), function biddle_makedir_stat_restat_callback_mkdir(errb) {
                                             if (errb !== null && errb.toString().indexOf("file already exists") < 0) {
-                                                return apps.errout({
-                                                    error: errb,
-                                                    name : "biddle_makedir_stat_restat_callback_mkdir"
-                                                });
+                                                return apps.errout({error: errb, name: "biddle_makedir_stat_restat_callback_mkdir"});
                                             }
                                             if (ind < len) {
                                                 biddle_makedir_stat_restat();
@@ -1072,10 +1023,7 @@
                                         });
                                 }
                                 if (erra !== null && erra.toString().indexOf("file already exists") < 0) {
-                                    return apps.errout({
-                                        error: erra,
-                                        name : "biddle_makedir_stat_restat_callback"
-                                    });
+                                    return apps.errout({error: erra, name: "biddle_makedir_stat_restat_callback"});
                                 }
                                 if (stata.isFile() === true) {
                                     return apps.errout({
@@ -1099,10 +1047,7 @@
                     return restat();
                 }
                 if (err !== null && err.toString().indexOf("file already exists") < 0) {
-                    return apps.errout({
-                        error: err,
-                        name : "biddle_makedir_stat"
-                    });
+                    return apps.errout({error: err, name: "biddle_makedir_stat"});
                 }
                 if (stats.isFile() === true) {
                     return apps.errout({
@@ -1155,8 +1100,7 @@
                                         if (chars[eol - 1] === " ") {
                                             chars[eol - 1] = "";
                                         } else if (chars[eol + 1] === " ") {
-                                            chars.splice(eol + 1,
-                                            1);
+                                            chars.splice(eol + 1, 1);
                                             final -= 1;
                                         }
                                     };
@@ -1350,7 +1294,7 @@
                         d    = 0;
                         do {
                             rows[0][d] = parse(rows[0][d].replace(/\s+/g, " ").replace(/^\s/, "").replace(/\s$/, ""), false, true);
-                            lend         = rows[0][d]
+                            lend       = rows[0][d]
                                 .replace(/\u001b\[\d+m/g, "")
                                 .length;
                             cols.push(lend);
@@ -1362,7 +1306,7 @@
                                 d = 0;
                                 do {
                                     rows[rows.length - 1][d] = parse(rows[rows.length - 1][d].replace(/\s+/g, " ").replace(/^\s/, "").replace(/\s$/, ""), false, true);
-                                    lend                       = rows[rows.length - 1][d]
+                                    lend                     = rows[rows.length - 1][d]
                                         .replace(/\u001b\[\d+m/g, "")
                                         .length;
                                     if (lend > cols[d]) {
@@ -1427,10 +1371,7 @@
                         b += 1;
                     };
                 if (err !== null && err !== undefined) {
-                    return apps.errout({
-                        error: err,
-                        name : "biddle_markdown_readme"
-                    });
+                    return apps.errout({error: err, name: "biddle_markdown_readme"});
                 }
                 readme = (function biddle_markdown_readme_removeImages() {
                     var readout = [],
@@ -1588,221 +1529,203 @@
             indexfile = function biddle_publish_indexfile() {
                 var rows   = [],
                     file   = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><!DOCTYPE html PUBLIC \"-//W3C//DTD X" +
-                            "HTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\"><html xml:lang=" +
-                            "\"en\" xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>!!app name!! - Public" +
-                            "ations</title> <meta content=\"application/xhtml+xml;charset=UTF-8\" http-equiv=" +
-                            "\"Content-Type\"/> <meta content=\"text/css\" http-equiv=\"content-style-type\"/" +
-                            "> <meta content=\"application/javascript\" http-equiv=\"content-script-type\"/> " +
-                            "<meta content=\"Global\" name=\"distribution\"/> <meta content=\"width=device-wi" +
-                            "dth, initial-scale=1\" name=\"viewport\"/> <meta content=\"index, follow\" name=" +
-                            "\"robots\"/> <style type=\"text/css\">body{background:#e8ddd8;font-family:\"Cent" +
-                            "ury Gothic\",\"Trebuchet MS\";font-size:10px;margin:0;padding:1em}table{border-c" +
-                            "ollapse:collapse}td,th{border:#333 solid 0.09em;font-size:1.6em;padding:0.5em 1e" +
-                            "m}h1{background:#fff8e8;border:0.05em solid #321;display:inline-block;margin:0;p" +
-                            "adding:0.2em}p{font-size:1.6em}tfoot td{font-size:1.2em;text-align:right}tfoot,t" +
-                            "head{background:#e8e8e8}thead th{cursor:pointer;height:1.5em;text-align:center;v" +
-                            "ertical-align:baseline}tbody tr:hover{background:#dfd}tr.odd{background:#e8e8ff}" +
-                            "tr.even{background:#fff}.sort{float:left;margin:0 0.5em 0 -0.5em;width:1em}td[da" +
-                            "ta-size]{text-align:right}</style></head><body><h1>!!app name!! - Publications</" +
-                            "h1><p>Click on table headings to sort.</p><table><thead><tr><th><span aria-descr" +
-                            "ibedby=\"aria-arrow\" class=\"sort\" style=\"visibility:hidden;\">&#x25bc;</span" +
-                            "> Version</th><th><span aria-describedby=\"aria-arrow\" class=\"sort\" style=\"v" +
-                            "isibility:hidden;\">&#x25bc;</span> Date</th><th><span aria-describedby=\"aria-a" +
-                            "rrow\" class=\"sort\" style=\"visibility:hidden;\">&#x25bc;</span> Size</th><th>" +
-                            "<span aria-describedby=\"aria-arrow\" class=\"sort\" style=\"visibility:hidden;" +
-                            "\">&#x25bc;</span> Variant Name</th><th><span aria-describedby=\"aria-arrow\" cl" +
-                            "ass=\"sort\" style=\"visibility:hidden;\">&#x25bc;</span> Zip File</th></tr></th" +
-                            "ead><tbody>!!row!!</tbody><tfoot><tr><td colspan=\"5\">Published with <a href=\"" +
-                            "https://github.com/prettydiff/biddle\">biddle</a>.</td></tr></tfoot></table><p a" +
-                            "ria-hidden=\"true\" id=\"aria-arrow\" style=\"display:none;\"></p><script src=\"" +
-                            "biddlesort.js\" type=\"application/javascript\"></script></body></html>",
+                           "HTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\"><html xml:lang=" +
+                           "\"en\" xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>!!app name!! - Public" +
+                           "ations</title> <meta content=\"application/xhtml+xml;charset=UTF-8\" http-equiv=" +
+                           "\"Content-Type\"/> <meta content=\"text/css\" http-equiv=\"content-style-type\"/" +
+                           "> <meta content=\"application/javascript\" http-equiv=\"content-script-type\"/> " +
+                           "<meta content=\"Global\" name=\"distribution\"/> <meta content=\"width=device-wi" +
+                           "dth, initial-scale=1\" name=\"viewport\"/> <meta content=\"index, follow\" name=" +
+                           "\"robots\"/> <style type=\"text/css\">body{background:#e8ddd8;font-family:\"Cent" +
+                           "ury Gothic\",\"Trebuchet MS\";font-size:10px;margin:0;padding:1em}table{border-c" +
+                           "ollapse:collapse}td,th{border:#333 solid 0.09em;font-size:1.6em;padding:0.5em 1e" +
+                           "m}h1{background:#fff8e8;border:0.05em solid #321;display:inline-block;margin:0;p" +
+                           "adding:0.2em}p{font-size:1.6em}tfoot td{font-size:1.2em;text-align:right}tfoot,t" +
+                           "head{background:#e8e8e8}thead th{cursor:pointer;height:1.5em;text-align:center;v" +
+                           "ertical-align:baseline}tbody tr:hover{background:#dfd}tr.odd{background:#e8e8ff}" +
+                           "tr.even{background:#fff}.sort{float:left;margin:0 0.5em 0 -0.5em;width:1em}td[da" +
+                           "ta-size]{text-align:right}</style></head><body><h1>!!app name!! - Publications</" +
+                           "h1><p>Click on table headings to sort.</p><table><thead><tr><th><span aria-descr" +
+                           "ibedby=\"aria-arrow\" class=\"sort\" style=\"visibility:hidden;\">&#x25bc;</span" +
+                           "> Version</th><th><span aria-describedby=\"aria-arrow\" class=\"sort\" style=\"v" +
+                           "isibility:hidden;\">&#x25bc;</span> Date</th><th><span aria-describedby=\"aria-a" +
+                           "rrow\" class=\"sort\" style=\"visibility:hidden;\">&#x25bc;</span> Size</th><th>" +
+                           "<span aria-describedby=\"aria-arrow\" class=\"sort\" style=\"visibility:hidden;" +
+                           "\">&#x25bc;</span> Variant Name</th><th><span aria-describedby=\"aria-arrow\" cl" +
+                           "ass=\"sort\" style=\"visibility:hidden;\">&#x25bc;</span> Zip File</th></tr></th" +
+                           "ead><tbody>!!row!!</tbody><tfoot><tr><td colspan=\"5\">Published with <a href=\"" +
+                           "https://github.com/prettydiff/biddle\">biddle</a>.</td></tr></tfoot></table><p a" +
+                           "ria-hidden=\"true\" id=\"aria-arrow\" style=\"display:none;\"></p><script src=\"" +
+                           "biddlesort.js\" type=\"application/javascript\"></script></body></html>",
                     script = "(function(){var headings=document.getElementsByTagName(\"thead\")[0].getElements" +
-                            "ByTagName(\"th\"),hlen=headings.length,a=0,start=1,sorter=function(heading){var " +
-                            "b=0,ind=0,len=headings.length,span=\"\",rows=[],rowlist=[],tbody=document.getEle" +
-                            "mentsByTagName(\"tbody\")[0],ascend=false,rowsort=function(a,b){var vala=\"\",va" +
-                            "lb=\"\";if(ind===1){vala=Number(a.getElementsByTagName(\"td\")[1].getAttribute(" +
-                            "\"data-date\"));valb=Number(b.getElementsByTagName(\"td\")[1].getAttribute(\"dat" +
-                            "a-date\"))}else if(ind===2){vala=Number(a.getElementsByTagName(\"td\")[2].getAtt" +
-                            "ribute(\"data-size\"));valb=Number(b.getElementsByTagName(\"td\")[2].getAttribut" +
-                            "e(\"data-size\"))}else{vala=a.getElementsByTagName(\"td\")[ind].innerHTML.toLowe" +
-                            "rCase();valb=b.getElementsByTagName(\"td\")[ind].innerHTML.toLowerCase()}if(asce" +
-                            "nd===true){if(vala>valb){return 1}else{return -1}}else{if(vala>valb){return -1}e" +
-                            "lse{return 1}}};do{span=headings[b].getElementsByTagName(\"span\")[0];if(heading" +
-                            "===headings[b]){ind=b;if(span.style.visibility===\"visible\"){if(span.innerHTML=" +
-                            "==\"▲\"){span.innerHTML=\"▼\"}else{span.innerHTML=\"▲\"}}else{span.style.visibil" +
-                            "ity=\"visible\"}if(span.innerHTML===\"▲\"){ascend=true;document.getElementById(" +
-                            "\"aria-arrow\").innerHTML=\"Sorting by \"+headings[b].lastChild.textContent+\" a" +
-                            "scending\"}else{ascend=false;document.getElementById(\"aria-arrow\").innerHTML=" +
-                            "\"Sorting by \"+headings[b].lastChild.textContent+\" descending\"}}else{span.sty" +
-                            "le.visibility=\"hidden\"}b+=1}while(b<len);rowlist=[];rows=tbody.getElementsByTa" +
-                            "gName(\"tr\");len=rows.length;b=0;do{rowlist.push(rows[b]);b+=1}while(b<len);row" +
-                            "list.sort(rowsort);b=0;do{if(b%2===0){rowlist[b].setAttribute(\"class\",\"even\"" +
-                            ")}else{rowlist[b].setAttribute(\"class\",\"odd\")}tbody.removeChild(rowlist[b]);" +
-                            "tbody.appendChild(rowlist[b]);b+=1}while(b<len)};do{headings[a].onclick=function" +
-                            "(e){sorter(this);e.preventDefault();return false;};a+=1}while(a<hlen);document.g" +
-                            "etElementsByTagName(\"thead\")[0].getElementsByTagName(\"th\")[start].getElement" +
-                            "sByTagName(\"span\")[0].innerHTML=\"▲\";document.getElementsByTagName(\"thead\")" +
-                            "[0].getElementsByTagName(\"th\")[start].getElementsByTagName(\"span\")[0].style." +
-                            "visibility=\"visible\";sorter(document.getElementsByTagName(\"thead\")[0].getEle" +
-                            "mentsByTagName(\"th\")[start])}());";
+                           "ByTagName(\"th\"),hlen=headings.length,a=0,start=1,sorter=function(heading){var " +
+                           "b=0,ind=0,len=headings.length,span=\"\",rows=[],rowlist=[],tbody=document.getEle" +
+                           "mentsByTagName(\"tbody\")[0],ascend=false,rowsort=function(a,b){var vala=\"\",va" +
+                           "lb=\"\";if(ind===1){vala=Number(a.getElementsByTagName(\"td\")[1].getAttribute(" +
+                           "\"data-date\"));valb=Number(b.getElementsByTagName(\"td\")[1].getAttribute(\"dat" +
+                           "a-date\"))}else if(ind===2){vala=Number(a.getElementsByTagName(\"td\")[2].getAtt" +
+                           "ribute(\"data-size\"));valb=Number(b.getElementsByTagName(\"td\")[2].getAttribut" +
+                           "e(\"data-size\"))}else{vala=a.getElementsByTagName(\"td\")[ind].innerHTML.toLowe" +
+                           "rCase();valb=b.getElementsByTagName(\"td\")[ind].innerHTML.toLowerCase()}if(asce" +
+                           "nd===true){if(vala>valb){return 1}else{return -1}}else{if(vala>valb){return -1}e" +
+                           "lse{return 1}}};do{span=headings[b].getElementsByTagName(\"span\")[0];if(heading" +
+                           "===headings[b]){ind=b;if(span.style.visibility===\"visible\"){if(span.innerHTML=" +
+                           "==\"▲\"){span.innerHTML=\"▼\"}else{span.innerHTML=\"▲\"}}else{span.style.visibil" +
+                           "ity=\"visible\"}if(span.innerHTML===\"▲\"){ascend=true;document.getElementById(" +
+                           "\"aria-arrow\").innerHTML=\"Sorting by \"+headings[b].lastChild.textContent+\" a" +
+                           "scending\"}else{ascend=false;document.getElementById(\"aria-arrow\").innerHTML=" +
+                           "\"Sorting by \"+headings[b].lastChild.textContent+\" descending\"}}else{span.sty" +
+                           "le.visibility=\"hidden\"}b+=1}while(b<len);rowlist=[];rows=tbody.getElementsByTa" +
+                           "gName(\"tr\");len=rows.length;b=0;do{rowlist.push(rows[b]);b+=1}while(b<len);row" +
+                           "list.sort(rowsort);b=0;do{if(b%2===0){rowlist[b].setAttribute(\"class\",\"even\"" +
+                           ")}else{rowlist[b].setAttribute(\"class\",\"odd\")}tbody.removeChild(rowlist[b]);" +
+                           "tbody.appendChild(rowlist[b]);b+=1}while(b<len)};do{headings[a].onclick=function" +
+                           "(e){sorter(this);e.preventDefault();return false;};a+=1}while(a<hlen);document.g" +
+                           "etElementsByTagName(\"thead\")[0].getElementsByTagName(\"th\")[start].getElement" +
+                           "sByTagName(\"span\")[0].innerHTML=\"▲\";document.getElementsByTagName(\"thead\")" +
+                           "[0].getElementsByTagName(\"th\")[start].getElementsByTagName(\"span\")[0].style." +
+                           "visibility=\"visible\";sorter(document.getElementsByTagName(\"thead\")[0].getEle" +
+                           "mentsByTagName(\"th\")[start])}());";
                 file = file.replace(/\!\!app\u0020name\!\!/g, data.packjson.name);
                 if (typeof data.packjson.author === "string") {
                     file = file.replace("</title> <", "</title> <meta content=\"" + data.packjson.author.replace(/\s+/g, " ").replace(/"/g, "") + "\" name=\"author\"/> <");
                 }
-                filedata
-                    .forEach(function biddle_publish_indexfile_filedata(val) {
-                        var build    = [],
-                            monthval = val
-                                .date
-                                .slice(4, 6),
-                            month    = {
-                                "01": "January",
-                                "02": "February",
-                                "03": "March",
-                                "04": "April",
-                                "05": "May",
-                                "06": "June",
-                                "07": "July",
-                                "08": "August",
-                                "09": "September",
-                                "10": "October",
-                                "11": "November",
-                                "12": "December"
-                            },
-                            varname  = (val.variant === "")
-                                ? "Full Application"
-                                : val.variant;
-                        build.push("<tr><td>");
-                        build.push(val.version);
-                        build.push("</td><td data-date=\"");
-                        build.push(val.date);
-                        build.push("\">");
-                        build.push(val.date.slice(6));
-                        build.push("\u0020");
-                        build.push(month[monthval]);
-                        build.push("\u0020");
-                        build.push(val.date.slice(0, 4));
-                        build.push("</td><td data-size=\"");
-                        build.push(val.size);
-                        build.push("\">");
-                        build.push(apps.commas(Number(val.size)));
-                        build.push("</td><td>");
-                        build.push(varname);
-                        build.push("</td><td><a href=\"");
-                        build.push(val.filename);
-                        build.push("\">");
-                        build.push(val.filename);
-                        build.push("</a></td></tr>");
-                        rows.push(build.join(""));
-                    });
+                filedata.forEach(function biddle_publish_indexfile_filedata(val) {
+                    var build    = [],
+                        monthval = val
+                            .date
+                            .slice(4, 6),
+                        month    = {
+                            "01": "January",
+                            "02": "February",
+                            "03": "March",
+                            "04": "April",
+                            "05": "May",
+                            "06": "June",
+                            "07": "July",
+                            "08": "August",
+                            "09": "September",
+                            "10": "October",
+                            "11": "November",
+                            "12": "December"
+                        },
+                        varname  = (val.variant === "")
+                            ? "Full Application"
+                            : val.variant;
+                    build.push("<tr><td>");
+                    build.push(val.version);
+                    build.push("</td><td data-date=\"");
+                    build.push(val.date);
+                    build.push("\">");
+                    build.push(val.date.slice(6));
+                    build.push("\u0020");
+                    build.push(month[monthval]);
+                    build.push("\u0020");
+                    build.push(val.date.slice(0, 4));
+                    build.push("</td><td data-size=\"");
+                    build.push(val.size);
+                    build.push("\">");
+                    build.push(apps.commas(Number(val.size)));
+                    build.push("</td><td>");
+                    build.push(varname);
+                    build.push("</td><td><a href=\"");
+                    build.push(val.filename);
+                    build.push("\">");
+                    build.push(val.filename);
+                    build.push("</a></td></tr>");
+                    rows.push(build.join(""));
+                });
                 file = file.replace(/\!\!row\!\!/, rows.join(""));
-                apps.writeFile(file, publoc + "index.xhtml",
-                function biddle_publish_indexfile_readIndex_index_writeXhtml() {
+                apps.writeFile(file, publoc + "index.xhtml", function biddle_publish_indexfile_readIndex_index_writeXhtml() {
                     return true;
                 });
-                apps.writeFile(script, publoc + "biddlesort.js",
-                function biddle_publish_indexfile_readIndex_writeScript() {
+                apps.writeFile(script, publoc + "biddlesort.js", function biddle_publish_indexfile_readIndex_writeScript() {
                     return true;
                 });
             },
             zippy     = function biddle_publish_zippy(vardata) {
-                apps
-                    .zip(function biddle_publish_zippy_zip(zipfilename, writejson) {
-                        node
-                            .fs
-                            .stat(zipfilename, function biddle_publish_zippy_zip_stat(erstat, stats) {
-                                var filename = zipfilename
-                                        .split(node.path.sep)
-                                        .pop(),
-                                    variants = filename
-                                        .replace(data.packjson.name, "")
-                                        .split("_"),
-                                    variant  = "",
-                                    sdate    = new Date(),
-                                    year     = String(sdate.getUTCFullYear()),
-                                    month    = String(sdate.getMonth() + 1),
-                                    day      = String(sdate.getDate());
-                                if (erstat !== null) {
-                                    return apps.errout({
-                                        error: erstat,
-                                        name : "biddle_publish_zippy_zip_stat"
-                                    });
-                                }
-                                if (typeof stats !== "object") {
-                                    return apps.errout({
-                                        error: "stats is not an object, from node.fs.stat",
-                                        name : "biddle_publish_zippy_zip_stat"
-                                    });
-                                }
-                                if (month.length < 2) {
-                                    month = "0" + month;
-                                }
-                                if (day.length < 2) {
-                                    day = "0" + day;
-                                }
-                                if (variants.length > 2) {
-                                    variant = variants[1];
-                                }
-                                filedata.push({
-                                    date    : year + month + day,
-                                    filename: filename,
-                                    size    : stats.size,
-                                    variant : variant,
-                                    version : data.packjson.version
-                                });
-                                varcount += 1;
-                                if (varcount === varlen) {
-                                    node
-                                        .fs
-                                        .readFile(publoc + "filedata.json",
-                                        function biddle_publish_zippy_zip_stat_readfiledata(erd, catalogue) {
-                                            var parsed = {};
-                                            if (erd !== null && erd !== "") {
-                                                if (erd.toString().indexOf("no such file or directory") > 0) {
-                                                    apps
-                                                        .writeFile(JSON.stringify({
-                                                            filedata: filedata
-                                                        }), publoc + "filedata.json",
-                                                        function biddle_publish_zippy_zip_stat_readfiledata_writeNew() {
-                                                            return true;
-                                                        });
-                                                    return indexfile();
-                                                }
-                                                return apps.errout({
-                                                    error: erd,
-                                                    name : "biddle_publish_zippy_zip_stat_readfiledata"
-                                                });
-                                            }
-                                            parsed   = JSON.parse(catalogue);
-                                            filedata = filedata.concat(parsed.filedata);
-                                            apps.writeFile(JSON.stringify({
-                                                filedata: filedata
-                                            }), publoc + "filedata.json",
-                                            function biddle_publish_zippy_zip_stat_readfiledata_write() {
-                                                return true;
-                                            });
-                                            indexfile();
-                                        });
-                                }
+                apps.zip(function biddle_publish_zippy_zip(zipfilename, writejson) {
+                    node
+                        .fs
+                        .stat(zipfilename, function biddle_publish_zippy_zip_stat(erstat, stats) {
+                            var filename = zipfilename
+                                    .split(node.path.sep)
+                                    .pop(),
+                                variants = filename
+                                    .replace(data.packjson.name, "")
+                                    .split("_"),
+                                variant  = "",
+                                sdate    = new Date(),
+                                year     = String(sdate.getUTCFullYear()),
+                                month    = String(sdate.getMonth() + 1),
+                                day      = String(sdate.getDate());
+                            if (erstat !== null) {
+                                return apps.errout({error: erstat, name: "biddle_publish_zippy_zip_stat"});
+                            }
+                            if (typeof stats !== "object") {
+                                return apps.errout({error: "stats is not an object, from node.fs.stat", name: "biddle_publish_zippy_zip_stat"});
+                            }
+                            if (month.length < 2) {
+                                month = "0" + month;
+                            }
+                            if (day.length < 2) {
+                                day = "0" + day;
+                            }
+                            if (variants.length > 2) {
+                                variant = variants[1];
+                            }
+                            filedata.push({
+                                date    : year + month + day,
+                                filename: filename,
+                                size    : stats.size,
+                                variant : variant,
+                                version : data.packjson.version
                             });
-                        apps.hash(zipfilename, "hashFile", function biddle_publish_zippy_zip_hash() {
-                            apps
-                                .writeFile(data.hashFile, zipfilename.replace(".zip", ".hash"), function biddle_publish_zippy_zip_hash_writehash() {
-                                    return true;
-                                });
-                            if (writejson === true && vardata.final === true) {
-                                apps
-                                    .writeFile(JSON.stringify(data.published), data.abspath + "published.json",
-                                    function biddle_publish_zippy_zip_hash_writeJSON() {
-                                        apps
-                                            .rmrecurse(data.abspath + "temp",
-                                            function biddle_publish_zippy_zip_hash_writeJSON_removeTemp() {
-                                                return true;
-                                            });
+                            varcount += 1;
+                            if (varcount === varlen) {
+                                node
+                                    .fs
+                                    .readFile(publoc + "filedata.json", function biddle_publish_zippy_zip_stat_readfiledata(erd, catalogue) {
+                                        var parsed = {},
+                                            x      = 0;
+                                        if (erd !== null && erd !== "") {
+                                            if (erd.toString().indexOf("no such file or directory") > 0) {
+                                                apps.writeFile(JSON.stringify({filedata: filedata}), publoc + "filedata.json", function biddle_publish_zippy_zip_stat_readfiledata_writeNew() {
+                                                    return true;
+                                                });
+                                                return indexfile();
+                                            }
+                                            return apps.errout({error: erd, name: "biddle_publish_zippy_zip_stat_readfiledata"});
+                                        }
+                                        parsed   = JSON.parse(catalogue);
+                                        x        = parsed.filedata.length - 1;
+                                        do {
+                                            if (parsed.filedata[x].filename.indexOf("_latest.zip") === parsed.filedata[x].filename.length - 11) {
+                                                parsed.filedata.splice(x, 1);
+                                            }
+                                            x -= 1;
+                                        } while (x > -1);
+                                        filedata = filedata.concat(parsed.filedata);
+                                        apps.writeFile(JSON.stringify({filedata: filedata}), publoc + "filedata.json", function biddle_publish_zippy_zip_stat_readfiledata_write() {
+                                            return true;
+                                        });
+                                        indexfile();
                                     });
                             }
                         });
-                    }, vardata);
+                    apps.hash(zipfilename, "hashFile", function biddle_publish_zippy_zip_hash() {
+                        apps.writeFile(data.hashFile, zipfilename.replace(".zip", ".hash"), function biddle_publish_zippy_zip_hash_writehash() {
+                            return true;
+                        });
+                        if (writejson === true && vardata.final === true) {
+                            apps.writeFile(JSON.stringify(data.published), data.abspath + "published.json", function biddle_publish_zippy_zip_hash_writeJSON() {
+                                apps.rmrecurse(data.abspath + "temp", function biddle_publish_zippy_zip_hash_writeJSON_removeTemp() {
+                                    return true;
+                                });
+                            });
+                        }
+                    });
+                }, vardata);
             },
             execution = function biddle_publish_execution() {
                 var vflag    = 0,
@@ -1814,89 +1737,84 @@
                     ? variants.length * 2
                     : variants.length;
                 apps.makedir("temp", function biddle_publish_execution_variantDir() {
-                    variants
-                        .forEach(function biddle_publish_execution_variantsDir_each(value) {
-                            var varobj = (value === "biddletempprimary")
-                                ? {}
-                                : data.packjson.publication_variants[value];
-                            value = apps.sanitizef(value);
-                            if (typeof varobj.exclusions !== "object" || typeof varobj.exclusions.join !== "function") {
-                                varobj.exclusions = [];
+                    variants.forEach(function biddle_publish_execution_variantsDir_each(value) {
+                        var varobj = (value === "biddletempprimary")
+                            ? {}
+                            : data
+                                .packjson
+                                .publication_variants[value];
+                        value = apps.sanitizef(value);
+                        if (typeof varobj.exclusions !== "object" || typeof varobj.exclusions.join !== "function") {
+                            varobj.exclusions = [];
+                        }
+                        varobj.exclusions = varobj
+                            .exclusions
+                            .concat(data.ignore);
+                        varobj
+                            .exclusions
+                            .sort();
+                        apps.copy(data.input[2], data.abspath + "temp" + node.path.sep + value, varobj.exclusions, function biddle_publish_execution_variantsDir_each_copy() {
+                            var complete = function biddle_publish_execution_variantsDir_each_copy_complete() {
+                                    var location = data.abspath + "temp" + node.path.sep + value + node.path.sep + data.packjson.name,
+                                        valname  = (value === "biddletempprimary")
+                                            ? ""
+                                            : value,
+                                        finalVar = (vflag === variants.length - 1);
+                                    vflag += 1;
+                                    zippy({final: finalVar, location: location, name: valname});
+                                },
+                                tasks    = function biddle_publish_execution_variantsDir_each_copy_tasks() {
+                                    node.child(varobj.tasks[0], function biddle_publish_execution_variantsDir_each_copy_tasks_child(ert, stdoutt, stdert) {
+                                        var len = varobj.tasks.length - 1;
+                                        if (ert !== null) {
+                                            console.log(text.bold + text.red + "Error:" + text.none + " with variant " + value + " on publish task");
+                                            console.log(varobj.tasks[0]);
+                                            console.log(ert);
+                                        } else if (stdert !== null && stdert !== "") {
+                                            console.log(text.bold + text.red + "Error:" + text.none + " with variant " + value + " on publish task");
+                                            console.log(varobj.tasks[0]);
+                                            console.log(stdert);
+                                        } else {
+                                            console.log(text.bold + text.green + "Complete:" + text.none + " with variant " + value + " on publish task");
+                                            console.log(varobj.tasks[0]);
+                                            console.log(stdoutt);
+                                        }
+                                        varobj
+                                            .tasks
+                                            .splice(0, 1);
+                                        if (len > 0) {
+                                            biddle_publish_execution_variantsDir_each_copy_tasks();
+                                        } else {
+                                            complete();
+                                        }
+                                    });
+                                };
+                            if (varobj.tasks === "object" && varobj.tasks.length > 0) {
+                                tasks();
+                            } else {
+                                complete();
                             }
-                            varobj.exclusions = varobj
-                                .exclusions
-                                .concat(data.ignore);
-                            varobj
-                                .exclusions
-                                .sort();
-                            apps.copy(data.input[2], data.abspath + "temp" + node.path.sep + value,
-                            varobj.exclusions, function biddle_publish_execution_variantsDir_each_copy() {
-                                var complete = function biddle_publish_execution_variantsDir_each_copy_complete() {
-                                        var location = data.abspath + "temp" + node.path.sep + value + node.path.sep + data.packjson.name,
-                                            valname  = (value === "biddletempprimary")
-                                                ? ""
-                                                : value,
-                                            finalVar = (vflag === variants.length - 1);
-                                        vflag += 1;
-                                        zippy({
-                                            final   : finalVar,
-                                            location: location,
-                                            name    : valname
-                                        });
-                                    },
-                                    tasks    = function biddle_publish_execution_variantsDir_each_copy_tasks() {
-                                        node
-                                            .child(varobj.tasks[0], function biddle_publish_execution_variantsDir_each_copy_tasks_child(ert, stdoutt, stdert) {
-                                                var len = varobj.tasks.length - 1;
-                                                if (ert !== null) {
-                                                    console.log(text.bold + text.red + "Error:" + text.none + " with variant " + value + " on publish task");
-                                                    console.log(varobj.tasks[0]);
-                                                    console.log(ert);
-                                                } else if (stdert !== null && stdert !== "") {
-                                                    console.log(text.bold + text.red + "Error:" + text.none + " with variant " + value + " on publish task");
-                                                    console.log(varobj.tasks[0]);
-                                                    console.log(stdert);
-                                                } else {
-                                                    console.log(text.bold + text.green + "Complete:" + text.none + " with variant " + value + " on publish task");
-                                                    console.log(varobj.tasks[0]);
-                                                    console.log(stdoutt);
-                                                }
-                                                varobj
-                                                    .tasks
-                                                    .splice(0, 1);
-                                                if (len > 0) {
-                                                    biddle_publish_execution_variantsDir_each_copy_tasks();
-                                                } else {
-                                                    complete();
-                                                }
-                                            });
-                                    };
-                                if (varobj.tasks === "object" && varobj.tasks.length > 0) {
-                                    tasks();
-                                } else {
-                                    complete();
-                                }
-                            });
                         });
+                    });
                 });
             },
             preexec   = function biddle_publish_preexec() {
                 if (data.address.target.indexOf(node.path.sep + "publications") + 1 === data.address.target.length - 13) {
                     data.address.target = data.address.target + apps.sanitizef(data.packjson.name) + node.path.sep;
                 }
-                apps
-                    .makedir(data.address.target, function biddle_publish_preexec_makedir() {
-                        if (data.latestVersion === true) {
-                            varlen                                    = varlen * 2;
-                            data.published[data.packjson.name].latest = data.packjson.version;
-                            apps.writeFile(data.packjson.version, data.address.target + "latest.txt",
-                            function biddle_zip_makedir_latestTXT() {
-                                execution();
-                            });
-                        } else {
+                apps.makedir(data.address.target, function biddle_publish_preexec_makedir() {
+                    if (data.latestVersion === true) {
+                        varlen      = varlen * 2;
+                        data
+                            .published[data.packjson.name]
+                            .latest = data.packjson.version;
+                        apps.writeFile(data.packjson.version, data.address.target + "latest.txt", function biddle_zip_makedir_latestTXT() {
                             execution();
-                        }
-                    });
+                        });
+                    } else {
+                        execution();
+                    }
+                });
             };
         apps.getpjson(function biddle_publish_callback() {
             if (data.published[data.packjson.name] !== undefined && data.published[data.packjson.name].versions.indexOf(data.packjson.version) > -1) {
@@ -1910,10 +1828,16 @@
                     .input
                     .slice(0, 3);
             } else if (data.published[data.packjson.name] === undefined) {
-                data.published[data.packjson.name]           = {};
-                data.published[data.packjson.name].versions  = [];
-                data.published[data.packjson.name].latest    = "";
-                data.published[data.packjson.name].directory = data.address.target + apps.sanitizef(data.packjson.name) + node.path.sep;
+                data.published[data.packjson.name] = {};
+                data
+                    .published[data.packjson.name]
+                    .versions                      = [];
+                data
+                    .published[data.packjson.name]
+                    .latest                        = "";
+                data
+                    .published[data.packjson.name]
+                    .directory                     = data.address.target + apps.sanitizef(data.packjson.name) + node.path.sep;
             }
             data.packjson.name  = apps.sanitizef(data.packjson.name);
             publoc              = data.address.publications + data.packjson.name + node.path.sep;
@@ -1975,29 +1899,20 @@
                     .open(data.address.downloads + node.path.sep + data.fileName, "w", function biddle_readBinary_writeBinary_writeopen(errx, fd) {
                         var buffer = new Buffer(size);
                         if (errx !== null) {
-                            return apps.errout({
-                                error: errx,
-                                name : "biddle_readBinary_writeBinary_writeopen"
-                            });
+                            return apps.errout({error: errx, name: "biddle_readBinary_writeBinary_writeopen"});
                         }
                         node
                             .fs
                             .read(fdescript, buffer, 0, size, 0, function biddle_readBinary_writeBinary_writeopen_read(erry, ready, buffy) {
                                 if (erry !== null) {
-                                    return apps.errout({
-                                        error: erry,
-                                        name : "biddle_readBinary_writeBinary_writeopen_read"
-                                    });
+                                    return apps.errout({error: erry, name: "biddle_readBinary_writeBinary_writeopen_read"});
                                 }
                                 if (ready > 0) {
                                     node
                                         .fs
                                         .write(fd, buffy, 0, size, function biddle_readBinary_writeBinary_writeopen_read_write(errz, written, buffz) {
                                             if (errz !== null) {
-                                                return apps.errout({
-                                                    error: errz,
-                                                    name : "biddle_readBinary_writeBinary_writeopen_read_write"
-                                                });
+                                                return apps.errout({error: errz, name: "biddle_readBinary_writeBinary_writeopen_read_write"});
                                             }
                                             if (written < 1) {
                                                 return apps.errout({
@@ -2015,10 +1930,7 @@
             .fs
             .stat(filePath, function biddle_readBinary_stat(errs, stats) {
                 if (errs !== null) {
-                    return apps.errout({
-                        error: errs,
-                        name : "biddle_readBinary_stat"
-                    });
+                    return apps.errout({error: errs, name: "biddle_readBinary_stat"});
                 }
                 size = stats.size;
                 node
@@ -2030,20 +1942,14 @@
                             buffer = new Buffer(length);
                         fdescript = fd;
                         if (erro !== null) {
-                            return apps.errout({
-                                error: erro,
-                                name : "biddle_readBinary_stat_open"
-                            });
+                            return apps.errout({error: erro, name: "biddle_readBinary_stat_open"});
                         }
                         node
                             .fs
                             .read(fd, buffer, 0, length, 1, function biddle_readyBinary_stat_open_read(errr, read, buff) {
                                 var bstring = "";
                                 if (errr !== null) {
-                                    return apps.errout({
-                                        error: errr,
-                                        name : "biddle_readBinary_stat_open_read"
-                                    });
+                                    return apps.errout({error: errr, name: "biddle_readBinary_stat_open_read"});
                                 }
                                 bstring = buff.toString("utf8", 0, buff.length);
                                 bstring = bstring.slice(2, bstring.length - 2);
@@ -2054,10 +1960,7 @@
                                         .fs
                                         .readFile(filePath, "utf8", function biddle_readBinary_stat_open_read_readFile(errf, fileData) {
                                             if (errf !== null && errf !== undefined) {
-                                                return apps.errout({
-                                                    error: errf,
-                                                    name : "biddle_readBinary_stat_open_read_readFile"
-                                                });
+                                                return apps.errout({error: errf, name: "biddle_readBinary_stat_open_read_readFile"});
                                             }
                                             if (data.command === "install" && (/(\.hash)$/).test(filePath) === true) {
                                                 data.hashFile = fileData;
@@ -2083,21 +1986,14 @@
         } else if (data.command === "installed" || data.command === "status" || (data.command === "list" && data.input[2] === "installed")) {
             datalist = "installed";
         } else {
-            return apps.errout({
-                error: "Unqualified operation: readlist() but command is not published or installed.",
-                name : "biddle_readlist"
-            });
+            return apps.errout({error: "Unqualified operation: readlist() but command is not published or installed.", name: "biddle_readlist"});
         }
         node
             .fs
-            .readFile(datalist + ".json",
-            "utf8", function biddle_readlist_readFile(err, fileData) {
+            .readFile(datalist + ".json", "utf8", function biddle_readlist_readFile(err, fileData) {
                 var jsondata = JSON.parse(fileData);
                 if (err !== null && err !== undefined) {
-                    return apps.errout({
-                        error: err,
-                        name : "biddle_readlist_readFile"
-                    });
+                    return apps.errout({error: err, name: "biddle_readlist_readFile"});
                 }
                 data[datalist]        = jsondata[datalist];
                 data.status[datalist] = true;
@@ -2158,26 +2054,19 @@
         return abs.join(node.path.sep) + node.path.sep + rel.join(node.path.sep);
     };
     apps.rmrecurse   = function biddle_rmrecurse(dirToKill, callback) {
-        node
-            .child(cmds.remove(dirToKill), function biddle_rmrecurse_child(err, stdout, stderrout) {
-                if (err !== null && err.toString().indexOf("No such file or directory") < 0 && err.toString().indexOf(": The directory is not empty.") < 0) {
-                    if (err.toString().indexOf("Cannot find path") > 0) {
-                        return callback();
-                    }
-                    return apps.errout({
-                        error: err,
-                        name : "biddle_rmrecurse_child"
-                    });
+        node.child(cmds.remove(dirToKill), function biddle_rmrecurse_child(err, stdout, stderrout) {
+            if (err !== null && err.toString().indexOf("No such file or directory") < 0 && err.toString().indexOf(": The directory is not empty.") < 0) {
+                if (err.toString().indexOf("Cannot find path") > 0) {
+                    return callback();
                 }
-                if (stderrout !== null && stderrout !== "" && stderrout.indexOf("No such file or directory") < 0 && stderrout.indexOf(": The directory is not empty.") < 0) {
-                    return apps.errout({
-                        error: stderrout,
-                        name : "biddle_rmrecurse_child"
-                    });
-                }
-                callback();
-                return stdout;
-            });
+                return apps.errout({error: err, name: "biddle_rmrecurse_child"});
+            }
+            if (stderrout !== null && stderrout !== "" && stderrout.indexOf("No such file or directory") < 0 && stderrout.indexOf(": The directory is not empty.") < 0) {
+                return apps.errout({error: stderrout, name: "biddle_rmrecurse_child"});
+            }
+            callback();
+            return stdout;
+        });
     };
     apps.sanitizef   = function biddle_sanitizef(filePath) {
         var paths    = filePath.split(node.path.sep),
@@ -2273,16 +2162,12 @@
         } else {
             list = Object.keys(data.installed);
             if (list.length < 1) {
-                return apps.errout({
-                    error: "No applications installed by biddle.",
-                    name : "biddle_status"
-                });
+                return apps.errout({error: "No applications installed by biddle.", name: "biddle_status"});
             }
         }
         len = list.length;
         do {
-            apps.get(data.installed[list[a]].published + "latest.txt",
-            getversion);
+            apps.get(data.installed[list[a]].published + "latest.txt", getversion);
             a += 1;
         } while (a < len);
     };
@@ -2316,13 +2201,9 @@
                             console.log(data);
                         });
                 }
-                exec
-                    .on("error", function biddle_test_spawn_error(data) {
-                        apps.errout({
-                            error: data,
-                            name : "biddle_test_spawn_error"
-                        });
-                    });
+                exec.on("error", function biddle_test_spawn_error(data) {
+                    apps.errout({error: data, name: "biddle_test_spawn_error"});
+                });
                 exec.on("close", function biddle_test_spawn_close() {
                     console.log("biddle has completed test for " + name + " is complete.");
                 });
@@ -2349,8 +2230,12 @@
                     name : "biddle_test"
                 });
             }
-            loc  = data.installed[name].location;
-            test = data.installed[name].test;
+            loc  = data
+                .installed[name]
+                .location;
+            test = data
+                .installed[name]
+                .test;
             spawn();
         } else {
             apps.getpjson(foreign);
@@ -2372,6 +2257,8 @@
                 "publish",
                 "install",
                 "listStatus",
+                "republish",
+                //"update",
                 "uninstall",
                 "unpublish"
             ],
@@ -2672,296 +2559,218 @@
                 order.splice(0, 1);
             };
         phases.copy          = function biddle_test_copy() {
-            node
-                .child(childcmd + "copy " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta.js " + testpath + " childtest", {
-                    cwd: data.abspath
-                }, function biddle_test_copy_child(er, stdout, stder) {
-                    var copytest = "Copied " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta.js to " + data.abspath + "unittest\nFiles: 1, Directories: 0, Symlinks: 0",
-                        copyfile = data.abspath + "unittest" + node.path.sep + "biddletesta.js";
-                    if (er !== null) {
-                        return apps.errout({
-                            error : er,
-                            name  : "biddle_test_copy_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    if (stder !== null && stder !== "") {
-                        return apps.errout({
-                            error : stder,
-                            name  : "biddle_test_copy_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    stdout = stdout
-                        .replace(/(\s+)$/, "")
-                        .replace(/\r\n/g, "\n");
-                    if (stdout !== copytest) {
-                        return diffFiles("biddle_test_copy_child", stdout, copytest);
-                    }
-                    node
-                        .fs
-                        .stat(copyfile, function biddle_test_copy_child_stat(ers, stats) {
-                            if (ers !== null) {
-                                return apps.errout({
-                                    error : ers,
-                                    name  : "biddle_test_copy_child_stat",
-                                    stdout: stdout,
-                                    time  : humantime(true)
-                                });
-                            }
-                            if (stats === undefined || stats.isFile() === false) {
-                                return apps.errout({
-                                    error : "copy failed as " + copyfile + " is not present",
-                                    name  : "biddle_test_copy_child_stat",
-                                    stdout: stdout,
-                                    time  : humantime(true)
-                                });
-                            }
-                            console.log(humantime(false) + " " + text.green + "copy test passed." + text.nocolor);
-                            next();
-                        });
-                });
+            node.child(childcmd + "copy " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta.js " + testpath + " childtest", {
+                cwd: data.abspath
+            }, function biddle_test_copy_child(er, stdout, stder) {
+                var copytest = "Copied " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta.js to " + data.abspath + "unittest\nFiles: 1, Directories: 0, Symlinks: 0",
+                    copyfile = data.abspath + "unittest" + node.path.sep + "biddletesta.js";
+                if (er !== null) {
+                    return apps.errout({error: er, name: "biddle_test_copy_child", stdout: stdout, time: humantime(true)});
+                }
+                if (stder !== null && stder !== "") {
+                    return apps.errout({error: stder, name: "biddle_test_copy_child", stdout: stdout, time: humantime(true)});
+                }
+                stdout = stdout
+                    .replace(/(\s+)$/, "")
+                    .replace(/\r\n/g, "\n");
+                if (stdout !== copytest) {
+                    return diffFiles("biddle_test_copy_child", stdout, copytest);
+                }
+                node
+                    .fs
+                    .stat(copyfile, function biddle_test_copy_child_stat(ers, stats) {
+                        if (ers !== null) {
+                            return apps.errout({error: ers, name: "biddle_test_copy_child_stat", stdout: stdout, time: humantime(true)});
+                        }
+                        if (stats === undefined || stats.isFile() === false) {
+                            return apps.errout({
+                                error : "copy failed as " + copyfile + " is not present",
+                                name  : "biddle_test_copy_child_stat",
+                                stdout: stdout,
+                                time  : humantime(true)
+                            });
+                        }
+                        console.log(humantime(false) + " " + text.green + "copy test passed." + text.nocolor);
+                        next();
+                    });
+            });
         };
         phases.get           = function biddle_test_get() {
             var flag = {
-                text  : false,
-                binary: false
+                binary: false,
+                text  : false
             };
-            node
-                .child(childcmd + "get https://s0.2mdn.net/879366/express_html_inpage_rendering_lib_200_150.js " + data.abspath + "unittest childtest", {
-                    cwd: data.abspath
-                }, function biddle_test_get_childText(er, stdout, stder) {
-                    var size     = "",
-                        sizenumb = "",
-                        sizetest = " \u001b[1m\u001b[32m111,805\u001b[39m\u001b[0m";
-                    if (er !== null) {
-                        return apps.errout({
-                            error : er,
-                            name  : "biddle_test_get_childText",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    if (stder !== null && stder !== "") {
-                        return apps.errout({
-                            error : stder,
-                            name  : "biddle_test_get_childText",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    size = stdout.slice(stdout.indexOf("written at") + 10).replace(/(\s+)$/, "");
-                    if ((/^(((File)|(\d{3}))\u0020)/).test(stdout) === false || stdout.indexOf("File\u0020") < 0 || stdout.indexOf(" 0 bytes") > 0 || size.replace(" bytes.", "").length < 4) {
-                        return apps.errout({
-                            error: "Unexpected output for test 'get':\r\n" + text.red + stdout + text.nocolor,
-                            name : "biddle_test_get_childText",
-                            time : humantime(true)
-                        });
-                    }
-                    size     = size.replace("\r\n", "\n").slice(0, size.indexOf("\n"));
-                    sizenumb = size.replace(/\sbytes\.?/, "");
-                    if (sizenumb !== sizetest) {
-                        return diffFiles("biddle_test_get_childText", sizenumb, sizetest);
-                    }
-                    console.log(humantime(false) + " " + text.green + "get text test passed." + text.nocolor + " File written at" + size);
-                    flag.text = true;
-                    if (flag.binary === true) {
-                        next();
-                    }
-                });
-            node
-                .child(childcmd + "get https://www.google.com/images/nav_logo242.png " + data.abspath + "unittest childtest", {
-                    cwd: data.abspath
-                }, function biddle_test_get_childBinary(er, stdout, stder) {
-                    var size     = "",
-                        sizenumb = "",
-                        sizetest = " \u001b[1m\u001b[32m21,909\u001b[39m\u001b[0m";
-                    if (er !== null) {
-                        return apps.errout({
-                            error : er,
-                            name  : "biddle_test_get_childBinary",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    if (stder !== null && stder !== "") {
-                        return apps.errout({
-                            error : stder,
-                            name  : "biddle_test_get_childBinary",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    size = stdout.slice(stdout.indexOf("written at") + 10).replace(/(\s+)$/, "");
-                    if ((/^(((File)|(\d{3}))\u0020)/).test(stdout) === false || stdout.indexOf("File\u0020") < 0 || stdout.indexOf(" 0 bytes") > 0 || size.replace(" bytes.", "").length < 4) {
-                        return apps.errout({
-                            error: "Unexpected output for test 'get':\r\n" + text.red + stdout + text.nocolor,
-                            name : "biddle_test_get_childBinary",
-                            time : humantime(true)
-                        });
-                    }
-                    size     = size.replace("\r\n", "\n").slice(0, size.indexOf("\n"));
-                    sizenumb = size.replace(/\sbytes\.?/, "");
-                    if (sizenumb !== sizetest) {
-                        return diffFiles("biddle_test_get_childBinary", sizenumb, sizetest);
-                    }
-                    console.log(humantime(false) + " " + text.green + "get binary test passed." + text.nocolor + " File written at" + size);
-                    flag.binary = true;
-                    if (flag.text === true) {
-                        next();
-                    }
-                });
+            node.child(childcmd + "get https://s0.2mdn.net/879366/express_html_inpage_rendering_lib_200_150.js " + data.abspath + "unittest childtest", {
+                cwd: data.abspath
+            }, function biddle_test_get_childText(er, stdout, stder) {
+                var size     = "",
+                    sizenumb = "",
+                    sizetest = " \u001b[1m\u001b[32m111,805\u001b[39m\u001b[0m";
+                if (er !== null) {
+                    return apps.errout({error: er, name: "biddle_test_get_childText", stdout: stdout, time: humantime(true)});
+                }
+                if (stder !== null && stder !== "") {
+                    return apps.errout({error: stder, name: "biddle_test_get_childText", stdout: stdout, time: humantime(true)});
+                }
+                size = stdout
+                    .slice(stdout.indexOf("written at") + 10)
+                    .replace(/(\s+)$/, "");
+                if ((/^(((File)|(\d{3}))\u0020)/).test(stdout) === false || stdout.indexOf("File\u0020") < 0 || stdout.indexOf(" 0 bytes") > 0 || size.replace(" bytes.", "").length < 4) {
+                    return apps.errout({
+                        error: "Unexpected output for test 'get':\r\n" + text.red + stdout + text.nocolor,
+                        name : "biddle_test_get_childText",
+                        time : humantime(true)
+                    });
+                }
+                size     = size
+                    .replace("\r\n", "\n")
+                    .slice(0, size.indexOf("\n"));
+                sizenumb = size.replace(/\sbytes\.?/, "");
+                if (sizenumb !== sizetest) {
+                    return diffFiles("biddle_test_get_childText", sizenumb, sizetest);
+                }
+                console.log(humantime(false) + " " + text.green + "get text test passed." + text.nocolor + " File written at" + size);
+                flag.text = true;
+                if (flag.binary === true) {
+                    next();
+                }
+            });
+            node.child(childcmd + "get https://www.google.com/images/nav_logo242.png " + data.abspath + "unittest childtest", {
+                cwd: data.abspath
+            }, function biddle_test_get_childBinary(er, stdout, stder) {
+                var size     = "",
+                    sizenumb = "",
+                    sizetest = " \u001b[1m\u001b[32m21,909\u001b[39m\u001b[0m";
+                if (er !== null) {
+                    return apps.errout({error: er, name: "biddle_test_get_childBinary", stdout: stdout, time: humantime(true)});
+                }
+                if (stder !== null && stder !== "") {
+                    return apps.errout({error: stder, name: "biddle_test_get_childBinary", stdout: stdout, time: humantime(true)});
+                }
+                size = stdout
+                    .slice(stdout.indexOf("written at") + 10)
+                    .replace(/(\s+)$/, "");
+                if ((/^(((File)|(\d{3}))\u0020)/).test(stdout) === false || stdout.indexOf("File\u0020") < 0 || stdout.indexOf(" 0 bytes") > 0 || size.replace(" bytes.", "").length < 4) {
+                    return apps.errout({
+                        error: "Unexpected output for test 'get':\r\n" + text.red + stdout + text.nocolor,
+                        name : "biddle_test_get_childBinary",
+                        time : humantime(true)
+                    });
+                }
+                size     = size
+                    .replace("\r\n", "\n")
+                    .slice(0, size.indexOf("\n"));
+                sizenumb = size.replace(/\sbytes\.?/, "");
+                if (sizenumb !== sizetest) {
+                    return diffFiles("biddle_test_get_childBinary", sizenumb, sizetest);
+                }
+                console.log(humantime(false) + " " + text.green + "get binary test passed." + text.nocolor + " File written at" + size);
+                flag.binary = true;
+                if (flag.text === true) {
+                    next();
+                }
+            });
         };
         phases.hashFile      = function biddle_test_hashFile() {
-            node
-                .child(childcmd + "hash " + data.abspath + "LICENSE childtest", {
-                    cwd: data.abspath
-                }, function biddle_test_hashFile_child(er, stdout, stder) {
-                    var hashtest = "be09a71a2cda28b74e9dd206f46c1621aebe29182723f191d8109db4705ced014de469043c397fee" +
-                            "4d8f3483e396007ca739717af4bf43fed4c2e3dd14f3dc0c";
-                    if (er !== null) {
-                        return apps.errout({
-                            error : er,
-                            name  : "biddle_test_hashFile_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    if (stder !== null && stder !== "") {
-                        return apps.errout({
-                            error : stder,
-                            name  : "biddle_test_hashFile_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    stdout = stdout.replace(/((\r?\n)+)$/, "");
-                    if (stdout !== hashtest) {
-                        return diffFiles("biddle_test_hashFile_child", stdout, hashtest);
-                    }
-                    console.log(humantime(false) + " " + text.green + "hash file test passed." + text.nocolor);
-                    next();
-                });
+            node.child(childcmd + "hash " + data.abspath + "LICENSE childtest", {
+                cwd: data.abspath
+            }, function biddle_test_hashFile_child(er, stdout, stder) {
+                var hashtest = "be09a71a2cda28b74e9dd206f46c1621aebe29182723f191d8109db4705ced014de469043c397fee" +
+                        "4d8f3483e396007ca739717af4bf43fed4c2e3dd14f3dc0c";
+                if (er !== null) {
+                    return apps.errout({error: er, name: "biddle_test_hashFile_child", stdout: stdout, time: humantime(true)});
+                }
+                if (stder !== null && stder !== "") {
+                    return apps.errout({error: stder, name: "biddle_test_hashFile_child", stdout: stdout, time: humantime(true)});
+                }
+                stdout = stdout.replace(/((\r?\n)+)$/, "");
+                if (stdout !== hashtest) {
+                    return diffFiles("biddle_test_hashFile_child", stdout, hashtest);
+                }
+                console.log(humantime(false) + " " + text.green + "hash file test passed." + text.nocolor);
+                next();
+            });
         };
         phases.hashString    = function biddle_test_hashString() {
-            node
-                .child(childcmd + "hash string \"a moderately long string to hash and test in the unit tests of biddle\" childtest", {
-                    cwd: data.abspath
-                }, function biddle_test_hashString_child(er, stdout, stder) {
-                    var hashtest = "d18faf161f06a2362ba0efbc4a66f8e85f500b6281c848f6775c587362808e3f51ff557a20a544c41660f5d92fc018020c74b035d1eef4954828bc4125c2a11d";
-                    if (er !== null) {
-                        return apps.errout({
-                            error : er,
-                            name  : "biddle_test_hashString_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    if (stder !== null && stder !== "") {
-                        return apps.errout({
-                            error : stder,
-                            name  : "biddle_test_hashString_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    stdout = stdout.replace(/((\r?\n)+)$/, "");
-                    if (stdout !== hashtest) {
-                        return diffFiles("biddle_test_hashString_child", stdout, hashtest);
-                    }
-                    console.log(humantime(false) + " " + text.green + "hash string test passed." + text.nocolor);
-                    next();
-                });
+            node.child(childcmd + "hash string \"a moderately long string to hash and test in the unit tests of bid" +
+                    "dle\" childtest", {
+                cwd: data.abspath
+            }, function biddle_test_hashString_child(er, stdout, stder) {
+                var hashtest = "d18faf161f06a2362ba0efbc4a66f8e85f500b6281c848f6775c587362808e3f51ff557a20a544c4" +
+                        "1660f5d92fc018020c74b035d1eef4954828bc4125c2a11d";
+                if (er !== null) {
+                    return apps.errout({error: er, name: "biddle_test_hashString_child", stdout: stdout, time: humantime(true)});
+                }
+                if (stder !== null && stder !== "") {
+                    return apps.errout({error: stder, name: "biddle_test_hashString_child", stdout: stdout, time: humantime(true)});
+                }
+                stdout = stdout.replace(/((\r?\n)+)$/, "");
+                if (stdout !== hashtest) {
+                    return diffFiles("biddle_test_hashString_child", stdout, hashtest);
+                }
+                console.log(humantime(false) + " " + text.green + "hash string test passed." + text.nocolor);
+                next();
+            });
         };
         phases.install       = function biddle_test_install() {
-            node
-                .child(childcmd + "install " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta_latest.zip childtest", {
-                    cwd: data.abspath
-                }, function biddle_test_install_child(er, stdout, stder) {
-                    var instfile = data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "liba" + node.path.sep + "libab.txt";
-                    if (er !== null) {
-                        return apps.errout({
-                            error : er,
-                            name  : "biddle_test_install_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    if (stder !== null && stder !== "") {
-                        return apps.errout({
-                            error : stder,
-                            name  : "biddle_test_install_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    if (stdout.indexOf("is missing the " + text.cyan + "http(s)" + text.nocolor + " scheme, treating as a local path...") < 7) {
-                        return apps.errout({
-                            error : "Expected output to contain: is missing the " + text.cyan + "http(s)" + text.nocolor + " scheme, t" +
-                                       "reating as a local path...",
-                            name  : "biddle_test_install_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    node
-                        .fs
-                        .stat(instfile, function biddle_test_install_child_stat(err, stats) {
-                            if (err !== null) {
-                                return apps.errout({
-                                    error : err,
-                                    name  : "biddle_test_install_child_stat",
-                                    stdout: stdout,
-                                    time  : humantime(true)
-                                });
-                            }
-                            if (typeof stats !== "object" || stats.isFile() === false) {
-                                return apps.errout({
-                                    error : instfile + " does not exist.",
-                                    name  : "biddle_test_install_child_stat",
-                                    stdout: stdout,
-                                    time  : humantime(true)
-                                });
-                            }
-                            console.log(humantime(false) + " " + text.green + "File from install is present:" + text.nocolor + " " + instfile);
-                            node
-                                .fs
-                                .readFile(data.abspath + "installed.json",
-                                function biddle_test_install_child_stat_readJSON(era, filedata) {
-                                    var inst = {};
-                                    if (era !== null && era !== undefined) {
-                                        return apps.errout({
-                                            error : instfile + " does not exist.",
-                                            name  : "biddle_test_install_child_stat_readJSON",
-                                            stdout: stdout,
-                                            time  : humantime(true)
-                                        });
-                                    }
-                                    inst = JSON.parse(filedata);
-                                    if (inst.biddletesta === undefined) {
-                                        return apps.errout({
-                                            error : "biddletesta is absent from installed.json",
-                                            name  : "biddle_test_install_child_stat_readJSON",
-                                            stdout: stdout,
-                                            time  : humantime(true)
-                                        });
-                                    }
-                                    if (inst.biddletesta.version !== "99.99.1234") {
-                                        return apps.errout({
-                                            error : "Expected biddletesta.version of installed.json to be '99.99.1234'.",
-                                            name  : "biddle_test_install_child_stat_readJSON",
-                                            stdout: stdout,
-                                            time  : humantime(true)
-                                        });
-                                    }
-                                    console.log(humantime(false) + " " + text.green + "installed.json contains biddletesta." + text.nocolor);
-                                    console.log(humantime(false) + " " + text.green + "install test passed." + text.nocolor);
-                                    next();
-                                });
-                        });
-                });
+            node.child(childcmd + "install " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta_latest.zip childtest", {
+                cwd: data.abspath
+            }, function biddle_test_install_child(er, stdout, stder) {
+                var instfile = data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "liba" + node.path.sep + "libab.txt";
+                if (er !== null) {
+                    return apps.errout({error: er, name: "biddle_test_install_child", stdout: stdout, time: humantime(true)});
+                }
+                if (stder !== null && stder !== "") {
+                    return apps.errout({error: stder, name: "biddle_test_install_child", stdout: stdout, time: humantime(true)});
+                }
+                if (stdout.indexOf("is missing the " + text.cyan + "http(s)" + text.nocolor + " scheme, treating as a local path...") < 7) {
+                    return apps.errout({
+                        error : "Expected output to contain: is missing the " + text.cyan + "http(s)" + text.nocolor + " scheme, treating as a local path...",
+                        name  : "biddle_test_install_child",
+                        stdout: stdout,
+                        time  : humantime(true)
+                    });
+                }
+                node
+                    .fs
+                    .stat(instfile, function biddle_test_install_child_stat(err, stats) {
+                        if (err !== null) {
+                            return apps.errout({error: err, name: "biddle_test_install_child_stat", stdout: stdout, time: humantime(true)});
+                        }
+                        if (typeof stats !== "object" || stats.isFile() === false) {
+                            return apps.errout({
+                                error : instfile + " does not exist.",
+                                name  : "biddle_test_install_child_stat",
+                                stdout: stdout,
+                                time  : humantime(true)
+                            });
+                        }
+                        console.log(humantime(false) + " " + text.green + "File from install is present:" + text.nocolor + " " + instfile);
+                        node
+                            .fs
+                            .readFile(data.abspath + "installed.json", function biddle_test_install_child_stat_readJSON(era, filedata) {
+                                var inst = {};
+                                if (era !== null && era !== undefined) {
+                                    return apps.errout({
+                                        error : instfile + " does not exist.",
+                                        name  : "biddle_test_install_child_stat_readJSON",
+                                        stdout: stdout,
+                                        time  : humantime(true)
+                                    });
+                                }
+                                inst = JSON.parse(filedata);
+                                if (inst.biddletesta === undefined) {
+                                    return apps.errout({error: "biddletesta is absent from installed.json", name: "biddle_test_install_child_stat_readJSON", stdout: stdout, time: humantime(true)});
+                                }
+                                if ((/^(99\.99\.\d{4})$/).test(inst.biddletesta.version) === false) {
+                                    return apps.errout({error: "Expected biddletesta.version of installed.json to be equivalent to '99\\.99\\.\\d{4}'.", name: "biddle_test_install_child_stat_readJSON", stdout: stdout, time: humantime(true)});
+                                }
+                                console.log(humantime(false) + " " + text.green + "installed.json contains biddletesta." + text.nocolor);
+                                console.log(humantime(false) + " " + text.green + "install test passed." + text.nocolor);
+                                next();
+                            });
+                    });
+            });
         };
         phases.lint          = function biddle_test_lint() {
             var ignoreDirectory = [
@@ -3005,9 +2814,7 @@
                         options.source = val[1];
                         result         = modules
                             .jslint
-                            .app(modules.prettydiff.app(options), {
-                                "for": true
-                            });
+                            .app(modules.prettydiff.app(options), {"for": true});
                         if (result.ok === true) {
                             console.log(humantime(false) + text.green + "Lint is good for file " + (ind + 1) + ":" + text.nocolor + " " + val[0]);
                             if (ind === arr.length - 1) {
@@ -3070,16 +2877,9 @@
                             .fs
                             .readFile(filePath, "utf8", function biddle_test_lint_getFiles_readFile_callback(err, data) {
                                 if (err !== null && err !== undefined) {
-                                    return apps.errout({
-                                        error: err,
-                                        name : "biddle_test_lint_getFiles_readFile_callback",
-                                        time : humantime(false)
-                                    });
+                                    return apps.errout({error: err, name: "biddle_test_lint_getFiles_readFile_callback", time: humantime(false)});
                                 }
-                                files.push([
-                                    filePath,
-                                    data
-                                ]);
+                                files.push([filePath, data]);
                                 endread += 1;
                                 if (endread === startread && endfiles === startfiles && enddirs === startdirs) {
                                     lintrun();
@@ -3100,11 +2900,7 @@
                                             var a = 0;
                                             endfiles += 1;
                                             if (errb !== null) {
-                                                return apps.errout({
-                                                    error: errb,
-                                                    name : "biddle_test_lint_getFiles_readDir_callback_fileEval_stat",
-                                                    time : humantime(false)
-                                                });
+                                                return apps.errout({error: errb, name: "biddle_test_lint_getFiles_readDir_callback_fileEval_stat", time: humantime(false)});
                                             }
                                             if (stat.isFile() === true && (/(\.js)$/).test(filename) === true) {
                                                 startread += 1;
@@ -3157,110 +2953,92 @@
                 ],
                 changed   = false,
                 listChild = function biddle_test_listStatus_childWrapper() {
-                    node
-                        .child(childcmd + listcmds[0] + " childtest", {
-                            cwd: data.abspath
-                        }, function biddle_test_listStatus_childWrapper_child(er, stdout, stder) {
-                            var listout = text.underline + "installed applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " -" +
-                                        " 99.99.1234 - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep + "\n\n" + text.underline + "published applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor +
-                                        " - 99.99.1234 - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "publications" + node.path.sep + "biddletestb" + node.path.sep,
-                                listpub = text.underline + "published applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " -" +
-                                        " 99.99.1234 - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "publications" + node.path.sep + "biddletestb" + node.path.sep,
-                                listist = text.underline + "installed applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " -" +
-                                        " 99.99.1234 - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep,
-                                statout = "\n" + text.underline + text.green + "all applications are current:" + text.none + "\n\n* biddl" +
-                                        "etesta matches published version " + text.cyan + "99.99.1234" + text.nocolor + "\n* biddletestb m" +
-                                        "atches published version " + text.cyan + "98.98.1234" + text.nocolor,
-                                statpba = "\n* biddletesta matches published version " + text.cyan + "99.99.1234" + text.nocolor,
-                                statpbb = "\n" + text.underline + "outdated applications:" + text.normal + "\n\n* biddletesta is installed at vers" +
-                                        "ion " + text.bold + text.red + "99.99.1234" + text.none + " but published version is " +
-                                        text.cyan + "11.22.6789" + text.nocolor + "\n\n" + text.underline + "current applications:" + text.normal + "\n\n* b" +
-                                        "iddletestb matches published version " + text.cyan + "98.98.1234" + text.nocolor,
-                                statpbc = "\n* biddletesta is installed at version " + text.bold + text.red + "99.99.1234" + text.none +
-                                        " but published version is " + text.cyan + "11.22.6789" + text.nocolor;
-                            if (er !== null) {
-                                return apps.errout({
-                                    error : er,
-                                    name  : "biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")",
-                                    stdout: stdout,
-                                    time  : humantime(true)
-                                });
+                    node.child(childcmd + listcmds[0] + " childtest", {
+                        cwd: data.abspath
+                    }, function biddle_test_listStatus_childWrapper_child(er, stdout, stder) {
+                        var listout = text.underline + "installed applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep + "\n\n" + text.underline + "published applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "publications" + node.path.sep + "biddletestb" + node.path.sep,
+                            listpub = text.underline + "published applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "publications" + node.path.sep + "biddletestb" + node.path.sep,
+                            listist = text.underline + "installed applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep,
+                            statout = "\n" + text.underline + text.green + "all applications are current:" + text.none + "\n\n* biddletesta matches published version " + text.cyan + "99.99.xxxx" + text.nocolor + "\n* biddletestb matches published version " + text.cyan + "98.98.1234" + text.nocolor,
+                            statpba = "\n* biddletesta matches published version " + text.cyan + "99.99.xxxx" + text.nocolor,
+                            statpbb = "\n" + text.underline + "outdated applications:" + text.normal + "\n\n* biddletesta is installed at version " + text.bold + text.red + "99.99.xxxx" + text.none + " but published version is " + text.cyan + "11.22.6789" + text.nocolor + "\n\n" + text.underline + "current applications:" + text.normal + "\n\n* biddletestb matches published version " + text.cyan + "98.98.1234" + text.nocolor,
+                            statpbc = "\n* biddletesta is installed at version " + text.bold + text.red + "99.99.xxxx" + text.none + " but published version is " + text.cyan + "11.22.6789" + text.nocolor;
+                        if (er !== null) {
+                            return apps.errout({
+                                error : er,
+                                name  : "biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")",
+                                stdout: stdout,
+                                time  : humantime(true)
+                            });
+                        }
+                        if (stder !== null && stder !== "") {
+                            return apps.errout({
+                                error : stder,
+                                name  : "biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")",
+                                stdout: stdout,
+                                time  : humantime(true)
+                            });
+                        }
+                        stdout = stdout
+                            .toLowerCase()
+                            .replace(/(\s+)$/, "")
+                            .replace(/\r\n/g, "\n")
+                            .replace(/99\.99\.\d{4}/g, "99.99.xxxx");
+                        if (changed === false && listcmds[0] === "list") {
+                            if (stdout !== listout) {
+                                return diffFiles("biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")", stdout, listout);
                             }
-                            if (stder !== null && stder !== "") {
-                                return apps.errout({
-                                    error : stder,
-                                    name  : "biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")",
-                                    stdout: stdout,
-                                    time  : humantime(true)
-                                });
+                            console.log(humantime(false) + " " + text.green + "mlist output passed." + text.nocolor);
+                        }
+                        if (changed === false && listcmds[0] === "list published") {
+                            if (stdout !== listpub) {
+                                return diffFiles("biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")", stdout, listpub);
                             }
-                            stdout = stdout
-                                .toLowerCase()
-                                .replace(/(\s+)$/, "")
-                                .replace(/\r\n/g, "\n");
-                            if (changed === false && listcmds[0] === "list") {
-                                if (stdout !== listout) {
-                                    return diffFiles("biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")",
-                                    stdout, listout);
-                                }
-                                console.log(humantime(false) + " " + text.green + "mlist output passed." + text.nocolor);
+                            console.log(humantime(false) + " " + text.green + "list published output passed." + text.nocolor);
+                        }
+                        if (changed === false && listcmds[0] === "list installed") {
+                            if (stdout !== listist) {
+                                return diffFiles("biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")", stdout, listist);
                             }
-                            if (changed === false && listcmds[0] === "list published") {
-                                if (stdout !== listpub) {
-                                    return diffFiles("biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")",
-                                    stdout, listpub);
-                                }
-                                console.log(humantime(false) + " " + text.green + "list published output passed." + text.nocolor);
+                            console.log(humantime(false) + " " + text.green + "list installed output passed." + text.nocolor);
+                        }
+                        if (changed === false && listcmds[0] === "status") {
+                            if (stdout !== statout) {
+                                return diffFiles("biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")", stdout, statout);
                             }
-                            if (changed === false && listcmds[0] === "list installed") {
-                                if (stdout !== listist) {
-                                    return diffFiles("biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")",
-                                    stdout, listist);
-                                }
-                                console.log(humantime(false) + " " + text.green + "list installed output passed." + text.nocolor);
+                            console.log(humantime(false) + " " + text.green + "status output passed." + text.nocolor);
+                        }
+                        if (changed === true && listcmds[0] === "status") {
+                            if (stdout !== statpbb) {
+                                return diffFiles("biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")", stdout, statpbb);
                             }
-                            if (changed === false && listcmds[0] === "status") {
-                                if (stdout !== statout) {
-                                    return diffFiles("biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")",
-                                    stdout, statout);
-                                }
-                                console.log(humantime(false) + " " + text.green + "status output passed." + text.nocolor);
+                            console.log(humantime(false) + " " + text.green + "status outdated output passed." + text.nocolor);
+                        }
+                        if (changed === true && listcmds[0] === "status biddletesta") {
+                            if (stdout !== statpbc) {
+                                return diffFiles("biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")", stdout, statpbc);
                             }
-                            if (changed === true && listcmds[0] === "status") {
-                                if (stdout !== statpbb) {
-                                    return diffFiles("biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")",
-                                    stdout, statpbb);
-                                }
-                                console.log(humantime(false) + " " + text.green + "status outdated output passed." + text.nocolor);
+                            console.log(humantime(false) + " " + text.green + "status outdated biddletesta output passed." + text.nocolor);
+                        }
+                        if (changed === false && listcmds[0] === "status biddletesta") {
+                            if (stdout !== statpba) {
+                                return diffFiles("biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")", stdout, statpba);
                             }
-                            if (changed === true && listcmds[0] === "status biddletesta") {
-                                if (stdout !== statpbc) {
-                                    return diffFiles("biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")",
-                                    stdout, statpbc);
-                                }
-                                console.log(humantime(false) + " " + text.green + "status outdated biddletesta output passed." + text.nocolor);
-                            }
-                            if (changed === false && listcmds[0] === "status biddletesta") {
-                                if (stdout !== statpba) {
-                                    return diffFiles("biddle_test_listStatus_childWrapper_child(changed: " + changed + ", " + listcmds[0] + ")",
-                                    stdout, statpba);
-                                }
-                                console.log(humantime(false) + " " + text.green + "status biddletesta output passed." + text.nocolor);
-                                apps.writeFile("11.22.6789", data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "latest.txt",
-                                function biddle_test_listStatus_childWrapper_child_changeVersion() {
-                                    changed = true;
-                                    listcmds.splice(0, 1);
-                                });
-                            } else {
+                            console.log(humantime(false) + " " + text.green + "status biddletesta output passed." + text.nocolor);
+                            apps.writeFile("11.22.6789", data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "latest.txt", function biddle_test_listStatus_childWrapper_child_changeVersion() {
+                                changed = true;
                                 listcmds.splice(0, 1);
-                            }
-                            if (listcmds.length > 0) {
-                                biddle_test_listStatus_childWrapper();
-                            } else {
-                                console.log(humantime(false) + " " + text.green + "list and status tests passed." + text.nocolor);
-                                next();
-                            }
-                        });
+                            });
+                        } else {
+                            listcmds.splice(0, 1);
+                        }
+                        if (listcmds.length > 0) {
+                            biddle_test_listStatus_childWrapper();
+                        } else {
+                            console.log(humantime(false) + " " + text.green + "list and status tests passed." + text.nocolor);
+                            next();
+                        }
+                    });
                 };
             listChild();
         };
@@ -3273,23 +3051,67 @@
             node.child(childcmd + "markdown " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "READMEa.md 60 childtest", {
                 cwd: data.abspath
             }, function biddle_test_markdown_60(er, stdout, stder) {
-                var markdowntest = "\n" + text.underline + text.bold + text.red + "test README" + text.none + "\nsome dummy subtext\n\n" + text.underline + text.bold + text.cyan + "First Secondary Heading" + text.none + "\n    | a big block quote lives here. This is where I\n    | am going to experience with wrapping a block quote a bit\n    | differently from other content.  I need enough text in\n    | this quote to wrap a couple of times, so I will continue\n    | adding some nonsense and as long as it takes to ensure I\n    | have a fully qualified test.\n    | New line in a block quote\n    | More block\n\n  This is a regular paragraph that needs to be long\n  enough to wrap a couple times.  This text will be unique\n  from the text in the block quote because uniqueness saves\n  time when debugging test failures.  I am now writing a\n  bunch of wrapping paragraph gibberish, such as\n  f324fasdaowkefsdva.  That one isn't even a word.  It isn't\n  cool if it doesn't contain a hyperlink,\n  (" + text.cyan + "http://tonowhwere.nothing" + text.nocolor + "), in some text.\n\n  " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like a\n    paragraph. So blah blah wrapping some madness into a\n    list item right gosh darn here and let's see what shakes\n    out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like a\n    paragraph. So blah blah wrapping some madness into a\n    list item right gosh darn here and let's see what shakes\n    out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to wrap like a\n      paragraph. So blah blah wrapping some madness into a\n      list item right gosh darn here and let's see what\n      shakes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to wrap like a\n      paragraph. So blah blah wrapping some madness into a\n      list item right gosh darn here and let's see what\n      shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need to wrap\n        like a paragraph. So blah blah wrapping some madness\n        into a list item right gosh darn here and let's see\n        what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need to wrap\n        like a paragraph. So blah blah wrapping some madness\n        into a list item right gosh darn here and let's see\n        what shakes out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like a\n    paragraph. So blah blah wrapping some madness into a\n    list item right gosh darn here and let's see what shakes\n    out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a paragraph.\n      So blah blah wrapping some madness into a list item\n      right gosh darn here and let's see what shakes out of\n      the coolness.\n\n  " + text.underline + text.bold + text.green + "First Tertiary Heading" + text.none + "\n    This text should be extra indented.\n\n    " + text.bold + text.red + "*" + text.none + " list item 1\n    " + text.bold + text.red + "*" + text.none + " list item 2\n      " + text.bold + text.red + "-" + text.none + " sublist item 1\n      " + text.bold + text.red + "-" + text.none + " sublist item 2\n        " + text.bold + text.red + "*" + text.none + " subsublist item 1\n        " + text.bold + text.red + "*" + text.none + " subsublist item 2\n    " + text.bold + text.red + "*" + text.none + " list item 3\n      " + text.bold + text.red + "-" + text.none + " boo\n\n    " + text.underline + text.bold + text.yellow + "Gettin Deep with the Headings" + text.none + "\n\n        | a big block quote lives here. This\n        | is where I am going to experience with wrapping a\n        | block quote a bit differently from other content.  I\n        | need enough text in this quote to wrap a couple of\n        | times, so I will continue adding some nonsense and\n        | as long as it takes to ensure I have a fully\n        | qualified test.\n        | New line in a block quote\n        | More block\n\n      Images get converted to their alt text\n      description.\n\n      This is a regular paragraph that needs to be\n      long enough to wrap a couple times.  This text will be\n      unique from the text in the block quote because\n      uniqueness saves time when debugging test failures.  I\n      am now writing a bunch of wrapping paragraph\n      gibberish, such as f324fasdaowkefsdva.  That one isn't\n      even a word.\n\n      " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like\n        a paragraph. So blah blah wrapping some madness into\n        a list item right gosh darn here and let's see what\n        shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like\n        a paragraph. So blah blah wrapping some madness into\n        a list item right gosh darn here and let's see what\n        shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to\n          wrap like a paragraph. So blah blah wrapping some\n          madness into a list item right gosh darn here and\n          let's see what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to\n          wrap like a paragraph. So blah blah wrapping some\n          madness into a list item right gosh darn here and\n          let's see what shakes out of the coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need\n            to wrap like a paragraph. So blah blah wrapping\n            some madness into a list item right gosh darn\n            here and let's see what shakes out of the\n            coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need\n            to wrap like a paragraph. So blah blah wrapping\n            some madness into a list item right gosh darn\n            here and let's see what shakes out of the\n            coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like\n        a paragraph. So blah blah wrapping some madness into\n        a list item right gosh darn here and let's see what\n        shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a\n          paragraph. So blah blah wrapping some madness into\n          a list item right gosh darn here and let's see\n          what shakes out of the coolness.\n\n      " + text.underline + "Command   " + text.normal + text.underline + " Local " + text.normal + text.underline + " Argument Type               " + text.normal + text.underline + " Second Argument " + text.normal + "\n      copy       " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n      get        " + text.bold + text.yellow + "?" + text.none + "      file path                    none           \n      global     " + text.bold + text.green + "✓" + text.none + "      none                         none           \n      hash       " + text.bold + text.green + "✓" + text.none + "      file path                    none           \n      help       " + text.bold + text.green + "✓" + text.none + "      number                       none           \n      install    " + text.bold + text.yellow + "?" + text.none + "      zip file                     directory path \n      list       " + text.bold + text.green + "✓" + text.none + "      \"" + text.yellow + "installed" + text.nocolor + "\" or \"" + text.yellow + "published" + text.nocolor + "\"   none           \n      markdown   " + text.bold + text.green + "✓" + text.none + "      path to markdown file        number         \n      publish    " + text.bold + text.green + "✓" + text.none + "      directory path               directory path \n      remove     " + text.bold + text.green + "✓" + text.none + "      file path or directory path  none           \n      status     " + text.bold + text.yellow + "?" + text.none + "      none or application name     none           \n      test       " + text.bold + text.red + "X" + text.none + "      none                         none           \n      uninstall  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unpublish  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unzip      " + text.bold + text.green + "✓" + text.none + "      path to zip file             directory path \n      zip        " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n\n" + text.underline + text.bold + text.cyan + "New big Heading" + text.none + "\n  paragraph here to see if indentation is largely reset\n  appropriate to the current heading that is bigger than the\n  previous headings",
+                var markdowntest = "\n" + text.underline + text.bold + text.red + "test README" + text.none + "\nsome dummy subtext\n\n" + text.underline + text.bold + text.cyan + "First Secondary Heading" + text.none + "\n    | a big block quote lives here. This is where I\n    | am going to experie" +
+                            "nce with wrapping a block quote a bit\n    | differently from other content.  I " +
+                            "need enough text in\n    | this quote to wrap a couple of times, so I will conti" +
+                            "nue\n    | adding some nonsense and as long as it takes to ensure I\n    | have " +
+                            "a fully qualified test.\n    | New line in a block quote\n    | More block\n\n  " +
+                            "This is a regular paragraph that needs to be long\n  enough to wrap a couple tim" +
+                            "es.  This text will be unique\n  from the text in the block quote because unique" +
+                            "ness saves\n  time when debugging test failures.  I am now writing a\n  bunch of" +
+                            " wrapping paragraph gibberish, such as\n  f324fasdaowkefsdva.  That one isn't ev" +
+                            "en a word.  It isn't\n  cool if it doesn't contain a hyperlink,\n  (" + text.cyan + "http://tonowhwere.nothing" + text.nocolor + "), in some text.\n\n  " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like a\n    paragraph. So blah blah wrappin" +
+                            "g some madness into a\n    list item right gosh darn here and let's see what sha" +
+                            "kes\n    out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like a\n    paragraph. So blah blah wrappin" +
+                            "g some madness into a\n    list item right gosh darn here and let's see what sha" +
+                            "kes\n    out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to wrap like a\n      paragraph. So blah blah wr" +
+                            "apping some madness into a\n      list item right gosh darn here and let's see w" +
+                            "hat\n      shakes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to wrap like a\n      paragraph. So blah blah wr" +
+                            "apping some madness into a\n      list item right gosh darn here and let's see w" +
+                            "hat\n      shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need to wrap\n        like a paragraph. So blah bl" +
+                            "ah wrapping some madness\n        into a list item right gosh darn here and let'" +
+                            "s see\n        what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need to wrap\n        like a paragraph. So blah bl" +
+                            "ah wrapping some madness\n        into a list item right gosh darn here and let'" +
+                            "s see\n        what shakes out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like a\n    paragraph. So blah blah wrappin" +
+                            "g some madness into a\n    list item right gosh darn here and let's see what sha" +
+                            "kes\n    out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a paragraph.\n      So blah blah wrapping some" +
+                            " madness into a list item\n      right gosh darn here and let's see what shakes " +
+                            "out of\n      the coolness.\n\n  " + text.underline + text.bold + text.green + "First Tertiary Heading" + text.none + "\n    This text should be extra indented.\n\n    " + text.bold + text.red + "*" + text.none + " list item 1\n    " + text.bold + text.red + "*" + text.none + " list item 2\n      " + text.bold + text.red + "-" + text.none + " sublist item 1\n      " + text.bold + text.red + "-" + text.none + " sublist item 2\n        " + text.bold + text.red + "*" + text.none + " subsublist item 1\n        " + text.bold + text.red + "*" + text.none + " subsublist item 2\n    " + text.bold + text.red + "*" + text.none + " list item 3\n      " + text.bold + text.red + "-" + text.none + " boo\n\n    " + text.underline + text.bold + text.yellow + "Gettin Deep with the Headings" + text.none + "\n\n        | a big block quote lives here. This\n        | is where I am going " +
+                            "to experience with wrapping a\n        | block quote a bit differently from othe" +
+                            "r content.  I\n        | need enough text in this quote to wrap a couple of\n   " +
+                            "     | times, so I will continue adding some nonsense and\n        | as long as " +
+                            "it takes to ensure I have a fully\n        | qualified test.\n        | New line" +
+                            " in a block quote\n        | More block\n\n      Images get converted to their a" +
+                            "lt text\n      description.\n\n      This is a regular paragraph that needs to b" +
+                            "e\n      long enough to wrap a couple times.  This text will be\n      unique fr" +
+                            "om the text in the block quote because\n      uniqueness saves time when debuggi" +
+                            "ng test failures.  I\n      am now writing a bunch of wrapping paragraph\n      " +
+                            "gibberish, such as f324fasdaowkefsdva.  That one isn't\n      even a word.\n\n  " +
+                            "    " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like\n        a paragraph. So blah blah wra" +
+                            "pping some madness into\n        a list item right gosh darn here and let's see " +
+                            "what\n        shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like\n        a paragraph. So blah blah wra" +
+                            "pping some madness into\n        a list item right gosh darn here and let's see " +
+                            "what\n        shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to\n          wrap like a paragraph. So blah bla" +
+                            "h wrapping some\n          madness into a list item right gosh darn here and\n  " +
+                            "        let's see what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to\n          wrap like a paragraph. So blah bla" +
+                            "h wrapping some\n          madness into a list item right gosh darn here and\n  " +
+                            "        let's see what shakes out of the coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need\n            to wrap like a paragraph. So bla" +
+                            "h blah wrapping\n            some madness into a list item right gosh darn\n    " +
+                            "        here and let's see what shakes out of the\n            coolness.\n      " +
+                            "    " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need\n            to wrap like a paragraph. So bla" +
+                            "h blah wrapping\n            some madness into a list item right gosh darn\n    " +
+                            "        here and let's see what shakes out of the\n            coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like\n        a paragraph. So blah blah wra" +
+                            "pping some madness into\n        a list item right gosh darn here and let's see " +
+                            "what\n        shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a\n          paragraph. So blah blah wrapping " +
+                            "some madness into\n          a list item right gosh darn here and let's see\n   " +
+                            "       what shakes out of the coolness.\n\n      " + text.underline + "Command   " + text.normal + text.underline + " Local " + text.normal + text.underline + " Argument Type               " + text.normal + text.underline + " Second Argument " + text.normal + "\n      copy       " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n      get        " + text.bold + text.yellow + "?" + text.none + "      file path                    none           \n      global     " + text.bold + text.green + "✓" + text.none + "      none                         none           \n      hash       " + text.bold + text.green + "✓" + text.none + "      file path                    none           \n      help       " + text.bold + text.green + "✓" + text.none + "      number                       none           \n      install    " + text.bold + text.yellow + "?" + text.none + "      zip file                     directory path \n      list       " + text.bold + text.green + "✓" + text.none + "      \"" + text.yellow + "installed" + text.nocolor + "\" or \"" + text.yellow + "published" + text.nocolor + "\"   none           \n      markdown   " + text.bold + text.green + "✓" + text.none + "      path to markdown file        number         \n      publish    " + text.bold + text.green + "✓" + text.none + "      directory path               directory path \n      remove     " + text.bold + text.green + "✓" + text.none + "      file path or directory path  none           \n      status     " + text.bold + text.yellow + "?" + text.none + "      none or application name     none           \n      test       " + text.bold + text.red + "X" + text.none + "      none                         none           \n      uninstall  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unpublish  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unzip      " + text.bold + text.green + "✓" + text.none + "      path to zip file             directory path \n      zip        " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n\n" + text.underline + text.bold + text.cyan + "New big Heading" + text.none + "\n  paragraph here to see if indentation is largely reset\n  appropriate to the " +
+                            "current heading that is bigger than the\n  previous headings",
                     name         = "biddle_test_markdown_60";
                 if (er !== null) {
-                    return apps.errout({
-                        error : er,
-                        name  : name,
-                        stdout: stdout,
-                        time  : humantime(true)
-                    });
+                    return apps.errout({error: er, name: name, stdout: stdout, time: humantime(true)});
                 }
                 if (stder !== null && stder !== "") {
-                    return apps.errout({
-                        error : stder,
-                        name  : name,
-                        stdout: stdout,
-                        time  : humantime(true)
-                    });
+                    return apps.errout({error: stder, name: name, stdout: stdout, time: humantime(true)});
                 }
                 stdout = stdout
                     .replace(/\r\n/g, "\n")
@@ -3308,23 +3130,65 @@
             node.child(childcmd + "markdown " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "READMEa.md 80 childtest", {
                 cwd: data.abspath
             }, function biddle_test_markdown_80(er, stdout, stder) {
-                var markdowntest = "\n" + text.underline + text.bold + text.red + "test README" + text.none + "\nsome dummy subtext\n\n" + text.underline + text.bold + text.cyan + "First Secondary Heading" + text.none + "\n    | a big block quote lives here. This is where I am going to\n    | experience with wrapping a block quote a bit differently from other content.\n    | I need enough text in this quote to wrap a couple of times, so I will\n    | continue adding some nonsense and as long as it takes to ensure I have a\n    | fully qualified test.\n    | New line in a block quote\n    | More block\n\n  This is a regular paragraph that needs to be long enough to wrap a couple\n  times.  This text will be unique from the text in the block quote because\n  uniqueness saves time when debugging test failures.  I am now writing a bunch\n  of wrapping paragraph gibberish, such as f324fasdaowkefsdva.  That one isn't\n  even a word.  It isn't cool if it doesn't contain a hyperlink,\n  (" + text.cyan + "http://tonowhwere.nothing" + text.nocolor + "), in some text.\n\n  " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like a paragraph. So blah blah\n    wrapping some madness into a list item right gosh darn here and let's see\n    what shakes out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like a paragraph. So blah blah\n    wrapping some madness into a list item right gosh darn here and let's see\n    what shakes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to wrap like a paragraph. So blah\n      blah wrapping some madness into a list item right gosh darn here and let's\n      see what shakes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to wrap like a paragraph. So blah\n      blah wrapping some madness into a list item right gosh darn here and let's\n      see what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need to wrap like a paragraph.\n        So blah blah wrapping some madness into a list item right gosh darn here\n        and let's see what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need to wrap like a paragraph.\n        So blah blah wrapping some madness into a list item right gosh darn here\n        and let's see what shakes out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like a paragraph. So blah blah\n    wrapping some madness into a list item right gosh darn here and let's see\n    what shakes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a paragraph. So blah blah\n      wrapping some madness into a list item right gosh darn here and let's see\n      what shakes out of the coolness.\n\n  " + text.underline + text.bold + text.green + "First Tertiary Heading" + text.none + "\n    This text should be extra indented.\n\n    " + text.bold + text.red + "*" + text.none + " list item 1\n    " + text.bold + text.red + "*" + text.none + " list item 2\n      " + text.bold + text.red + "-" + text.none + " sublist item 1\n      " + text.bold + text.red + "-" + text.none + " sublist item 2\n        " + text.bold + text.red + "*" + text.none + " subsublist item 1\n        " + text.bold + text.red + "*" + text.none + " subsublist item 2\n    " + text.bold + text.red + "*" + text.none + " list item 3\n      " + text.bold + text.red + "-" + text.none + " boo\n\n    " + text.underline + text.bold + text.yellow + "Gettin Deep with the Headings" + text.none + "\n\n        | a big block quote lives here. This is where I am going\n        | to experience with wrapping a block quote a bit differently from other\n        | content.  I need enough text in this quote to wrap a couple of times, so\n        | I will continue adding some nonsense and as long as it takes to ensure I\n        | have a fully qualified test.\n        | New line in a block quote\n        | More block\n\n      Images get converted to their alt text description.\n\n      This is a regular paragraph that needs to be long enough to wrap a\n      couple times.  This text will be unique from the text in the block quote\n      because uniqueness saves time when debugging test failures.  I am now\n      writing a bunch of wrapping paragraph gibberish, such as\n      f324fasdaowkefsdva.  That one isn't even a word.\n\n      " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like a paragraph. So blah\n        blah wrapping some madness into a list item right gosh darn here and\n        let's see what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like a paragraph. So blah\n        blah wrapping some madness into a list item right gosh darn here and\n        let's see what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to wrap like a paragraph.\n          So blah blah wrapping some madness into a list item right gosh darn\n          here and let's see what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to wrap like a paragraph.\n          So blah blah wrapping some madness into a list item right gosh darn\n          here and let's see what shakes out of the coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need to wrap like a\n            paragraph. So blah blah wrapping some madness into a list item right\n            gosh darn here and let's see what shakes out of the coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need to wrap like a\n            paragraph. So blah blah wrapping some madness into a list item right\n            gosh darn here and let's see what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like a paragraph. So blah\n        blah wrapping some madness into a list item right gosh darn here and\n        let's see what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a paragraph. So blah\n          blah wrapping some madness into a list item right gosh darn here and\n          let's see what shakes out of the coolness.\n\n      " + text.underline + "Command   " + text.normal + text.underline + " Local " + text.normal + text.underline + " Argument Type               " + text.normal + text.underline + " Second Argument " + text.normal + "\n      copy       " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n      get        " + text.bold + text.yellow + "?" + text.none + "      file path                    none           \n      global     " + text.bold + text.green + "✓" + text.none + "      none                         none           \n      hash       " + text.bold + text.green + "✓" + text.none + "      file path                    none           \n      help       " + text.bold + text.green + "✓" + text.none + "      number                       none           \n      install    " + text.bold + text.yellow + "?" + text.none + "      zip file                     directory path \n      list       " + text.bold + text.green + "✓" + text.none + "      \"" + text.yellow + "installed" + text.nocolor + "\" or \"" + text.yellow + "published" + text.nocolor + "\"   none           \n      markdown   " + text.bold + text.green + "✓" + text.none + "      path to markdown file        number         \n      publish    " + text.bold + text.green + "✓" + text.none + "      directory path               directory path \n      remove     " + text.bold + text.green + "✓" + text.none + "      file path or directory path  none           \n      status     " + text.bold + text.yellow + "?" + text.none + "      none or application name     none           \n      test       " + text.bold + text.red + "X" + text.none + "      none                         none           \n      uninstall  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unpublish  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unzip      " + text.bold + text.green + "✓" + text.none + "      path to zip file             directory path \n      zip        " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n\n" + text.underline + text.bold + text.cyan + "New big Heading" + text.none + "\n  paragraph here to see if indentation is largely reset appropriate to the\n  current heading that is bigger than the previous headings",
+                var markdowntest = "\n" + text.underline + text.bold + text.red + "test README" + text.none + "\nsome dummy subtext\n\n" + text.underline + text.bold + text.cyan + "First Secondary Heading" + text.none + "\n    | a big block quote lives here. This is where I am going to\n    | experie" +
+                            "nce with wrapping a block quote a bit differently from other content.\n    | I n" +
+                            "eed enough text in this quote to wrap a couple of times, so I will\n    | contin" +
+                            "ue adding some nonsense and as long as it takes to ensure I have a\n    | fully " +
+                            "qualified test.\n    | New line in a block quote\n    | More block\n\n  This is " +
+                            "a regular paragraph that needs to be long enough to wrap a couple\n  times.  Thi" +
+                            "s text will be unique from the text in the block quote because\n  uniqueness sav" +
+                            "es time when debugging test failures.  I am now writing a bunch\n  of wrapping p" +
+                            "aragraph gibberish, such as f324fasdaowkefsdva.  That one isn't\n  even a word. " +
+                            " It isn't cool if it doesn't contain a hyperlink,\n  (" + text.cyan + "http://tonowhwere.nothing" + text.nocolor + "), in some text.\n\n  " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like a paragraph. So blah blah\n    wrappin" +
+                            "g some madness into a list item right gosh darn here and let's see\n    what sha" +
+                            "kes out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like a paragraph. So blah blah\n    wrappin" +
+                            "g some madness into a list item right gosh darn here and let's see\n    what sha" +
+                            "kes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to wrap like a paragraph. So blah\n      blah wr" +
+                            "apping some madness into a list item right gosh darn here and let's\n      see w" +
+                            "hat shakes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to wrap like a paragraph. So blah\n      blah wr" +
+                            "apping some madness into a list item right gosh darn here and let's\n      see w" +
+                            "hat shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need to wrap like a paragraph.\n        So blah bl" +
+                            "ah wrapping some madness into a list item right gosh darn here\n        and let'" +
+                            "s see what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need to wrap like a paragraph.\n        So blah bl" +
+                            "ah wrapping some madness into a list item right gosh darn here\n        and let'" +
+                            "s see what shakes out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like a paragraph. So blah blah\n    wrappin" +
+                            "g some madness into a list item right gosh darn here and let's see\n    what sha" +
+                            "kes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a paragraph. So blah blah\n      wrapping some" +
+                            " madness into a list item right gosh darn here and let's see\n      what shakes " +
+                            "out of the coolness.\n\n  " + text.underline + text.bold + text.green + "First Tertiary Heading" + text.none + "\n    This text should be extra indented.\n\n    " + text.bold + text.red + "*" + text.none + " list item 1\n    " + text.bold + text.red + "*" + text.none + " list item 2\n      " + text.bold + text.red + "-" + text.none + " sublist item 1\n      " + text.bold + text.red + "-" + text.none + " sublist item 2\n        " + text.bold + text.red + "*" + text.none + " subsublist item 1\n        " + text.bold + text.red + "*" + text.none + " subsublist item 2\n    " + text.bold + text.red + "*" + text.none + " list item 3\n      " + text.bold + text.red + "-" + text.none + " boo\n\n    " + text.underline + text.bold + text.yellow + "Gettin Deep with the Headings" + text.none + "\n\n        | a big block quote lives here. This is where I am going\n        | " +
+                            "to experience with wrapping a block quote a bit differently from other\n        " +
+                            "| content.  I need enough text in this quote to wrap a couple of times, so\n    " +
+                            "    | I will continue adding some nonsense and as long as it takes to ensure I\n" +
+                            "        | have a fully qualified test.\n        | New line in a block quote\n   " +
+                            "     | More block\n\n      Images get converted to their alt text description.\n" +
+                            "\n      This is a regular paragraph that needs to be long enough to wrap a\n    " +
+                            "  couple times.  This text will be unique from the text in the block quote\n    " +
+                            "  because uniqueness saves time when debugging test failures.  I am now\n      w" +
+                            "riting a bunch of wrapping paragraph gibberish, such as\n      f324fasdaowkefsdv" +
+                            "a.  That one isn't even a word.\n\n      " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like a paragraph. So blah\n        blah wra" +
+                            "pping some madness into a list item right gosh darn here and\n        let's see " +
+                            "what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like a paragraph. So blah\n        blah wra" +
+                            "pping some madness into a list item right gosh darn here and\n        let's see " +
+                            "what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to wrap like a paragraph.\n          So blah bla" +
+                            "h wrapping some madness into a list item right gosh darn\n          here and let" +
+                            "'s see what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to wrap like a paragraph.\n          So blah bla" +
+                            "h wrapping some madness into a list item right gosh darn\n          here and let" +
+                            "'s see what shakes out of the coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need to wrap like a\n            paragraph. So bla" +
+                            "h blah wrapping some madness into a list item right\n            gosh darn here " +
+                            "and let's see what shakes out of the coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need to wrap like a\n            paragraph. So bla" +
+                            "h blah wrapping some madness into a list item right\n            gosh darn here " +
+                            "and let's see what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like a paragraph. So blah\n        blah wra" +
+                            "pping some madness into a list item right gosh darn here and\n        let's see " +
+                            "what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a paragraph. So blah\n          blah wrapping " +
+                            "some madness into a list item right gosh darn here and\n          let's see what" +
+                            " shakes out of the coolness.\n\n      " + text.underline + "Command   " + text.normal + text.underline + " Local " + text.normal + text.underline + " Argument Type               " + text.normal + text.underline + " Second Argument " + text.normal + "\n      copy       " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n      get        " + text.bold + text.yellow + "?" + text.none + "      file path                    none           \n      global     " + text.bold + text.green + "✓" + text.none + "      none                         none           \n      hash       " + text.bold + text.green + "✓" + text.none + "      file path                    none           \n      help       " + text.bold + text.green + "✓" + text.none + "      number                       none           \n      install    " + text.bold + text.yellow + "?" + text.none + "      zip file                     directory path \n      list       " + text.bold + text.green + "✓" + text.none + "      \"" + text.yellow + "installed" + text.nocolor + "\" or \"" + text.yellow + "published" + text.nocolor + "\"   none           \n      markdown   " + text.bold + text.green + "✓" + text.none + "      path to markdown file        number         \n      publish    " + text.bold + text.green + "✓" + text.none + "      directory path               directory path \n      remove     " + text.bold + text.green + "✓" + text.none + "      file path or directory path  none           \n      status     " + text.bold + text.yellow + "?" + text.none + "      none or application name     none           \n      test       " + text.bold + text.red + "X" + text.none + "      none                         none           \n      uninstall  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unpublish  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unzip      " + text.bold + text.green + "✓" + text.none + "      path to zip file             directory path \n      zip        " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n\n" + text.underline + text.bold + text.cyan + "New big Heading" + text.none + "\n  paragraph here to see if indentation is largely reset appropriate to the\n  " +
+                            "current heading that is bigger than the previous headings",
                     name         = "biddle_test_markdown_80";
                 if (er !== null) {
-                    return apps.errout({
-                        error : er,
-                        name  : name,
-                        stdout: stdout,
-                        time  : humantime(true)
-                    });
+                    return apps.errout({error: er, name: name, stdout: stdout, time: humantime(true)});
                 }
                 if (stder !== null && stder !== "") {
-                    return apps.errout({
-                        error : stder,
-                        name  : name,
-                        stdout: stdout,
-                        time  : humantime(true)
-                    });
+                    return apps.errout({error: stder, name: name, stdout: stdout, time: humantime(true)});
                 }
                 stdout = stdout
                     .replace(/\r\n/g, "\n")
@@ -3343,23 +3207,65 @@
             node.child(childcmd + "markdown " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "READMEa.md 120 childtest", {
                 cwd: data.abspath
             }, function biddle_test_markdown_120(er, stdout, stder) {
-                var markdowntest = "\n" + text.underline + text.bold + text.red + "test README" + text.none + "\nsome dummy subtext\n\n" + text.underline + text.bold + text.cyan + "First Secondary Heading" + text.none + "\n    | a big block quote lives here. This is where I am going to experience with wrapping a block quote a bit\n    | differently from other content.  I need enough text in this quote to wrap a couple of times, so I will continue\n    | adding some nonsense and as long as it takes to ensure I have a fully qualified test.\n    | New line in a block quote\n    | More block\n\n  This is a regular paragraph that needs to be long enough to wrap a couple times.  This text will be unique from the\n  text in the block quote because uniqueness saves time when debugging test failures.  I am now writing a bunch of\n  wrapping paragraph gibberish, such as f324fasdaowkefsdva.  That one isn't even a word.  It isn't cool if it doesn't\n  contain a hyperlink, (" + text.cyan + "http://tonowhwere.nothing" + text.nocolor + "), in some text.\n\n  " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list item\n    right gosh darn here and let's see what shakes out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list item\n    right gosh darn here and let's see what shakes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list\n      item right gosh darn here and let's see what shakes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list\n      item right gosh darn here and let's see what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need to wrap like a paragraph. So blah blah wrapping some madness into a\n        list item right gosh darn here and let's see what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need to wrap like a paragraph. So blah blah wrapping some madness into a\n        list item right gosh darn here and let's see what shakes out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list item\n    right gosh darn here and let's see what shakes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a paragraph. So blah blah wrapping some madness into a list item right\n      gosh darn here and let's see what shakes out of the coolness.\n\n  " + text.underline + text.bold + text.green + "First Tertiary Heading" + text.none + "\n    This text should be extra indented.\n\n    " + text.bold + text.red + "*" + text.none + " list item 1\n    " + text.bold + text.red + "*" + text.none + " list item 2\n      " + text.bold + text.red + "-" + text.none + " sublist item 1\n      " + text.bold + text.red + "-" + text.none + " sublist item 2\n        " + text.bold + text.red + "*" + text.none + " subsublist item 1\n        " + text.bold + text.red + "*" + text.none + " subsublist item 2\n    " + text.bold + text.red + "*" + text.none + " list item 3\n      " + text.bold + text.red + "-" + text.none + " boo\n\n    " + text.underline + text.bold + text.yellow + "Gettin Deep with the Headings" + text.none + "\n\n        | a big block quote lives here. This is where I am going to experience with wrapping a block\n        | quote a bit differently from other content.  I need enough text in this quote to wrap a couple of times, so I\n        | will continue adding some nonsense and as long as it takes to ensure I have a fully qualified test.\n        | New line in a block quote\n        | More block\n\n      Images get converted to their alt text description.\n\n      This is a regular paragraph that needs to be long enough to wrap a couple times.  This text will be unique\n      from the text in the block quote because uniqueness saves time when debugging test failures.  I am now writing a\n      bunch of wrapping paragraph gibberish, such as f324fasdaowkefsdva.  That one isn't even a word.\n\n      " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list\n        item right gosh darn here and let's see what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list\n        item right gosh darn here and let's see what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to wrap like a paragraph. So blah blah wrapping some madness into\n          a list item right gosh darn here and let's see what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to wrap like a paragraph. So blah blah wrapping some madness into\n          a list item right gosh darn here and let's see what shakes out of the coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need to wrap like a paragraph. So blah blah wrapping some\n            madness into a list item right gosh darn here and let's see what shakes out of the coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need to wrap like a paragraph. So blah blah wrapping some\n            madness into a list item right gosh darn here and let's see what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like a paragraph. So blah blah wrapping some madness into a list\n        item right gosh darn here and let's see what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a paragraph. So blah blah wrapping some madness into a list item\n          right gosh darn here and let's see what shakes out of the coolness.\n\n      " + text.underline + "Command   " + text.normal + text.underline + " Local " + text.normal + text.underline + " Argument Type               " + text.normal + text.underline + " Second Argument " + text.normal + "\n      copy       " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n      get        " + text.bold + text.yellow + "?" + text.none + "      file path                    none           \n      global     " + text.bold + text.green + "✓" + text.none + "      none                         none           \n      hash       " + text.bold + text.green + "✓" + text.none + "      file path                    none           \n      help       " + text.bold + text.green + "✓" + text.none + "      number                       none           \n      install    " + text.bold + text.yellow + "?" + text.none + "      zip file                     directory path \n      list       " + text.bold + text.green + "✓" + text.none + "      \"" + text.yellow + "installed" + text.nocolor + "\" or \"" + text.yellow + "published" + text.nocolor + "\"   none           \n      markdown   " + text.bold + text.green + "✓" + text.none + "      path to markdown file        number         \n      publish    " + text.bold + text.green + "✓" + text.none + "      directory path               directory path \n      remove     " + text.bold + text.green + "✓" + text.none + "      file path or directory path  none           \n      status     " + text.bold + text.yellow + "?" + text.none + "      none or application name     none           \n      test       " + text.bold + text.red + "X" + text.none + "      none                         none           \n      uninstall  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unpublish  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unzip      " + text.bold + text.green + "✓" + text.none + "      path to zip file             directory path \n      zip        " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n\n" + text.underline + text.bold + text.cyan + "New big Heading" + text.none + "\n  paragraph here to see if indentation is largely reset appropriate to the current heading that is bigger than the\n  previous headings",
+                var markdowntest = "\n" + text.underline + text.bold + text.red + "test README" + text.none + "\nsome dummy subtext\n\n" + text.underline + text.bold + text.cyan + "First Secondary Heading" + text.none + "\n    | a big block quote lives here. This is where I am going to experience wit" +
+                            "h wrapping a block quote a bit\n    | differently from other content.  I need en" +
+                            "ough text in this quote to wrap a couple of times, so I will continue\n    | add" +
+                            "ing some nonsense and as long as it takes to ensure I have a fully qualified tes" +
+                            "t.\n    | New line in a block quote\n    | More block\n\n  This is a regular par" +
+                            "agraph that needs to be long enough to wrap a couple times.  This text will be u" +
+                            "nique from the\n  text in the block quote because uniqueness saves time when deb" +
+                            "ugging test failures.  I am now writing a bunch of\n  wrapping paragraph gibberi" +
+                            "sh, such as f324fasdaowkefsdva.  That one isn't even a word.  It isn't cool if i" +
+                            "t doesn't\n  contain a hyperlink, (" + text.cyan + "http://tonowhwere.nothing" + text.nocolor + "), in some text.\n\n  " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like a paragraph. So blah blah wrapping som" +
+                            "e madness into a list item\n    right gosh darn here and let's see what shakes o" +
+                            "ut of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like a paragraph. So blah blah wrapping som" +
+                            "e madness into a list item\n    right gosh darn here and let's see what shakes o" +
+                            "ut of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to wrap like a paragraph. So blah blah wrapping " +
+                            "some madness into a list\n      item right gosh darn here and let's see what sha" +
+                            "kes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to wrap like a paragraph. So blah blah wrapping " +
+                            "some madness into a list\n      item right gosh darn here and let's see what sha" +
+                            "kes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need to wrap like a paragraph. So blah blah wrappi" +
+                            "ng some madness into a\n        list item right gosh darn here and let's see wha" +
+                            "t shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need to wrap like a paragraph. So blah blah wrappi" +
+                            "ng some madness into a\n        list item right gosh darn here and let's see wha" +
+                            "t shakes out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like a paragraph. So blah blah wrapping som" +
+                            "e madness into a list item\n    right gosh darn here and let's see what shakes o" +
+                            "ut of the coolness.\n    " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a paragraph. So blah blah wrapping some madnes" +
+                            "s into a list item right\n      gosh darn here and let's see what shakes out of " +
+                            "the coolness.\n\n  " + text.underline + text.bold + text.green + "First Tertiary Heading" + text.none + "\n    This text should be extra indented.\n\n    " + text.bold + text.red + "*" + text.none + " list item 1\n    " + text.bold + text.red + "*" + text.none + " list item 2\n      " + text.bold + text.red + "-" + text.none + " sublist item 1\n      " + text.bold + text.red + "-" + text.none + " sublist item 2\n        " + text.bold + text.red + "*" + text.none + " subsublist item 1\n        " + text.bold + text.red + "*" + text.none + " subsublist item 2\n    " + text.bold + text.red + "*" + text.none + " list item 3\n      " + text.bold + text.red + "-" + text.none + " boo\n\n    " + text.underline + text.bold + text.yellow + "Gettin Deep with the Headings" + text.none + "\n\n        | a big block quote lives here. This is where I am going to experien" +
+                            "ce with wrapping a block\n        | quote a bit differently from other content. " +
+                            " I need enough text in this quote to wrap a couple of times, so I\n        | wil" +
+                            "l continue adding some nonsense and as long as it takes to ensure I have a fully" +
+                            " qualified test.\n        | New line in a block quote\n        | More block\n\n " +
+                            "     Images get converted to their alt text description.\n\n      This is a regu" +
+                            "lar paragraph that needs to be long enough to wrap a couple times.  This text wi" +
+                            "ll be unique\n      from the text in the block quote because uniqueness saves ti" +
+                            "me when debugging test failures.  I am now writing a\n      bunch of wrapping pa" +
+                            "ragraph gibberish, such as f324fasdaowkefsdva.  That one isn't even a word.\n\n " +
+                            "     " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like a paragraph. So blah blah wrapping som" +
+                            "e madness into a list\n        item right gosh darn here and let's see what shak" +
+                            "es out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like a paragraph. So blah blah wrapping som" +
+                            "e madness into a list\n        item right gosh darn here and let's see what shak" +
+                            "es out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to wrap like a paragraph. So blah blah wrapping " +
+                            "some madness into\n          a list item right gosh darn here and let's see what" +
+                            " shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to wrap like a paragraph. So blah blah wrapping " +
+                            "some madness into\n          a list item right gosh darn here and let's see what" +
+                            " shakes out of the coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need to wrap like a paragraph. So blah blah wrappi" +
+                            "ng some\n            madness into a list item right gosh darn here and let's see" +
+                            " what shakes out of the coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need to wrap like a paragraph. So blah blah wrappi" +
+                            "ng some\n            madness into a list item right gosh darn here and let's see" +
+                            " what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like a paragraph. So blah blah wrapping som" +
+                            "e madness into a list\n        item right gosh darn here and let's see what shak" +
+                            "es out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a paragraph. So blah blah wrapping some madnes" +
+                            "s into a list item\n          right gosh darn here and let's see what shakes out" +
+                            " of the coolness.\n\n      " + text.underline + "Command   " + text.normal + text.underline + " Local " + text.normal + text.underline + " Argument Type               " + text.normal + text.underline + " Second Argument " + text.normal + "\n      copy       " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n      get        " + text.bold + text.yellow + "?" + text.none + "      file path                    none           \n      global     " + text.bold + text.green + "✓" + text.none + "      none                         none           \n      hash       " + text.bold + text.green + "✓" + text.none + "      file path                    none           \n      help       " + text.bold + text.green + "✓" + text.none + "      number                       none           \n      install    " + text.bold + text.yellow + "?" + text.none + "      zip file                     directory path \n      list       " + text.bold + text.green + "✓" + text.none + "      \"" + text.yellow + "installed" + text.nocolor + "\" or \"" + text.yellow + "published" + text.nocolor + "\"   none           \n      markdown   " + text.bold + text.green + "✓" + text.none + "      path to markdown file        number         \n      publish    " + text.bold + text.green + "✓" + text.none + "      directory path               directory path \n      remove     " + text.bold + text.green + "✓" + text.none + "      file path or directory path  none           \n      status     " + text.bold + text.yellow + "?" + text.none + "      none or application name     none           \n      test       " + text.bold + text.red + "X" + text.none + "      none                         none           \n      uninstall  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unpublish  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unzip      " + text.bold + text.green + "✓" + text.none + "      path to zip file             directory path \n      zip        " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n\n" + text.underline + text.bold + text.cyan + "New big Heading" + text.none + "\n  paragraph here to see if indentation is largely reset appropriate to the cur" +
+                            "rent heading that is bigger than the\n  previous headings",
                     name         = "biddle_test_markdown_120";
                 if (er !== null) {
-                    return apps.errout({
-                        error : er,
-                        name  : name,
-                        stdout: stdout,
-                        time  : humantime(true)
-                    });
+                    return apps.errout({error: er, name: name, stdout: stdout, time: humantime(true)});
                 }
                 if (stder !== null && stder !== "") {
-                    return apps.errout({
-                        error : stder,
-                        name  : name,
-                        stdout: stdout,
-                        time  : humantime(true)
-                    });
+                    return apps.errout({error: stder, name: name, stdout: stdout, time: humantime(true)});
                 }
                 stdout = stdout
                     .replace(/\r\n/g, "\n")
@@ -3411,45 +3317,24 @@
                                     cwd: data.abspath
                                 }, function biddle_test_moduleInstall_handler_stat_add_submodule(era, stdouta, stdoutera) {
                                     if (era !== null && era.toString().indexOf("already exists in the index") < 0) {
-                                        return apps.errout({
-                                            error : era,
-                                            name  : "biddle_test_moduleInstall_handler_stat_add_submodule",
-                                            stdout: stdouta,
-                                            time  : humantime(true)
-                                        });
+                                        return apps.errout({error: era, name: "biddle_test_moduleInstall_handler_stat_add_submodule", stdout: stdouta, time: humantime(true)});
                                     }
                                     if (stdoutera !== null && stdoutera !== "" && stdoutera.indexOf("Cloning into '") < 0 && stdoutera.indexOf("already exists in the index") < 0) {
-                                        return apps.errout({
-                                            error : stdoutera,
-                                            name  : "biddle_test_moduleInstall_handler_stat_add_submodule",
-                                            stdout: stdouta,
-                                            time  : humantime(true)
-                                        });
+                                        return apps.errout({error: stdoutera, name: "biddle_test_moduleInstall_handler_stat_add_submodule", stdout: stdouta, time: humantime(true)});
                                     }
-                                    node
-                                        .child("git clone " + modules[mod].repo, {
-                                            cwd: data.abspath
-                                        }, function biddle_test_moduleInstall_handler_stat_add_submodule_clone(erb, stdoutb, stdouterb) {
-                                            if (erb !== null) {
-                                                return apps.errout({
-                                                    error : erb,
-                                                    name  : "biddle_test_moduleInstall_handler_stat_add_submodule_clone",
-                                                    stdout: stdoutb,
-                                                    time  : humantime(true)
-                                                });
-                                            }
-                                            if (stdouterb !== null && stdouterb !== "" && stdouterb.indexOf("Cloning into '") < 0) {
-                                                return apps.errout({
-                                                    error : stdouterb,
-                                                    name  : "biddle_test_moduleInstall_handler_stat_add_submodule_clone",
-                                                    stdout: stdoutb,
-                                                    time  : humantime(true)
-                                                });
-                                            }
-                                            ind += 1;
-                                            editions(mod, true, ind);
-                                            return stdoutb;
-                                        });
+                                    node.child("git clone " + modules[mod].repo, {
+                                        cwd: data.abspath
+                                    }, function biddle_test_moduleInstall_handler_stat_add_submodule_clone(erb, stdoutb, stdouterb) {
+                                        if (erb !== null) {
+                                            return apps.errout({error: erb, name: "biddle_test_moduleInstall_handler_stat_add_submodule_clone", stdout: stdoutb, time: humantime(true)});
+                                        }
+                                        if (stdouterb !== null && stdouterb !== "" && stdouterb.indexOf("Cloning into '") < 0) {
+                                            return apps.errout({error: stdouterb, name: "biddle_test_moduleInstall_handler_stat_add_submodule_clone", stdout: stdoutb, time: humantime(true)});
+                                        }
+                                        ind += 1;
+                                        editions(mod, true, ind);
+                                        return stdoutb;
+                                    });
                                     return stdouta;
                                 });
                             };
@@ -3457,22 +3342,14 @@
                                 if (erstat.toString().indexOf("Error: ENOENT: no such file or directory, stat '") === 0) {
                                     return add();
                                 }
-                                return apps.errout({
-                                    error: erstat,
-                                    name : "biddle_test_moduleInstall_handler_stat",
-                                    time : humantime(true)
-                                });
+                                return apps.errout({error: erstat, name: "biddle_test_moduleInstall_handler_stat", time: humantime(true)});
                             }
                             if (stats.isDirectory() === true) {
                                 return node
                                     .fs
                                     .readdir(modules[mod].dir, function biddle_test_moduleInstall_handler_stat_readdir(direrr, files) {
                                         if (typeof direrr === "string") {
-                                            return apps.errout({
-                                                error: direrr,
-                                                name : "biddle_test_moduleInstall_handler_stat_readdir",
-                                                time : humantime(true)
-                                            });
+                                            return apps.errout({error: direrr, name: "biddle_test_moduleInstall_handler_stat_readdir", time: humantime(true)});
                                         }
                                         ind += 1;
                                         if (files.length < 1) {
@@ -3517,11 +3394,7 @@
                                 .fs
                                 .readFile(appFile, "utf8", function biddle_test_moduleInstall_editions_submod_lintread(erread, data) {
                                     if (erread !== null && erread !== undefined) {
-                                        apps.errout({
-                                            error: erread,
-                                            name : "biddle_test_moduleInstall_editions_lintread",
-                                            time : humantime(true)
-                                        });
+                                        apps.errout({error: erread, name: "biddle_test_moduleInstall_editions_lintread", time: humantime(true)});
                                     }
                                     if (data.slice(data.length - 30).indexOf("\nmodule.exports = jslint;") < 0) {
                                         data = data + "\nmodule.exports = jslint;";
@@ -3529,11 +3402,7 @@
                                             .fs
                                             .writeFile(appFile, data, "utf8", function biddle_test_moduleInstall_editions_submod_lintread_lintwrite(erwrite) {
                                                 if (erwrite !== null && erwrite !== undefined) {
-                                                    apps.errout({
-                                                        error: erwrite,
-                                                        name : "biddle_test_moduleInstall_editions_lintread_lintwrite",
-                                                        time : humantime(true)
-                                                    });
+                                                    apps.errout({error: erwrite, name: "biddle_test_moduleInstall_editions_lintread_lintwrite", time: humantime(true)});
                                                 }
                                                 jslintcomplete();
                                             });
@@ -3562,139 +3431,90 @@
                         submod(false);
                     },
                     update = function biddle_test_moduleInstall_editions_update() {
-                        node
-                            .child("git submodule update", {
-                                cwd: data.abspath
-                            }, function biddle_test_moduleInstall_editions_update_child(erd, stdoutd, stdouterd) {
-                                if (erd !== null) {
-                                    apps.errout({
-                                        error : erd,
-                                        name  : "biddle_test_moduleInstall_editions_update_child",
-                                        stdout: stdoutd,
-                                        time  : humantime(true)
-                                    });
-                                }
-                                if (stdouterd !== null && stdouterd !== "" && stdouterd.indexOf("Cloning into '") < 0 && stdouterd.indexOf("From ") !== 0) {
-                                    apps.errout({
-                                        error : stdouterd,
-                                        name  : "biddle_test_moduleInstall_editions_update_child",
-                                        stdout: stdoutd,
-                                        time  : humantime(true)
-                                    });
-                                }
-                                if (flag.today === false) {
-                                    console.log("Submodules downloaded.");
-                                }
-                                keys.forEach(each);
-                            });
+                        node.child("git submodule update", {
+                            cwd: data.abspath
+                        }, function biddle_test_moduleInstall_editions_update_child(erd, stdoutd, stdouterd) {
+                            if (erd !== null) {
+                                apps.errout({error: erd, name: "biddle_test_moduleInstall_editions_update_child", stdout: stdoutd, time: humantime(true)});
+                            }
+                            if (stdouterd !== null && stdouterd !== "" && stdouterd.indexOf("Cloning into '") < 0 && stdouterd.indexOf("From ") !== 0) {
+                                apps.errout({error: stdouterd, name: "biddle_test_moduleInstall_editions_update_child", stdout: stdoutd, time: humantime(true)});
+                            }
+                            if (flag.today === false) {
+                                console.log("Submodules downloaded.");
+                            }
+                            keys.forEach(each);
+                        });
                     },
                     pull   = function biddle_test_moduleInstall_editions_pull() {
-                        node
-                            .child("git submodule foreach git pull origin master", {
-                                cwd: data.abspath
-                            }, function biddle_test_moduleInstall_editions_pull_child(errpull, stdoutpull, stdouterpull) {
-                                if (errpull !== null) {
-                                    console.log(errpull);
-                                    if (errpull.toString().indexOf("fatal: no submodule mapping found in .gitmodules for path ") > 0) {
-                                        console.log("No access to GitHub or .gitmodules is corrupt. Proceeding assuming submodules we" +
-                                                "re previously installed.");
-                                        flag.apps = true;
-                                        return keys.forEach(each);
-                                    }
-                                    apps.errout({
-                                        error : errpull,
-                                        name  : "biddle_test_moduleInstall_editions_pull_child",
-                                        stdout: stdoutpull,
-                                        time  : humantime(true)
-                                    });
+                        node.child("git submodule foreach git pull origin master", {
+                            cwd: data.abspath
+                        }, function biddle_test_moduleInstall_editions_pull_child(errpull, stdoutpull, stdouterpull) {
+                            if (errpull !== null) {
+                                console.log(errpull);
+                                if (errpull.toString().indexOf("fatal: no submodule mapping found in .gitmodules for path ") > 0) {
+                                    console.log("No access to GitHub or .gitmodules is corrupt. Proceeding assuming submodules we" +
+                                            "re previously installed.");
+                                    flag.apps = true;
+                                    return keys.forEach(each);
                                 }
-                                if (stdouterpull !== null && stdouterpull !== "" && stdouterpull.indexOf("Cloning into '") < 0 && stdouterpull.indexOf("From ") < 0 && stdouterpull.indexOf("fatal: no submodule mapping found in .gitmodules for path ") < 0) {
-                                    apps.errout({
-                                        error : stdouterpull,
-                                        name  : "biddle_test_moduleInstall_editions_pull_child",
-                                        stdout: stdoutpull,
-                                        time  : humantime(true)
-                                    });
-                                }
-                                if (flag.today === false) {
-                                    console.log("Submodules checked for updates.");
-                                }
-                                keys.forEach(each);
-                            });
+                                apps.errout({error: errpull, name: "biddle_test_moduleInstall_editions_pull_child", stdout: stdoutpull, time: humantime(true)});
+                            }
+                            if (stdouterpull !== null && stdouterpull !== "" && stdouterpull.indexOf("Cloning into '") < 0 && stdouterpull.indexOf("From ") < 0 && stdouterpull.indexOf("fatal: no submodule mapping found in .gitmodules for path ") < 0) {
+                                apps.errout({error: stdouterpull, name: "biddle_test_moduleInstall_editions_pull_child", stdout: stdoutpull, time: humantime(true)});
+                            }
+                            if (flag.today === false) {
+                                console.log("Submodules checked for updates.");
+                            }
+                            keys.forEach(each);
+                        });
                     };
                 if (ind === keys.length) {
                     if (today !== date) {
-                        node
-                            .child("git checkout jslint.js", {
-                                cwd: data.abspath + "JSLint"
-                            }, function biddle_test_moduleInstall_editions_checkoutJSLint(erjsl, stdoutjsl, stdouterjsl) {
-                                if (erjsl !== null) {
-                                    apps.errout({
-                                        error : erjsl,
-                                        name  : "biddle_test_moduleInstall_editions_checkoutJSLint",
-                                        stdout: stdoutjsl,
-                                        time  : humantime(true)
-                                    });
-                                }
-                                if (stdouterjsl !== null && stdouterjsl !== "") {
-                                    apps.errout({
-                                        error : stdouterjsl,
-                                        name  : "biddle_test_moduleInstall_editions_checkoutJSLint",
-                                        stdout: stdoutjsl,
-                                        time  : humantime(true)
-                                    });
-                                }
-                                ind = 0;
-                                node
-                                    .fs
-                                    .writeFile("today.js", "/\u002aglobal module\u002a/(function () {\"use strict\";var today=" + date + ";module.exports=today;}());",
-                                    function biddle_test_moduleInstall_editions_checkoutJSLint_writeToday(werr) {
-                                        if (werr !== null && werr !== undefined) {
-                                            apps.errout({
-                                                error: werr,
-                                                name : "biddle_test_moduleInstall_editions_checkoutJSLint_writeToday",
-                                                time : humantime(true)
-                                            });
-                                        }
-                                        if (cloned === true) {
-                                            console.log("Submodules downloaded.");
-                                        } else {
-                                            console.log("Submodules checked for updates.");
-                                        }
-                                        if (flag.apps === true) {
-                                            modout();
-                                        } else {
-                                            console.log("Checked for new versions of submodules.");
-                                            flag.today = true;
-                                        }
-                                    });
-                                if (cloned === true) {
-                                    node
-                                        .child("git submodule init", {
-                                            cwd: data.abspath
-                                        }, function biddle_test_moduleInstall_editions_checkoutJSLint_init(erc, stdoutc, stdouterc) {
-                                            if (erc !== null) {
-                                                apps.errout({
-                                                    error : erc,
-                                                    name  : "biddle_test_moduleInstall_editions_checkoutJSLint_init",
-                                                    stdout: stdoutc,
-                                                    time  : humantime(true)
-                                                });
-                                            }
-                                            if (stdouterc !== null && stdouterc !== "" && stdouterc.indexOf("Cloning into '") < 0 && stdouterc.indexOf("From ") < 0 && stdouterc.indexOf(" registered for path ") < 0) {
-                                                apps.errout({
-                                                    error : stdouterc,
-                                                    name  : "biddle_test_moduleInstall_editions_checkoutJSLint_init",
-                                                    stdout: stdoutc,
-                                                    time  : humantime(true)
-                                                });
-                                            }
-                                            update();
-                                        });
-                                } else {
-                                    pull();
-                                }
-                            });
+                        node.child("git checkout jslint.js", {
+                            cwd: data.abspath + "JSLint"
+                        }, function biddle_test_moduleInstall_editions_checkoutJSLint(erjsl, stdoutjsl, stdouterjsl) {
+                            if (erjsl !== null) {
+                                apps.errout({error: erjsl, name: "biddle_test_moduleInstall_editions_checkoutJSLint", stdout: stdoutjsl, time: humantime(true)});
+                            }
+                            if (stdouterjsl !== null && stdouterjsl !== "") {
+                                apps.errout({error: stdouterjsl, name: "biddle_test_moduleInstall_editions_checkoutJSLint", stdout: stdoutjsl, time: humantime(true)});
+                            }
+                            ind = 0;
+                            node
+                                .fs
+                                .writeFile("today.js", "/\u002aglobal module\u002a/(function () {\"use strict\";var today=" + date + ";module.exports=today;}());", function biddle_test_moduleInstall_editions_checkoutJSLint_writeToday(werr) {
+                                    if (werr !== null && werr !== undefined) {
+                                        apps.errout({error: werr, name: "biddle_test_moduleInstall_editions_checkoutJSLint_writeToday", time: humantime(true)});
+                                    }
+                                    if (cloned === true) {
+                                        console.log("Submodules downloaded.");
+                                    } else {
+                                        console.log("Submodules checked for updates.");
+                                    }
+                                    if (flag.apps === true) {
+                                        modout();
+                                    } else {
+                                        console.log("Checked for new versions of submodules.");
+                                        flag.today = true;
+                                    }
+                                });
+                            if (cloned === true) {
+                                node.child("git submodule init", {
+                                    cwd: data.abspath
+                                }, function biddle_test_moduleInstall_editions_checkoutJSLint_init(erc, stdoutc, stdouterc) {
+                                    if (erc !== null) {
+                                        apps.errout({error: erc, name: "biddle_test_moduleInstall_editions_checkoutJSLint_init", stdout: stdoutc, time: humantime(true)});
+                                    }
+                                    if (stdouterc !== null && stdouterc !== "" && stdouterc.indexOf("Cloning into '") < 0 && stdouterc.indexOf("From ") < 0 && stdouterc.indexOf(" registered for path ") < 0) {
+                                        apps.errout({error: stdouterc, name: "biddle_test_moduleInstall_editions_checkoutJSLint_init", stdout: stdoutc, time: humantime(true)});
+                                    }
+                                    update();
+                                });
+                            } else {
+                                pull();
+                            }
+                        });
                     } else {
                         flag.today = true;
                         console.log("Running prior installed modules.");
@@ -3705,758 +3525,642 @@
                 }
             };
             apps.rmrecurse(testpath, function biddle_test_moduleInstall_rmrecurse() {
-                apps
-                    .makedir(testpath, function biddle_test_moduleInstall_rmrecurse_makedir() {
-                        handler(0);
-                    });
+                apps.makedir(testpath, function biddle_test_moduleInstall_rmrecurse_makedir() {
+                    handler(0);
+                });
             });
         };
         phases.publish       = function biddle_test_publish() {
-            node
-                .child(childcmd + "publish " + data.abspath + "test" + node.path.sep + "biddletesta childtest", {
-                    cwd: data.abspath
-                }, function biddle_test_publish_child(er, stdout, stder) {
-                    var bgreen = text.bold + text.green,
-                        bcyan = text.bold + text.cyan,
-                        publishtest = "File publications/biddletesta/biddlesort.js written at " + bgreen + "xxx" +
-                                text.none + " bytes.\nFile publications/biddletesta/biddletesta_" +
-                                bcyan + "xxx.zip" + text.none + " written at " + bgreen + "xxx" + text.none +
-                                " bytes.\nFile publications/biddletesta/biddletesta_" + bcyan + "l" +
-                                "atest.zip" + text.none + " written at " + bgreen + "xxx" + text.none +
-                                " bytes.\nFile publications/biddletesta/biddletesta_" + bcyan + "min_xxx.z" +
-                                "ip" + text.none + " written at " + bgreen + "xxx" + text.none + " bytes" +
-                                ".\nFile publications/biddletesta/biddletesta_" + bcyan + "min_latest.zip" +
-                                text.none + " written at " + bgreen + "xxx" + text.none + " bytes." +
-                                "\nFile publications/biddletesta/biddletesta_" + bcyan + "prod_xxx.zip" +
-                                text.none + " written at " + bgreen + "xxx" + text.none + " bytes." +
-                                "\nFile publications/biddletesta/biddletesta_" + bcyan + "prod_latest.zip" +
-                                text.none + " written at " + bgreen + "xxx" + text.none + " bytes." +
-                                "\nFile publications/biddletesta/filedata.json written at " + bgreen + "xxx" +
-                                text.none + " bytes.\nFile publications/biddletesta/index.xhtml written at" +
-                                " " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletesta" +
-                                "/latest.txt written at " + bgreen + "xxx" + text.none + " bytes.",
-                        outputs     = stdout
-                            .replace(/(\s+)$/, "")
-                            .replace("\r\n", "\n")
-                            .split("\n")
-                            .sort(function biddle_test_publish_child_outSort(a, b) {
-                                if (a > b) {
-                                    return 1;
+            node.child(childcmd + "publish " + data.abspath + "test" + node.path.sep + "biddletesta childtest", {
+                cwd: data.abspath
+            }, function biddle_test_publish_child(er, stdout, stder) {
+                var bgreen      = text.bold + text.green,
+                    bcyan       = text.bold + text.cyan,
+                    publishtest = "File publications/biddletesta/biddlesort.js written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletesta/biddletesta_" + bcyan + "xxx.zip" + text.none + " written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletesta/biddletesta_" + bcyan + "latest.zip" + text.none + " written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletesta/biddletesta_" + bcyan + "min_xxx.zip" + text.none + " written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletesta/biddletesta_" + bcyan + "min_latest.zip" + text.none + " written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletesta/biddletesta_" + bcyan + "prod_xxx.zip" + text.none + " written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletesta/biddletesta_" + bcyan + "prod_latest.zip" + text.none + " written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletesta/filedata.json written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletesta/index.xhtml written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletesta/latest.txt written at " + bgreen + "xxx" + text.none + " bytes.",
+                    outputs     = stdout
+                        .replace(/(\s+)$/, "")
+                        .replace("\r\n", "\n")
+                        .split("\n")
+                        .sort(function biddle_test_publish_child_outSort(a, b) {
+                            if (a > b) {
+                                return 1;
+                            }
+                            return -1;
+                        }),
+                    output      = "",
+                    abspath     = new RegExp(data.abspath.replace(/\\/g, "\\\\"), "g");
+                if (er !== null) {
+                    apps.errout({error: er, name: "biddle_test_publish_child", stdout: stdout, time: humantime(true)});
+                }
+                if (stder !== null && stder !== "") {
+                    apps.errout({error: stder, name: "biddle_test_publish_child", stdout: stdout, time: humantime(true)});
+                }
+                node
+                    .fs
+                    .stat(data.abspath + "temp", function biddle_test_publish_child_statTemp(errtemp) {
+                        if (errtemp === null) {
+                            return apps.errout({error: "Directory 'temp' from publish operation should have been removed.", name: "biddle_test_publish_child_statTemp", time: humantime(true)});
+                        }
+                        if (errtemp.toString().indexOf("no such file or directory") < 0) {
+                            return apps.errout({error: errtemp, name: "biddle_test_publish_child_statTemp", time: humantime(true)});
+                        }
+                        outputs.forEach(function biddle_test_publish_child_statTemp_formatOutput(value, index, array) {
+                            var val = value.slice(value.indexOf("publications"));
+                            array[index] = "File " + val;
+                        });
+                        output = outputs.join("\n");
+                        output = output.replace(/\\/g, "/");
+                        output = output
+                            .replace(/\d+\.\d+\.\d+\.zip/g, "xxx.zip")
+                            .replace(/\u001b\[32m\d+(,\d+)*/g, text.green + "xxx")
+                            .replace(abspath, "");
+                        if (stdout.indexOf("Error") > 0) {
+                            console.log(stdout);
+                            return apps.errout({error: "Error from child process", name: "biddle_test_publish_child_statTemp", stdout: stdout, time: humantime(true)});
+                        }
+                        if (output !== publishtest) {
+                            return diffFiles("biddle_test_publish_child_statTemp", output, publishtest);
+                        }
+                        console.log(humantime(false) + " " + text.green + "The stdout for publish is correct." + text.nocolor);
+                        node
+                            .fs
+                            .readFile(data.abspath + "published.json", "utf8", function biddle_test_publish_child_statTemp_readJSON(err, fileData) {
+                                var jsondata = {},
+                                    pub      = data.abspath + "publications" + node.path.sep + "biddletesta";
+                                if (err !== null && err !== undefined) {
+                                    return apps.errout({error: err, name: "biddle_test_publish_child_statTemp_readJSON", stdout: stdout, time: humantime(true)});
                                 }
-                                return -1;
-                            }),
-                        output      = "",
-                        abspath     = new RegExp(data.abspath.replace(/\\/g, "\\\\"), "g");
-                    if (er !== null) {
-                        apps.errout({
-                            error : er,
-                            name  : "biddle_test_publish_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    if (stder !== null && stder !== "") {
-                        apps.errout({
-                            error : stder,
-                            name  : "biddle_test_publish_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    node
-                        .fs
-                        .stat(data.abspath + "temp",
-                        function biddle_test_publish_child_statTemp(errtemp) {
-                            if (errtemp === null) {
-                                return apps.errout({
-                                    error: "Directory 'temp' from publish operation should have been removed.",
-                                    name : "biddle_test_publish_child_statTemp",
-                                    time : humantime(true)
-                                });
-                            }
-                            if (errtemp.toString().indexOf("no such file or directory") < 0) {
-                                return apps.errout({
-                                    error: errtemp,
-                                    name : "biddle_test_publish_child_statTemp",
-                                    time : humantime(true)
-                                });
-                            }
-                            outputs
-                                .forEach(function biddle_test_publish_child_statTemp_formatOutput(value, index, array) {
-                                    var val = value.slice(value.indexOf("publications"));
-                                    array[index] = "File " + val;
-                                });
-                            output = outputs.join("\n");
-                            output = output.replace(/\\/g, "/");
-                            output = output
-                                .replace(/\d+\.\d+\.\d+\.zip/g, "xxx.zip")
-                                .replace(/\u001b\[32m\d+(,\d+)*/g, text.green + "xxx")
-                                .replace(abspath, "");
-                            if (output !== publishtest) {
-                                return diffFiles("biddle_test_publish_child_statTemp", output, publishtest);
-                            }
-                            console.log(humantime(false) + " " + text.green + "The stdout for publish is correct." + text.nocolor);
-                            node
-                                .fs
-                                .readFile(data.abspath + "published.json",
-                                "utf8", function biddle_test_publish_child_statTemp_readJSON(err, fileData) {
-                                    var jsondata = {},
-                                        pub      = data.abspath + "publications" + node.path.sep + "biddletesta";
-                                    if (err !== null && err !== undefined) {
-                                        return apps.errout({
-                                            error : err,
-                                            name  : "biddle_test_publish_child_statTemp_readJSON",
-                                            stdout: stdout,
-                                            time  : humantime(true)
-                                        });
-                                    }
-                                    jsondata = JSON.parse(fileData);
-                                    if (jsondata.biddletesta === undefined) {
-                                        return apps.errout({
-                                            error : "No biddletesta property in published.json file.",
-                                            name  : "biddle_test_publish_child_statTemp_readJSON",
-                                            stdout: stdout,
-                                            time  : humantime(true)
-                                        });
-                                    }
-                                    if (jsondata.biddletesta.latest !== "99.99.1234") {
-                                        return apps.errout({
-                                            error : "biddletesta.latest of published.json is '" + jsondata.biddletesta.latest + "' not '99.99.1234'.",
-                                            name  : "biddle_test_publish_child_statTemp_readJSON",
-                                            stdout: stdout,
-                                            time  : humantime(true)
-                                        });
-                                    }
-                                    console.log(humantime(false) + " " + text.green + "File published.json contains biddletesta" + text.nocolor);
-                                    node
-                                        .fs
-                                        .readdir(pub, function biddle_test_publish_child_statTemp_readJSON_readdir(errr, files) {
-                                            var filetest = "biddlesort.js,biddletesta_v.hash,biddletesta_v.zip,biddletesta_latest.hash,biddl" +
-                                                        "etesta_latest.zip,biddletesta_min_v.hash,biddletesta_min_v.zip,biddletesta_min_l" +
-                                                        "atest.hash,biddletesta_min_latest.zip,biddletesta_prod_v.hash,biddletesta_prod_v" +
-                                                        ".zip,biddletesta_prod_latest.hash,biddletesta_prod_latest.zip,filedata.json,inde" +
-                                                        "x.xhtml,latest.txt",
-                                                filelist = files.sort(function biddle_test_publish_child_statTemp_readJSON_readdir_outSort(a, b) {
+                                jsondata = JSON.parse(fileData);
+                                if (jsondata.biddletesta === undefined) {
+                                    return apps.errout({error: "No biddletesta property in published.json file.", name: "biddle_test_publish_child_statTemp_readJSON", stdout: stdout, time: humantime(true)});
+                                }
+                                if ((/^(99\.99\.\d{4})$/).test(jsondata.biddletesta.latest) === false) {
+                                    return apps.errout({
+                                        error : "biddletesta.latest of published.json is '" + jsondata.biddletesta.latest + "' not equivalent to '99\\.99\\.\\d{4}'.",
+                                        name  : "biddle_test_publish_child_statTemp_readJSON",
+                                        stdout: stdout,
+                                        time  : humantime(true)
+                                    });
+                                }
+                                console.log(humantime(false) + " " + text.green + "File published.json contains biddletesta" + text.nocolor);
+                                node
+                                    .fs
+                                    .readdir(pub, function biddle_test_publish_child_statTemp_readJSON_readdir(errr, files) {
+                                        var filetest = "biddlesort.js,biddletesta_v.hash,biddletesta_v.zip,biddletesta_latest.hash,biddl" +
+                                                     "etesta_latest.zip,biddletesta_min_v.hash,biddletesta_min_v.zip,biddletesta_min_l" +
+                                                     "atest.hash,biddletesta_min_latest.zip,biddletesta_prod_v.hash,biddletesta_prod_v" +
+                                                     ".zip,biddletesta_prod_latest.hash,biddletesta_prod_latest.zip,filedata.json,inde" +
+                                                     "x.xhtml,latest.txt",
+                                            filelist = files
+                                                .sort(function biddle_test_publish_child_statTemp_readJSON_readdir_outSort(a, b) {
                                                     if (a > b) {
                                                         return 1;
                                                     }
                                                     return -1;
                                                 })
-                                                    .join(",")
-                                                    .replace(/_\d+\.\d+\.\d+\.((zip)|(hash))/g, function biddle_test_publish_child_statTemp_readJSON_readdir_replace(x) {
-                                                        if (x.indexOf("zip") > 0) {
-                                                            return "_v.zip";
+                                                .join(",")
+                                                .replace(/_\d+\.\d+\.\d+\.((zip)|(hash))/g, function biddle_test_publish_child_statTemp_readJSON_readdir_replace(x) {
+                                                    if (x.indexOf("zip") > 0) {
+                                                        return "_v.zip";
+                                                    }
+                                                    return "_v.hash";
+                                                }),
+                                            stats    = {},
+                                            statfile = function biddle_test_publish_child_statTemp_readJSON_readdir_statfile(index) {
+                                                stats[files[index]] = false;
+                                                node
+                                                    .fs
+                                                    .stat(pub + node.path.sep + files[index], function biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback(errs, statobj) {
+                                                        if (errs !== null) {
+                                                            return apps.errout({error: errs, name: "biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback", stdout: stdout, time: humantime(true)});
                                                         }
-                                                        return "_v.hash";
-                                                    }),
-                                                stats    = {},
-                                                statfile = function biddle_test_publish_child_statTemp_readJSON_readdir_statfile(index) {
-                                                    stats[files[index]] = false;
-                                                    node
-                                                        .fs
-                                                        .stat(pub + node.path.sep + files[index], function biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback(errs, statobj) {
-                                                            if (errs !== null) {
-                                                                return apps.errout({
-                                                                    error : errs,
-                                                                    name  : "biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback",
-                                                                    stdout: stdout,
-                                                                    time  : humantime(true)
-                                                                });
-                                                            }
-                                                            if (files[index].indexOf(".hash") === files[index].length - 5 && statobj.size !== 128) {
-                                                                return apps.errout({
-                                                                    error : "Expected hash file " + files[index] + " to be file size 128.",
-                                                                    name  : "biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback",
-                                                                    stdout: stdout,
-                                                                    time  : humantime(true)
-                                                                });
-                                                            }
-                                                            if (files[index].indexOf(".zip") === files[index].length - 4 && statobj.size > 20000) {
-                                                                return apps.errout({
-                                                                    error : "Zip file " + files[index] + " is too big at " + apps.commas(statobj.size) + ".",
-                                                                    name  : "biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback",
-                                                                    stdout: stdout,
-                                                                    time  : humantime(true)
-                                                                });
-                                                            }
-                                                            console.log(humantime(false) + " " + files[index] + " present at size " + text.bold + text.green + apps.commas(statobj.size) + text.none + " bytes.");
-                                                            stats[files[index]] = true;
-                                                            if (stats[files[0]] === true && stats[files[1]] === true && stats[files[2]] === true && stats[files[3]] === true && stats[files[4]] === true && stats[files[5]] === true && stats[files[6]] === true && stats[files[7]] === true && stats[files[8]] === true && stats[files[9]] === true && stats[files[10]] === true && stats[files[11]] === true) {
-                                                                console.log(humantime(false) + " " + text.green + "publish test passed." + text.nocolor);
-                                                                node.child(childcmd + "publish " + data.abspath + "test" + node.path.sep + "biddletesta childtest", {
-                                                                    cwd: data.abspath
-                                                                }, function biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish(erx, stdoutx, stderx) {
-                                                                    var publishagain = text.bold + text.cyan + "Function:" + text.none + " biddle_publish_execution\n" +
-                                                                                     text.bold + text.red + "Error:" + text.none + " Attempted to publish biddletesta over exi" +
-                                                                                     "sting version",
-                                                                        stack        = [];
-                                                                    if (erx !== null) {
-                                                                        if (typeof erx.stack === "string") {
-                                                                            stack = erx
-                                                                                .stack
-                                                                                .split(" at ");
-                                                                        }
-                                                                        if (stack.length < 1 || stack[1].indexOf("ChildProcess.exithandler (child_process.js:2") < 0) {
+                                                        if (files[index].indexOf(".hash") === files[index].length - 5 && statobj.size !== 128) {
+                                                            return apps.errout({
+                                                                error : "Expected hash file " + files[index] + " to be file size 128.",
+                                                                name  : "biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback",
+                                                                stdout: stdout,
+                                                                time  : humantime(true)
+                                                            });
+                                                        }
+                                                        if (files[index].indexOf(".zip") === files[index].length - 4 && statobj.size > 20000) {
+                                                            return apps.errout({
+                                                                error : "Zip file " + files[index] + " is too big at " + apps.commas(statobj.size) + ".",
+                                                                name  : "biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback",
+                                                                stdout: stdout,
+                                                                time  : humantime(true)
+                                                            });
+                                                        }
+                                                        console.log(humantime(false) + " " + files[index] + " present at size " + text.bold + text.green + apps.commas(statobj.size) + text.none + " bytes.");
+                                                        stats[files[index]] = true;
+                                                        if (stats[files[0]] === true && stats[files[1]] === true && stats[files[2]] === true && stats[files[3]] === true && stats[files[4]] === true && stats[files[5]] === true && stats[files[6]] === true && stats[files[7]] === true && stats[files[8]] === true && stats[files[9]] === true && stats[files[10]] === true && stats[files[11]] === true) {
+                                                            console.log(humantime(false) + " " + text.green + "publish test passed." + text.nocolor);
+                                                            node.child(childcmd + "publish " + data.abspath + "test" + node.path.sep + "biddletesta childtest", {
+                                                                cwd: data.abspath
+                                                            }, function biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish(erx, stdoutx, stderx) {
+                                                                var publishagain = text.bold + text.cyan + "Function:" + text.none + " biddle_publish_execution\n" + text.bold + text.red + "Error:" + text.none + " Attempted to publish biddletesta over existing version",
+                                                                    stack        = [];
+                                                                if (erx !== null) {
+                                                                    if (typeof erx.stack === "string") {
+                                                                        stack = erx
+                                                                            .stack
+                                                                            .split(" at ");
+                                                                    }
+                                                                    if (stack.length < 1 || stack[1].indexOf("ChildProcess.exithandler (child_process.js:2") < 0) {
+                                                                        return apps.errout({error: erx, name: "biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish", stdout: stdout, time: humantime(true)});
+                                                                    }
+                                                                }
+                                                                if (stderx !== null && stderx !== "") {
+                                                                    return apps.errout({error: stderx, name: "biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish", stdout: stdout, time: humantime(true)});
+                                                                }
+                                                                stdoutx = stdoutx
+                                                                    .replace("\r\n", "\n")
+                                                                    .replace(/(\u0020\d+\.\d+\.\d+\s*)$/, "");
+                                                                if (stdoutx !== publishagain) {
+                                                                    return diffFiles("biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish", stdoutx, publishagain);
+                                                                }
+                                                                node
+                                                                    .fs
+                                                                    .stat(data.abspath + "temp", function biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish_statTemp(errtemp) {
+                                                                        if (errtemp === null) {
                                                                             return apps.errout({
-                                                                                error : erx,
-                                                                                name  : "biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish",
-                                                                                stdout: stdout,
-                                                                                time  : humantime(true)
+                                                                                error: "Directory 'temp' from publish operation should have been removed.",
+                                                                                name : "biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish_st" +
+                                                                                          "atTemp",
+                                                                                time : humantime(true)
                                                                             });
                                                                         }
-                                                                    }
-                                                                    if (stderx !== null && stderx !== "") {
-                                                                        return apps.errout({
-                                                                            error : stderx,
-                                                                            name  : "biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish",
-                                                                            stdout: stdout,
-                                                                            time  : humantime(true)
-                                                                        });
-                                                                    }
-                                                                    stdoutx = stdoutx
-                                                                        .replace("\r\n", "\n")
-                                                                        .replace(/(\u0020\d+\.\d+\.\d+\s*)$/, "");
-                                                                    if (stdoutx !== publishagain) {
-                                                                        return diffFiles("biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish", stdoutx, publishagain);
-                                                                    }
-                                                                    node
-                                                                        .fs
-                                                                        .stat(data.abspath + "temp",
-                                                                        function biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish_statTemp(errtemp) {
-                                                                            if (errtemp === null) {
-                                                                                return apps.errout({
-                                                                                    error: "Directory 'temp' from publish operation should have been removed.",
-                                                                                    name : "biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish_st" +
-                                                                                              "atTemp",
-                                                                                    time : humantime(true)
-                                                                                });
-                                                                            }
-                                                                            if (errtemp.toString().indexOf("no such file or directory") < 0) {
-                                                                                return apps.errout({
-                                                                                    error: errtemp,
-                                                                                    name : "biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish_st" +
-                                                                                              "atTemp",
-                                                                                    time : humantime(true)
-                                                                                });
-                                                                            }
-                                                                            console.log(humantime(false) + " " + text.green + "Redundant publish test (error messaging) passed." + text.nocolor);
-                                                                            next();
-                                                                        });
-                                                                });
-                                                            }
-                                                        });
-                                                };
-                                            if (errr !== null) {
-                                                return apps.errout({
-                                                    error : errr,
-                                                    name  : "biddle_test_publish_child_statTemp_readJSON_readdir",
-                                                    stdout: stdout,
-                                                    time  : humantime(true)
-                                                });
-                                            }
-                                            if (filelist !== filetest) {
-                                                return diffFiles("biddle_test_publish_child_statTemp_readJSON_readdir", filelist, filetest);
-                                            }
-                                            console.log(humantime(false) + " " + text.green + "List of files generated by publish is correct." + text.nocolor);
-                                            statfile(0);
-                                            statfile(1);
-                                            statfile(2);
-                                            statfile(3);
-                                            statfile(4);
-                                            statfile(5);
-                                            statfile(6);
-                                            statfile(7);
-                                            statfile(8);
-                                            statfile(9);
-                                            statfile(10);
-                                            statfile(11);
-                                        });
-                                    return stdout;
-                                });
-                        });
-                });
+                                                                        if (errtemp.toString().indexOf("no such file or directory") < 0) {
+                                                                            return apps.errout({
+                                                                                error: errtemp,
+                                                                                name : "biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish_st" +
+                                                                                          "atTemp",
+                                                                                time : humantime(true)
+                                                                            });
+                                                                        }
+                                                                        console.log(humantime(false) + " " + text.green + "Redundant publish test (error messaging) passed." + text.nocolor);
+                                                                        next();
+                                                                    });
+                                                            });
+                                                        }
+                                                    });
+                                            };
+                                        if (errr !== null) {
+                                            return apps.errout({error: errr, name: "biddle_test_publish_child_statTemp_readJSON_readdir", stdout: stdout, time: humantime(true)});
+                                        }
+                                        if (filelist !== filetest) {
+                                            return diffFiles("biddle_test_publish_child_statTemp_readJSON_readdir", filelist, filetest);
+                                        }
+                                        console.log(humantime(false) + " " + text.green + "List of files generated by publish is correct." + text.nocolor);
+                                        statfile(0);
+                                        statfile(1);
+                                        statfile(2);
+                                        statfile(3);
+                                        statfile(4);
+                                        statfile(5);
+                                        statfile(6);
+                                        statfile(7);
+                                        statfile(8);
+                                        statfile(9);
+                                        statfile(10);
+                                        statfile(11);
+                                    });
+                                return stdout;
+                            });
+                    });
+            });
         };
         phases.remove        = function biddle_test_remove() {
-            node
-                .child(childcmd + "remove " + testpath + node.path.sep + "biddletesta.js childtest", {
-                    cwd: data.abspath
-                }, function biddle_test_remove_child(er, stdout, stder) {
-                    var removefile = testpath + node.path.sep + "biddletesta.js",
-                        removetest = "Removed " + removefile;
-                    if (er !== null) {
-                        return apps.errout({
-                            error : er,
-                            name  : "biddle_test_remove_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    if (stder !== null && stder !== "") {
-                        return apps.errout({
-                            error : stder,
-                            name  : "biddle_test_remove_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    stdout = stdout.replace(/(\s+)$/, "");
-                    if (stdout !== removetest) {
-                        return diffFiles("biddle_test_remove_child", stdout, removetest);
-                    }
-                    node
-                        .fs
-                        .stat(removefile, function biddle_test_remove_child_stat(ers) {
-                            if (ers === null || ers.toString().indexOf("no such file for directory") > 0) {
-                                return apps.errout({
-                                    error : "remove test failed as file is still present",
-                                    name  : "biddle_test_remove_child_stat",
-                                    stdout: stdout,
-                                    time  : humantime(true)
-                                });
+            node.child(childcmd + "remove " + testpath + node.path.sep + "biddletesta.js childtest", {
+                cwd: data.abspath
+            }, function biddle_test_remove_child(er, stdout, stder) {
+                var removefile = testpath + node.path.sep + "biddletesta.js",
+                    removetest = "Removed " + removefile;
+                if (er !== null) {
+                    return apps.errout({error: er, name: "biddle_test_remove_child", stdout: stdout, time: humantime(true)});
+                }
+                if (stder !== null && stder !== "") {
+                    return apps.errout({error: stder, name: "biddle_test_remove_child", stdout: stdout, time: humantime(true)});
+                }
+                stdout = stdout.replace(/(\s+)$/, "");
+                if (stdout !== removetest) {
+                    return diffFiles("biddle_test_remove_child", stdout, removetest);
+                }
+                node
+                    .fs
+                    .stat(removefile, function biddle_test_remove_child_stat(ers) {
+                        if (ers === null || ers.toString().indexOf("no such file for directory") > 0) {
+                            return apps.errout({error: "remove test failed as file is still present", name: "biddle_test_remove_child_stat", stdout: stdout, time: humantime(true)});
+                        }
+                        console.log(humantime(false) + " " + text.green + "remove test passed." + text.nocolor);
+                        next();
+                    });
+            });
+        };
+        phases.republish     = function biddle_test_republish() {
+            var packpath = data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "package.json";
+            node.fs.readFile(packpath, function biddle_test_republish_read(rfer, packjson) {
+                var pack = JSON.parse(packjson),
+                    ver  = pack
+                        .version
+                        .split(".");
+                if (rfer !== null) {
+                    return apps.errout({error: rfer, name: "biddle_test_republish_read", stdout: "", time: humantime(true)});
+                }
+                if (ver[ver.length - 1] === "9999") {
+                    ver[ver.length - 1] = "0000";
+                } else {
+                    ver[ver.length - 1] = String(Number(ver[ver.length - 1]) + 1);
+                }
+                pack.version = ver.join(".");
+                apps.writeFile(JSON.stringify(pack), packpath, function biddle_test_republish_read_write() {
+                    var pubdirs = data.abspath.split(node.path.sep);
+                    pubdirs.pop();
+                    console.log(humantime(false) + " " + text.green + "version updated for test" + node.path.sep + "biddletesta to:" + text.nocolor + " 99.99." + ver[ver.length - 1]);
+                    node.child(childcmd + "publish " + packpath.replace(node.path.sep + "package.json", ""), {
+                        cwd: pubdirs.join(node.path.sep)
+                    }, function biddle_test_republish_read_write_publish(er, stdout, stder) {
+                        var flag = {
+                                index  : false,
+                                publish: false,
+                                rdirs  : false
+                            },
+                            complete = function () {
+                                var fkeys = Object.keys(flag),
+                                    a     = fkeys.length - 1;
+                                do {
+                                    if (flag[fkeys[a]] === false) {
+                                        return;
+                                    }
+                                    a -= 1;
+                                } while (a > -1);
+                                next();
+                            };
+                        if (er !== null) {
+                            return apps.errout({error: er, name: "biddle_test_republish_read_write_publish", stdout: stdout, time: humantime(true)});
+                        }
+                        if (stder !== null && stder !== "") {
+                            return apps.errout({error: stder, name: "biddle_test_republish_read_write_publish", stdout: stdout, time: humantime(true)});
+                        }
+                        node.fs.readdir(data.abspath + "publications" + node.path.sep + "biddletesta", function biddle_test_republish_read_write_publish_readDir(der, files) {
+                            if (der !== null) {
+                                return apps.errout({error: der, name: "biddle_test_republish_read_write_publish_readDir", stdout: stdout, time: humantime(true)});
                             }
-                            console.log(humantime(false) + " " + text.green + "remove test passed." + text.nocolor);
-                            next();
+                            if (files.length !== 22) {
+                                return apps.errout({error: "Expected 22 files in the published directory, but instead there are " + files.length + "\r\n* " + files.join("\r\n* "), name: "biddle_test_republish_read_write_publish_readDir", stdout: stdout, time: humantime(true)});
+                            }
+                            console.log(humantime(false) + " " + text.green + "20 files in publications" + node.path.sep + "biddletesta" + text.nocolor);
+                            flag.rdirs = true;
+                            complete();
                         });
+                        node.fs.readFile(data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "index.xhtml", function biddle_test_republish_read_write_publish_readIndex(ier, file) {
+                            var index = "",
+                                trs   = [];
+                            if (ier !== null) {
+                                return apps.errout({error: ier, name: "biddle_test_republish_read_write_publish_readIndex", stdout: stdout, time: humantime(true)});
+                            }
+                            index = (typeof file === "string")
+                                ? file
+                                : file.toString();
+                            index = index.replace(/99\.99\.\d{4}/g, "99.99.xxxx");
+                            trs   = index.split("<td>99.99.xxxx</td>");
+                            if (trs.length !== 10) {
+                                return apps.errout({error: "Expected 9 zip files in index.xhtml, but there are " + (trs.length - 1), name: "biddle_test_republish_read_write_publish_readIndex", stdout: stdout, time: humantime(true)});
+                            }
+                            console.log(humantime(false) + " " + text.green + "9 entries in publications" + node.path.sep + "biddletesta" + node.path.sep + "index.xhtml" + text.nocolor);
+                            flag.index = true;
+                            complete();
+                        });
+                        node.fs.readFile(data.abspath + "published.json", function biddle_test_republish_read_write_publish_readPublished(per, file) {
+                            var pub = {};
+                            if (per !== null) {
+                                return apps.errout({error: per, name: "biddle_test_republish_read_write_publish_readPublished", stdout: stdout, time: humantime(true)});
+                            }
+                            pub = JSON.parse(file);
+                            if (pub.biddletesta.versions.length !== 2) {
+                                return apps.errout({error: "Expected (published.json).biddletesta.versions of published.json to have two version numbers", name: "biddle_test_republish_read_write_publish_readPublished", stdout: stdout, time: humantime(true)});
+                            }
+                            console.log(humantime(false) + " " + text.green + "(published.json).biddletesta.versions has two version numbers" + text.nocolor);
+                            if (pub.biddletesta.directory !== data.abspath + "publications" + node.path.sep + "biddletesta/") {
+                                return diffFiles("biddle_test_republish_read_write_publish_readPublished", pub.biddletesta.directory, data.abspath + "publications" + node.path.sep + "biddletesta/");
+                            }
+                            console.log(humantime(false) + " " + text.green + "(published.json).biddletesta.directory is correct location" + text.nocolor);
+                            flag.publish = true;
+                            complete();
+                        });
+                    });
                 });
+            });
+            // readfile - test/biddletesta/package.json replace "99.99.1234" with
+            // "99.99.1235" writeFile biddle publish test/biddletesta  (run from an
+            // unfamiliar location as everything should be relative to the project
+            // directory) verify
+            // * latest files, 1234 files, and 1235 files
+            // * files are the proper sizes
+            // * verify index.html contains those files
         };
         phases.uninstall     = function biddle_test_uninstall() {
-            node
-                .child(childcmd + "uninstall biddletesta childtest", {
-                    cwd: data.abspath
-                }, function biddle_test_uninstall_child(er, stdout, stder) {
-                    var uninsttest = "App " + text.cyan + "biddletesta" + text.nocolor + " is uninstalled.";
-                    if (er !== null) {
-                        return apps.errout({
-                            error : er,
-                            name  : "biddle_test_uninstall_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    if (stder !== null && stder !== "") {
-                        return apps.errout({
-                            error : stder,
-                            name  : "biddle_test_uninstall_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    stdout = stdout.replace(/(\s+)$/, "");
-                    if (stdout !== uninsttest) {
-                        return diffFiles("biddle_test_uninstall_child", stdout, uninsttest);
-                    }
-                    if (data.installed.biddletesta !== undefined) {
-                        return apps.errout({
-                            error : "biddletesta property not removed from data.installed object",
-                            name  : "biddle_test_uninstall_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    console.log(humantime(false) + " " + text.green + "biddletesta removed from installed.json." + text.nocolor);
-                    node
-                        .fs
-                        .stat(data.abspath + "applications" + node.path.sep + "biddletesta",
-                        function biddle_test_uninstall_child_stat(err, stat) {
-                            if (err !== null && err.toString().indexOf("no such file or directory") < 0) {
-                                return apps.errout({
-                                    error: err,
-                                    name : "biddle_test_uninstall_child_stat",
-                                    time : humantime(true)
-                                });
-                            }
-                            if (stat !== undefined && stat.isDirectory() === true) {
-                                return apps.errout({
-                                    error : "applications" + node.path.sep + "biddletesta directory not deleted by uninstall command",
-                                    name  : "biddle_test_uninstall_child_stat",
-                                    stdout: stdout,
-                                    time  : humantime(true)
-                                });
-                            }
-                            if (err.toString().indexOf("no such file or directory") > 0) {
-                                node
-                                    .fs
-                                    .readFile(data.abspath + "installed.json",
-                                    function biddle_test_uninstall_child_stat_readfile(erf, filedata) {
-                                        var jsondata = {};
-                                        if (erf !== null && erf !== undefined) {
-                                            return apps.errout({
-                                                error : erf,
-                                                name  : "biddle_test_uninstall_child_stat_readfile",
-                                                stdout: stdout,
-                                                time  : humantime(true)
-                                            });
-                                        }
-                                        jsondata = JSON.parse(filedata);
-                                        if (jsondata.biddletesta !== undefined) {
-                                            return apps.errout({
-                                                error : "biddletesta property still present in installed.json file",
-                                                name  : "biddle_test_uninstall_child_stat_readfile",
-                                                stdout: stdout,
-                                                time  : humantime(true)
-                                            });
-                                        }
-                                        console.log(humantime(false) + " " + text.green + "uninstall test passed." + text.nocolor);
-                                        node.child(childcmd + "uninstall biddletesta childtest", {
-                                            cwd: data.abspath
-                                        }, function biddle_test_uninstall_child_stat_readfile_again(erx, stdoutx, stderx) {
-                                            var uninstagain = "Attempted to uninstall " + text.cyan + "biddletesta" + text.nocolor + " which is " +
-                                                            text.bold + text.red + "absent" + text.none + " from the list of installed applications. Try using " +
-                                                            "the command " + text.green + "biddle list installed" + text.nocolor + ".",
-                                                stack       = [];
-                                            if (erx !== null) {
-                                                if (typeof erx.stack === "string") {
-                                                    stack = erx
-                                                        .stack
-                                                        .split(" at ");
-                                                }
-                                                if (stack.length < 1 || stack[1].indexOf("ChildProcess.exithandler (child_process.js:202:12)") < 0) {
-                                                    return apps.errout({
-                                                        error : erx,
-                                                        name  : "biddle_test_uninstall_child_stat_readfile_again",
-                                                        stdout: stdout,
-                                                        time  : humantime(true)
-                                                    });
-                                                }
-                                            }
-                                            if (stderx !== null && stderx !== "") {
-                                                return apps.errout({
-                                                    error : stderx,
-                                                    name  : "biddle_test_uninstall_child_stat_readfile_again",
-                                                    stdout: stdout,
-                                                    time  : humantime(true)
-                                                });
-                                            }
-                                            stdoutx = stdoutx.replace(/(\s+)$/, "");
-                                            if (stdoutx !== uninstagain) {
-                                                return diffFiles("biddle_test_uninstall_child_stat_readfile_again", stdoutx, uninstagain);
-                                            }
-                                            console.log(humantime(false) + " " + text.green + "Redundant uninstall test (error messaging) passed." + text.nocolor);
-                                            next();
-                                        });
-                                    });
-                            } else {
-                                return apps.errout({
-                                    error : "directory applications" + node.path.sep + "biddletesta changed to something else and not deleted",
-                                    name  : "biddle_test_uninstall_child_stat",
-                                    stdout: stdout,
-                                    time  : humantime(true)
-                                });
-                            }
-                        });
-                });
-        };
-        phases.unpublish     = function biddle_test_unpublish() {
-            node
-                .child(childcmd + "unpublish biddletesta childtest", {
-                    cwd: data.abspath
-                }, function biddle_test_unpublish_child(er, stdout, stder) {
-                    var unpubtest = "App " + text.cyan + "biddletesta" + text.nocolor + " is unpublished.";
-                    if (er !== null) {
-                        return apps.errout({
-                            error : er,
-                            name  : "biddle_test_unpublish_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    if (stder !== null && stder !== "") {
-                        return apps.errout({
-                            error : stder,
-                            name  : "biddle_test_unpublish_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    stdout = stdout.replace(/(\s+)$/, "");
-                    if (stdout !== unpubtest) {
-                        return diffFiles("biddle_test_unpublish_child", stdout, unpubtest);
-                    }
-                    if (data.published.biddletesta !== undefined) {
-                        return apps.errout({
-                            error : "biddletesta property not removed from data.published object",
-                            name  : "biddle_test_unpublish_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    console.log(humantime(false) + " " + text.green + "biddletesta removed from published.json." + text.nocolor);
-                    node
-                        .fs
-                        .stat(data.abspath + "publications" + node.path.sep + "biddletesta",
-                        function biddle_test_unpublish_child_stat(err, stat) {
-                            if (err !== null && err.toString().indexOf("no such file or directory") < 0) {
-                                return apps.errout({
-                                    error: err,
-                                    name : "biddle_test_unpublish_child_stat",
-                                    time : humantime(true)
-                                });
-                            }
-                            if (stat !== undefined && stat.isDirectory() === true) {
-                                return apps.errout({
-                                    error : "publications" + node.path.sep + "biddletesta directory not deleted by unpublish command",
-                                    name  : "biddle_test_unpublish_child_stat",
-                                    stdout: stdout,
-                                    time  : humantime(true)
-                                });
-                            }
-                            if (err.toString().indexOf("no such file or directory") > 0) {
-                                node
-                                    .fs
-                                    .readFile(data.abspath + "published.json",
-                                    function biddle_test_unpublish_child_stat_readfile(erf, filedata) {
-                                        var jsondata = {};
-                                        if (erf !== null && erf !== undefined) {
-                                            return apps.errout({
-                                                error : erf,
-                                                name  : "biddle_test_unpublish_child_stat_readfile",
-                                                stdout: stdout,
-                                                time  : humantime(true)
-                                            });
-                                        }
-                                        jsondata = JSON.parse(filedata);
-                                        if (jsondata.biddletesta !== undefined) {
-                                            return apps.errout({
-                                                error : "biddletesta property still present in published.json file",
-                                                name  : "biddle_test_unpublish_child_stat_readfile",
-                                                stdout: stdout,
-                                                time  : humantime(true)
-                                            });
-                                        }
-                                        console.log(humantime(false) + " " + text.green + "unpublish test passed." + text.nocolor);
-                                        node.child(childcmd + "unpublish biddletesta childtest", {
-                                            cwd: data.abspath
-                                        }, function biddle_test_unpublish_child_stat_readfile_again(erx, stdoutx, stderx) {
-                                            var unpubagain = "Attempted to unpublish " + text.cyan + "biddletesta" + text.nocolor + " which is " +
-                                                           text.bold + text.red + "absent" + text.none + " from the list of published applications. Try using " +
-                                                           "the command " + text.green + "biddle list published" + text.nocolor + ".",
-                                                stack      = [];
-                                            if (erx !== null) {
-                                                if (typeof erx.stack === "string") {
-                                                    stack = erx
-                                                        .stack
-                                                        .split(" at ");
-                                                }
-                                                if (stack.length < 1 || stack[1].indexOf("ChildProcess.exithandler (child_process.js:202:12)") < 0) {
-                                                    return apps.errout({
-                                                        error : erx,
-                                                        name  : "biddle_test_unpublish_child_stat_readfile_again",
-                                                        stdout: stdout,
-                                                        time  : humantime(true)
-                                                    });
-                                                }
-                                            }
-                                            if (stderx !== null && stderx !== "") {
-                                                return apps.errout({
-                                                    error : stderx,
-                                                    name  : "biddle_test_unpublish_child_stat_readfile_again",
-                                                    stdout: stdout,
-                                                    time  : humantime(true)
-                                                });
-                                            }
-                                            stdoutx = stdoutx.replace(/(\s+)$/, "");
-                                            if (stdoutx !== unpubagain) {
-                                                return diffFiles("biddle_test_unpublish_child_stat_readfile_again", stdoutx, unpubagain);
-                                            }
-                                            console.log(humantime(false) + " " + text.green + "Redundant unpublish test (error messaging) passed." + text.nocolor);
-                                            next();
-                                        });
-                                    });
-                            } else {
-                                return apps.errout({
-                                    error : "directory publications" + node.path.sep + "biddletesta changed to something else and not deleted",
-                                    name  : "biddle_test_unpublish_child_stat",
-                                    stdout: stdout,
-                                    time  : humantime(true)
-                                });
-                            }
-                        });
-                });
-        };
-        phases.unzip         = function biddle_test_unzip() {
-            node
-                .child(childcmd + "unzip " + data.abspath + "unittest" + node.path.sep + "biddletesta.zip " + data.abspath + "unittest" + node.path.sep + "unzip childtest", {
-                    cwd: data.abspath
-                }, function biddle_test_unzip_child(er, stdout, stder) {
-                    if (er !== null) {
-                        return apps.errout({
-                            error : er,
-                            name  : "biddle_test_unzip_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    if (stder !== null && stder !== "") {
-                        return apps.errout({
-                            error : stder,
-                            name  : "biddle_test_unzip_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    node
-                        .fs
-                        .stat(testpath + node.path.sep + "unzip" + node.path.sep + "biddletesta.js",
-                        function biddle_test_unzip_child_stat(err, stat) {
-                            if (err !== null) {
-                                return apps.errout({
-                                    error : err,
-                                    name  : "biddle_test_unzip_child_stat",
-                                    stdout: stdout,
-                                    time  : humantime(true)
-                                });
-                            }
-                            if (stat.size < 10000) {
-                                return apps.errout({
-                                    error : text.red + "unzip test failed." + text.nocolor,
-                                    name  : "biddle_test_unzip_child_stat",
-                                    stdout: stdout,
-                                    time  : humantime(true)
-                                });
-                            }
-                            console.log(humantime(false) + " " + text.green + "biddletesta.js unzipped." + text.nocolor);
+            node.child(childcmd + "uninstall biddletesta childtest", {
+                cwd: data.abspath
+            }, function biddle_test_uninstall_child(er, stdout, stder) {
+                var uninsttest = "App " + text.cyan + "biddletesta" + text.nocolor + " is uninstalled.";
+                if (er !== null) {
+                    return apps.errout({error: er, name: "biddle_test_uninstall_child", stdout: stdout, time: humantime(true)});
+                }
+                if (stder !== null && stder !== "") {
+                    return apps.errout({error: stder, name: "biddle_test_uninstall_child", stdout: stdout, time: humantime(true)});
+                }
+                stdout = stdout.replace(/(\s+)$/, "");
+                if (stdout !== uninsttest) {
+                    return diffFiles("biddle_test_uninstall_child", stdout, uninsttest);
+                }
+                if (data.installed.biddletesta !== undefined) {
+                    return apps.errout({error: "biddletesta property not removed from data.installed object", name: "biddle_test_uninstall_child", stdout: stdout, time: humantime(true)});
+                }
+                console.log(humantime(false) + " " + text.green + "biddletesta removed from installed.json." + text.nocolor);
+                node
+                    .fs
+                    .stat(data.abspath + "applications" + node.path.sep + "biddletesta", function biddle_test_uninstall_child_stat(err, stat) {
+                        if (err !== null && err.toString().indexOf("no such file or directory") < 0) {
+                            return apps.errout({error: err, name: "biddle_test_uninstall_child_stat", time: humantime(true)});
+                        }
+                        if (stat !== undefined && stat.isDirectory() === true) {
+                            return apps.errout({
+                                error : "applications" + node.path.sep + "biddletesta directory not deleted by uninstall command",
+                                name  : "biddle_test_uninstall_child_stat",
+                                stdout: stdout,
+                                time  : humantime(true)
+                            });
+                        }
+                        if (err.toString().indexOf("no such file or directory") > 0) {
                             node
                                 .fs
-                                .readdir(testpath + node.path.sep + "unzip",
-                                function biddle_test_unzip_child_stat_readDir(erd, files) {
-                                    var count = 5;
-                                    if (erd !== null) {
-                                        return apps.errout({
-                                            error : erd,
-                                            name  : "biddle_test_unzip_child_stat_readDir",
-                                            stdout: stdout,
-                                            time  : humantime(true)
-                                        });
+                                .readFile(data.abspath + "installed.json", function biddle_test_uninstall_child_stat_readfile(erf, filedata) {
+                                    var jsondata = {};
+                                    if (erf !== null && erf !== undefined) {
+                                        return apps.errout({error: erf, name: "biddle_test_uninstall_child_stat_readfile", stdout: stdout, time: humantime(true)});
                                     }
-                                    if (files.length !== count) {
-                                        return apps.errout({
-                                            error : "Expected " + count + " items unzipped, but there are " + files.length + ".",
-                                            name  : "biddle_test_unzip_child_stat_readDir",
-                                            stdout: stdout,
-                                            time  : humantime(true)
-                                        });
+                                    jsondata = JSON.parse(filedata);
+                                    if (jsondata.biddletesta !== undefined) {
+                                        return apps.errout({error: "biddletesta property still present in installed.json file", name: "biddle_test_uninstall_child_stat_readfile", stdout: stdout, time: humantime(true)});
                                     }
-                                    console.log(humantime(false) + " " + text.green + count + " items unzipped." + text.nocolor);
-                                    console.log(humantime(false) + " " + text.green + "unzip test passed." + text.nocolor);
-                                    next();
+                                    console.log(humantime(false) + " " + text.green + "uninstall test passed." + text.nocolor);
+                                    node.child(childcmd + "uninstall biddletesta childtest", {
+                                        cwd: data.abspath
+                                    }, function biddle_test_uninstall_child_stat_readfile_again(erx, stdoutx, stderx) {
+                                        var uninstagain = "Attempted to uninstall " + text.cyan + "biddletesta" + text.nocolor + " which is " + text.bold + text.red + "absent" + text.none + " from the list of installed applications. Try using the command " + text.green + "biddle list installed" + text.nocolor + ".",
+                                            stack       = [];
+                                        if (erx !== null) {
+                                            if (typeof erx.stack === "string") {
+                                                stack = erx
+                                                    .stack
+                                                    .split(" at ");
+                                            }
+                                            if (stack.length < 1 || stack[1].indexOf("ChildProcess.exithandler (child_process.js:202:12)") < 0) {
+                                                return apps.errout({error: erx, name: "biddle_test_uninstall_child_stat_readfile_again", stdout: stdout, time: humantime(true)});
+                                            }
+                                        }
+                                        if (stderx !== null && stderx !== "") {
+                                            return apps.errout({error: stderx, name: "biddle_test_uninstall_child_stat_readfile_again", stdout: stdout, time: humantime(true)});
+                                        }
+                                        stdoutx = stdoutx.replace(/(\s+)$/, "");
+                                        if (stdoutx !== uninstagain) {
+                                            return diffFiles("biddle_test_uninstall_child_stat_readfile_again", stdoutx, uninstagain);
+                                        }
+                                        console.log(humantime(false) + " " + text.green + "Redundant uninstall test (error messaging) passed." + text.nocolor);
+                                        next();
+                                    });
                                 });
-                            return stdout;
-                        });
-                });
+                        } else {
+                            return apps.errout({
+                                error : "directory applications" + node.path.sep + "biddletesta changed to something else and not deleted",
+                                name  : "biddle_test_uninstall_child_stat",
+                                stdout: stdout,
+                                time  : humantime(true)
+                            });
+                        }
+                    });
+            });
+        };
+        phases.update        = function biddle_test_update() {
+            return;
+        };
+        phases.unpublish     = function biddle_test_unpublish() {
+            node.child(childcmd + "unpublish biddletesta childtest", {
+                cwd: data.abspath
+            }, function biddle_test_unpublish_child(er, stdout, stder) {
+                var unpubtest = "App " + text.cyan + "biddletesta" + text.nocolor + " is unpublished.";
+                if (er !== null) {
+                    return apps.errout({error: er, name: "biddle_test_unpublish_child", stdout: stdout, time: humantime(true)});
+                }
+                if (stder !== null && stder !== "") {
+                    return apps.errout({error: stder, name: "biddle_test_unpublish_child", stdout: stdout, time: humantime(true)});
+                }
+                stdout = stdout.replace(/(\s+)$/, "");
+                if (stdout !== unpubtest) {
+                    return diffFiles("biddle_test_unpublish_child", stdout, unpubtest);
+                }
+                if (data.published.biddletesta !== undefined) {
+                    return apps.errout({error: "biddletesta property not removed from data.published object", name: "biddle_test_unpublish_child", stdout: stdout, time: humantime(true)});
+                }
+                console.log(humantime(false) + " " + text.green + "biddletesta removed from published.json." + text.nocolor);
+                node
+                    .fs
+                    .stat(data.abspath + "publications" + node.path.sep + "biddletesta", function biddle_test_unpublish_child_stat(err, stat) {
+                        if (err !== null && err.toString().indexOf("no such file or directory") < 0) {
+                            return apps.errout({error: err, name: "biddle_test_unpublish_child_stat", time: humantime(true)});
+                        }
+                        if (stat !== undefined && stat.isDirectory() === true) {
+                            return apps.errout({
+                                error : "publications" + node.path.sep + "biddletesta directory not deleted by unpublish command",
+                                name  : "biddle_test_unpublish_child_stat",
+                                stdout: stdout,
+                                time  : humantime(true)
+                            });
+                        }
+                        if (err.toString().indexOf("no such file or directory") > 0) {
+                            node
+                                .fs
+                                .readFile(data.abspath + "published.json", function biddle_test_unpublish_child_stat_readfile(erf, filedata) {
+                                    var jsondata = {};
+                                    if (erf !== null && erf !== undefined) {
+                                        return apps.errout({error: erf, name: "biddle_test_unpublish_child_stat_readfile", stdout: stdout, time: humantime(true)});
+                                    }
+                                    jsondata = JSON.parse(filedata);
+                                    if (jsondata.biddletesta !== undefined) {
+                                        return apps.errout({error: "biddletesta property still present in published.json file", name: "biddle_test_unpublish_child_stat_readfile", stdout: stdout, time: humantime(true)});
+                                    }
+                                    console.log(humantime(false) + " " + text.green + "unpublish test passed." + text.nocolor);
+                                    node.child(childcmd + "unpublish biddletesta childtest", {
+                                        cwd: data.abspath
+                                    }, function biddle_test_unpublish_child_stat_readfile_again(erx, stdoutx, stderx) {
+                                        var unpubagain = "Attempted to unpublish " + text.cyan + "biddletesta" + text.nocolor + " which is " + text.bold + text.red + "absent" + text.none + " from the list of published applications. Try using the command " + text.green + "biddle list published" + text.nocolor + ".",
+                                            stack      = [];
+                                        if (erx !== null) {
+                                            if (typeof erx.stack === "string") {
+                                                stack = erx
+                                                    .stack
+                                                    .split(" at ");
+                                            }
+                                            if (stack.length < 1 || stack[1].indexOf("ChildProcess.exithandler (child_process.js:202:12)") < 0) {
+                                                return apps.errout({error: erx, name: "biddle_test_unpublish_child_stat_readfile_again", stdout: stdout, time: humantime(true)});
+                                            }
+                                        }
+                                        if (stderx !== null && stderx !== "") {
+                                            return apps.errout({error: stderx, name: "biddle_test_unpublish_child_stat_readfile_again", stdout: stdout, time: humantime(true)});
+                                        }
+                                        stdoutx = stdoutx.replace(/(\s+)$/, "");
+                                        if (stdoutx !== unpubagain) {
+                                            return diffFiles("biddle_test_unpublish_child_stat_readfile_again", stdoutx, unpubagain);
+                                        }
+                                        console.log(humantime(false) + " " + text.green + "Redundant unpublish test (error messaging) passed." + text.nocolor);
+                                        next();
+                                    });
+                                });
+                        } else {
+                            return apps.errout({
+                                error : "directory publications" + node.path.sep + "biddletesta changed to something else and not deleted",
+                                name  : "biddle_test_unpublish_child_stat",
+                                stdout: stdout,
+                                time  : humantime(true)
+                            });
+                        }
+                    });
+            });
+        };
+        phases.unzip         = function biddle_test_unzip() {
+            node.child(childcmd + "unzip " + data.abspath + "unittest" + node.path.sep + "biddletesta.zip " + data.abspath + "unittest" + node.path.sep + "unzip childtest", {
+                cwd: data.abspath
+            }, function biddle_test_unzip_child(er, stdout, stder) {
+                if (er !== null) {
+                    return apps.errout({error: er, name: "biddle_test_unzip_child", stdout: stdout, time: humantime(true)});
+                }
+                if (stder !== null && stder !== "") {
+                    return apps.errout({error: stder, name: "biddle_test_unzip_child", stdout: stdout, time: humantime(true)});
+                }
+                node
+                    .fs
+                    .stat(testpath + node.path.sep + "unzip" + node.path.sep + "biddletesta.js", function biddle_test_unzip_child_stat(err, stat) {
+                        if (err !== null) {
+                            return apps.errout({error: err, name: "biddle_test_unzip_child_stat", stdout: stdout, time: humantime(true)});
+                        }
+                        if (stat.size < 10000) {
+                            return apps.errout({
+                                error : text.red + "unzip test failed." + text.nocolor,
+                                name  : "biddle_test_unzip_child_stat",
+                                stdout: stdout,
+                                time  : humantime(true)
+                            });
+                        }
+                        console.log(humantime(false) + " " + text.green + "biddletesta.js unzipped." + text.nocolor);
+                        node
+                            .fs
+                            .readdir(testpath + node.path.sep + "unzip", function biddle_test_unzip_child_stat_readDir(erd, files) {
+                                var count = 5;
+                                if (erd !== null) {
+                                    return apps.errout({error: erd, name: "biddle_test_unzip_child_stat_readDir", stdout: stdout, time: humantime(true)});
+                                }
+                                if (files.length !== count) {
+                                    return apps.errout({
+                                        error : "Expected " + count + " items unzipped, but there are " + files.length + ".",
+                                        name  : "biddle_test_unzip_child_stat_readDir",
+                                        stdout: stdout,
+                                        time  : humantime(true)
+                                    });
+                                }
+                                console.log(humantime(false) + " " + text.green + count + " items unzipped." + text.nocolor);
+                                console.log(humantime(false) + " " + text.green + "unzip test passed." + text.nocolor);
+                                next();
+                            });
+                        return stdout;
+                    });
+            });
         };
         phases.zip           = function biddle_test_zip() {
-            node
-                .child(childcmd + "zip " + data.abspath + "test" + node.path.sep + "biddletesta " + data.abspath + "unittest childtest", {
-                    cwd: data.abspath
-                }, function biddle_test_zip_child(er, stdout, stder) {
-                    var ziptest = "Zip file written: unittest" + node.path.sep + "biddletesta.zip";
-                    if (er !== null) {
-                        return apps.errout({
-                            error : er,
-                            name  : "biddle_test_zip_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    if (stder !== null && stder !== "") {
-                        return apps.errout({
-                            error : stder,
-                            name  : "biddle_test_zip_child",
-                            stdout: stdout,
-                            time  : humantime(true)
-                        });
-                    }
-                    stdout = stdout
-                        .replace(/(\s+)$/, "")
-                        .replace(data.abspath, "");
-                    if (stdout !== ziptest) {
-                        return diffFiles("biddle_test_zip_child", stdout, ziptest);
-                    }
-                    node
-                        .fs
-                        .stat(testpath + node.path.sep + "biddletesta.zip",
-                        function biddle_test_zip_stat(err, stat) {
-                            if (err !== null) {
-                                return apps.errout({
-                                    error : err,
-                                    name  : "biddle_test_zip_stat",
-                                    stdout: stdout,
-                                    time  : humantime(true)
-                                });
-                            }
-                            if (stat.size > 20000) {
-                                return apps.errout({
-                                    error : "Zip file is too large at " + apps.commas(stat.size) + " bytes.",
-                                    name  : "biddle_test_zip_stat",
-                                    stdout: stdout,
-                                    time  : humantime(true)
-                                });
-                            }
-                            console.log(humantime(false) + " " + text.green + "zip test passed." + text.nocolor + " File " + data.abspath + "unittest" + node.path.sep + "biddletesta.zip written at " + text.bold + text.green + apps.commas(stat.size) + text.none + " bytes.");
-                            next();
-                        });
-                });
+            node.child(childcmd + "zip " + data.abspath + "test" + node.path.sep + "biddletesta " + data.abspath + "unittest childtest", {
+                cwd: data.abspath
+            }, function biddle_test_zip_child(er, stdout, stder) {
+                var ziptest = "Zip file written: unittest" + node.path.sep + "biddletesta.zip";
+                if (er !== null) {
+                    return apps.errout({error: er, name: "biddle_test_zip_child", stdout: stdout, time: humantime(true)});
+                }
+                if (stder !== null && stder !== "") {
+                    return apps.errout({error: stder, name: "biddle_test_zip_child", stdout: stdout, time: humantime(true)});
+                }
+                stdout = stdout
+                    .replace(/(\s+)$/, "")
+                    .replace(data.abspath, "");
+                if (stdout !== ziptest) {
+                    return diffFiles("biddle_test_zip_child", stdout, ziptest);
+                }
+                node
+                    .fs
+                    .stat(testpath + node.path.sep + "biddletesta.zip", function biddle_test_zip_stat(err, stat) {
+                        if (err !== null) {
+                            return apps.errout({error: err, name: "biddle_test_zip_stat", stdout: stdout, time: humantime(true)});
+                        }
+                        if (stat.size > 20000) {
+                            return apps.errout({
+                                error : "Zip file is too large at " + apps.commas(stat.size) + " bytes.",
+                                name  : "biddle_test_zip_stat",
+                                stdout: stdout,
+                                time  : humantime(true)
+                            });
+                        }
+                        console.log(humantime(false) + " " + text.green + "zip test passed." + text.nocolor + " File " + data.abspath + "unittest" + node.path.sep + "biddletesta.zip written at " + text.bold + text.green + apps.commas(stat.size) + text.none + " bytes.");
+                        next();
+                    });
+            });
         };
         next();
     };
     apps.uninstall   = function biddle_uninstall(fromTest) {
         var app = data.installed[data.input[2]];
         if (app === undefined && fromTest === false) {
-            return console.log("Attempted to uninstall " + text.cyan + data.input[2] + text.nocolor + " which is " + text.bold + text.red + "absent" + text.none + " from the list o" +
-                    "f installed applications. Try using the command " + text.green + "biddle list installed" +
-                    text.nocolor + ".");
+            return console.log("Attempted to uninstall " + text.cyan + data.input[2] + text.nocolor + " which is " + text.bold + text.red + "absent" + text.none + " from the list of installed applications. Try using the command " + text.green + "biddle list installed" + text.nocolor + ".");
         }
         if (fromTest === true) {
             delete data.installed.biddletestb;
-            apps.rmrecurse(data.abspath + "applications" + node.path.sep + "biddletestb",
-            function biddle_uninstall_removeTest() {
+            apps.rmrecurse(data.abspath + "applications" + node.path.sep + "biddletestb", function biddle_uninstall_removeTest() {
                 return true;
             });
         }
-        apps
-            .rmrecurse(app.location, function biddle_uninstall_rmrecurse() {
-                var str = "",
-                    loc = app.location;
-                delete data.installed[data.input[2]];
-                str = JSON.stringify(data.installed);
-                apps.writeFile(str, data.abspath + "installed.json",
-                function biddle_uninstall_rmrecurse_writeFile() {
-                    data.input[3] = "remove";
-                    if (data.platform !== "win32") {
-                        apps.global(loc + node.path.sep);
-                    }
-                    if (fromTest === false) {
-                        console.log("App " + text.cyan + data.input[2] + text.nocolor + " is uninstalled.");
-                    }
-                });
+        apps.rmrecurse(app.location, function biddle_uninstall_rmrecurse() {
+            var str = "",
+                loc = app.location;
+            delete data.installed[data.input[2]];
+            str = JSON.stringify(data.installed);
+            apps.writeFile(str, data.abspath + "installed.json", function biddle_uninstall_rmrecurse_writeFile() {
+                data.input[3] = "remove";
+                if (data.platform !== "win32") {
+                    apps.global(loc + node.path.sep);
+                }
+                if (fromTest === false) {
+                    console.log("App " + text.cyan + data.input[2] + text.nocolor + " is uninstalled.");
+                }
             });
+        });
     };
     apps.unpublish   = function biddle_unpublish(fromTest) {
         var app = data.published[data.input[2]];
         if (app === undefined && fromTest === false) {
-            return console.log("Attempted to unpublish " + text.cyan + data.input[2] + text.nocolor + " which is " + text.bold + text.red + "absent" + text.none + " from the list o" +
-                    "f published applications. Try using the command " + text.green + "biddle list published" +
-                    text.nocolor + ".");
+            return console.log("Attempted to unpublish " + text.cyan + data.input[2] + text.nocolor + " which is " + text.bold + text.red + "absent" + text.none + " from the list of published applications. Try using the command " + text.green + "biddle list published" + text.nocolor + ".");
         }
         if (fromTest === true) {
             delete data.published.biddletestb;
-            apps.rmrecurse(data.abspath + "publications" + node.path.sep + "biddletestb",
-            function biddle_unpublish_removeTest() {
+            apps.rmrecurse(data.abspath + "publications" + node.path.sep + "biddletestb", function biddle_unpublish_removeTest() {
                 return true;
             });
         }
-        apps
-            .rmrecurse(app.directory, function biddle_unpublish_rmrecurse() {
-                var str = "";
-                delete data.published[data.input[2]];
-                str = JSON.stringify(data.published);
-                apps.writeFile(str, data.abspath + "published.json",
-                function biddle_unpublish_rmrecurse_writeFile() {
-                    if (fromTest === false) {
-                        console.log("App " + text.cyan + data.input[2] + text.nocolor + " is unpublished.");
-                    }
-                });
+        apps.rmrecurse(app.directory, function biddle_unpublish_rmrecurse() {
+            var str = "";
+            delete data.published[data.input[2]];
+            str = JSON.stringify(data.published);
+            apps.writeFile(str, data.abspath + "published.json", function biddle_unpublish_rmrecurse_writeFile() {
+                if (fromTest === false) {
+                    console.log("App " + text.cyan + data.input[2] + text.nocolor + " is unpublished.");
+                }
             });
+        });
     };
     apps.writeFile   = function biddle_writeFile(fileData, fileName, callback) {
         var callbacker = function biddle_writeFile_callbacker(size) {
@@ -4472,7 +4176,7 @@
                 }
                 callback(fileData);
             },
-            encoding = ((data.command !== "install" && (/[\u0002-\u0008]|[\u000e-\u001f]/).test(fileData) === true) || (/(\.zip)$/).test(fileName) === true)
+            encoding   = ((data.command !== "install" && (/[\u0002-\u0008]|[\u000e-\u001f]/).test(fileData) === true) || (/(\.zip)$/).test(fileName) === true)
                 ? "binary"
                 : "utf8";
         node
@@ -4481,15 +4185,11 @@
                 if (err !== null) {
                     if (data.platform !== "win32" && data.command === "global" && err.toString().indexOf("EACCES: permission denied")) {
                         return apps.errout({
-                            error: err.toString() + "\n" + text.bold + text.red + "This command requires sudo access." + text.none + " Pleas" +
-                                    "e try 'sudo node biddle global'.",
+                            error: err.toString() + "\n" + text.bold + text.red + "This command requires sudo access." + text.none + " Please try 'sudo node biddle global'.",
                             name : "biddle_writeFile_callback"
                         });
                     }
-                    return apps.errout({
-                        error: err,
-                        name : "biddle_writeFile_callback"
-                    });
+                    return apps.errout({error: err, name: "biddle_writeFile_callback"});
                 }
                 if (data.command === "get" || data.command === "publish") {
                     if (data.command === "publish") {
@@ -4499,10 +4199,7 @@
                         .fs
                         .stat(fileName, function biddle_writeFile_callback_getstat(errstat, stat) {
                             if (errstat !== null) {
-                                return apps.errout({
-                                    error: errstat,
-                                    name : "biddle_writeFile_callback_getstat"
-                                });
+                                return apps.errout({error: errstat, name: "biddle_writeFile_callback_getstat"});
                             }
                             callbacker(stat.size);
                         });
@@ -4521,41 +4218,30 @@
                 ? ""
                 : "_" + apps.sanitizef(zippack.name),
             childfunc   = function biddle_zip_childfunc(zipfilename, zipcmd, writejson) {
-                node
-                    .child(zipcmd, {
-                        cwd: zipdir
-                    }, function biddle_zip_childfunc_child(err, stdout, stderr) {
-                        if (err !== null && stderr.toString().indexOf("No such file or directory") < 0) {
-                            return apps.errout({
-                                error: err,
-                                name : "biddle_zip_childfunc_child"
+                node.child(zipcmd, {
+                    cwd: zipdir
+                }, function biddle_zip_childfunc_child(err, stdout, stderr) {
+                    if (err !== null && stderr.toString().indexOf("No such file or directory") < 0) {
+                        return apps.errout({error: err, name: "biddle_zip_childfunc_child"});
+                    }
+                    if (stderr !== null && stderr.replace(/\s+/, "") !== "" && stderr.indexOf("No such file or directory") < 0) {
+                        return apps.errout({error: stderr, name: "biddle_zip_childfunc_child"});
+                    }
+                    if (data.command === "install") {
+                        node
+                            .fs
+                            .readFile(data.address.target + "package.json", function biddle_zip_childfunc_child_install(erf, filedata) {
+                                if (erf !== null && erf !== undefined) {
+                                    return apps.errout({error: erf, name: "biddle_zip_childfunc_child_install"});
+                                }
+                                data.packjson = JSON.parse(filedata);
+                                callback(zipfilename, writejson);
                             });
-                        }
-                        if (stderr !== null && stderr.replace(/\s+/, "") !== "" && stderr.indexOf("No such file or directory") < 0) {
-                            return apps.errout({
-                                error: stderr,
-                                name : "biddle_zip_childfunc_child"
-                            });
-                        }
-                        if (data.command === "install") {
-                            node
-                                .fs
-                                .readFile(data.address.target + "package.json",
-                                function biddle_zip_childfunc_child_install(erf, filedata) {
-                                    if (erf !== null && erf !== undefined) {
-                                        return apps.errout({
-                                            error: erf,
-                                            name : "biddle_zip_childfunc_child_install"
-                                        });
-                                    }
-                                    data.packjson = JSON.parse(filedata);
-                                    callback(zipfilename, writejson);
-                                });
-                        } else {
-                            callback(zipfilename, writejson);
-                        }
-                        return stdout;
-                    });
+                    } else {
+                        callback(zipfilename, writejson);
+                    }
+                    return stdout;
+                });
             };
         if (data.command === "publish" || data.command === "zip") {
             if (data.command === "zip") {
@@ -4568,10 +4254,8 @@
                 apps.makedir(data.address.target, function biddle_zip_makepubdir() {
                     zipdir = zippack.location;
                     if (data.latestVersion === true) {
-                        latestfile = zipfile.replace(data.packjson.version + ".zip",
-                        "latest.zip");
-                        latestcmd  = cmd.replace(data.packjson.version + ".zip",
-                        "latest.zip");
+                        latestfile = zipfile.replace(data.packjson.version + ".zip", "latest.zip");
+                        latestcmd  = cmd.replace(data.packjson.version + ".zip", "latest.zip");
                         childfunc(latestfile, latestcmd, false);
                     }
                     childfunc(zipfile, cmd, true);
@@ -4581,10 +4265,7 @@
                     .fs
                     .stat(data.input[2], function biddle_zip_stat(ers, stats) {
                         if (ers !== null) {
-                            return apps.errout({
-                                error: ers,
-                                name : "biddle_zip_stat"
-                            });
+                            return apps.errout({error: ers, name: "biddle_zip_stat"});
                         }
                         if (stats.isDirectory() === true) {
                             cmd = cmds.zip(zipfile, "");
@@ -4691,25 +4372,21 @@
                     if (data.command === "commands") {
                         apps.commands();
                     } else if (data.command === "copy") {
-                        apps
-                            .copy(data.input[2], data.input[3], [], function biddle_init_start_copy() {
-                                return true;
-                            });
+                        apps.copy(data.input[2], data.input[3], [], function biddle_init_start_copy() {
+                            return true;
+                        });
                     } else if (data.command === "get") {
-                        apps
-                            .get(data.input[2], function biddle_init_start_getback(filedata) {
-                                apps
-                                    .writeFile(filedata, data.address.target + data.fileName, function biddle_init_start_getback_callback() {
-                                        return filedata;
-                                    });
+                        apps.get(data.input[2], function biddle_init_start_getback(filedata) {
+                            apps.writeFile(filedata, data.address.target + data.fileName, function biddle_init_start_getback_callback() {
+                                return filedata;
                             });
+                        });
                     } else if (data.command === "global") {
                         apps.global(data.abspath);
                     } else if (data.command === "hash") {
-                        apps
-                            .hash(data.input[2], "hashFile", function biddle_init_start_hash() {
-                                console.log(data.hashFile);
-                            });
+                        apps.hash(data.input[2], "hashFile", function biddle_init_start_hash() {
+                            console.log(data.hashFile);
+                        });
                     } else if (data.command === "install") {
                         apps.install();
                     } else if (data.command === "list") {
@@ -4719,10 +4396,9 @@
                     } else if (data.command === "publish") {
                         apps.publish();
                     } else if (data.command === "remove") {
-                        apps
-                            .rmrecurse(data.input[2], function biddle_init_stat_remove() {
-                                console.log("Removed " + apps.relToAbs(data.input[2], data.cwd));
-                            });
+                        apps.rmrecurse(data.input[2], function biddle_init_stat_remove() {
+                            console.log("Removed " + apps.relToAbs(data.input[2], data.cwd));
+                        });
                     } else if (data.command === "status") {
                         apps.status();
                     } else if (data.command === "test") {
@@ -4732,21 +4408,19 @@
                     } else if (data.command === "unpublish") {
                         apps.unpublish(false);
                     } else if (data.command === "unzip") {
-                        apps
-                            .zip(function biddle_init_start_unzip(zipfile) {
-                                return console.log("File " + zipfile + " unzipped to: " + data.address.target);
-                            }, {
-                                location: apps.relToAbs(data.input[2], data.cwd),
-                                name    : ""
-                            });
+                        apps.zip(function biddle_init_start_unzip(zipfile) {
+                            return console.log("File " + zipfile + " unzipped to: " + data.address.target);
+                        }, {
+                            location: apps.relToAbs(data.input[2], data.cwd),
+                            name    : ""
+                        });
                     } else if (data.command === "zip") {
-                        apps
-                            .zip(function biddle_init_start_zip(zipfile) {
-                                return console.log("Zip file written: " + zipfile);
-                            }, {
-                                location: apps.relToAbs(data.input[2], data.cwd),
-                                name    : ""
-                            });
+                        apps.zip(function biddle_init_start_zip(zipfile) {
+                            return console.log("Zip file written: " + zipfile);
+                        }, {
+                            location: apps.relToAbs(data.input[2], data.cwd),
+                            name    : ""
+                        });
                     }
                 }
             };
@@ -4772,11 +4446,7 @@
                 b += 1;
             } while (b < c);
             if (a.length < 1) {
-                a = [
-                    "",
-                    "",
-                    ""
-                ];
+                a = ["", "", ""];
             }
             a[0] = a[0].toLowerCase();
             if (a[a.length - 1] === "childtest") {
@@ -4813,14 +4483,10 @@
         data.address.publications = data.abspath + "publications" + node.path.sep;
         node
             .fs
-            .readFile(data.abspath + "installed.json",
-            "utf8", function biddle_init_installed(err, fileData) {
+            .readFile(data.abspath + "installed.json", "utf8", function biddle_init_installed(err, fileData) {
                 var parsed = {};
                 if (err !== null && err !== undefined) {
-                    return apps.errout({
-                        error: err,
-                        name : "biddle_init_installed"
-                    });
+                    return apps.errout({error: err, name: "biddle_init_installed"});
                 }
                 if (fileData !== "") {
                     parsed = JSON.parse(fileData);
@@ -4833,14 +4499,10 @@
             });
         node
             .fs
-            .readFile(data.abspath + "published.json",
-            "utf8", function biddle_init_published(err, fileData) {
+            .readFile(data.abspath + "published.json", "utf8", function biddle_init_published(err, fileData) {
                 var parsed = {};
                 if (err !== null && err !== undefined) {
-                    return apps.errout({
-                        error: err,
-                        name : "biddle_init_published"
-                    });
+                    return apps.errout({error: err, name: "biddle_init_published"});
                 }
                 if (fileData !== "") {
                     parsed = JSON.parse(fileData);
@@ -4883,10 +4545,7 @@
                                 }
                                 return;
                             }
-                            return apps.errout({
-                                error: err,
-                                name : "biddle_init_biddlerc_readFile"
-                            });
+                            return apps.errout({error: err, name: "biddle_init_biddlerc_readFile"});
                         }
                         if (fileData !== "") {
                             parsed = JSON.parse(fileData);
