@@ -16,7 +16,7 @@
             cyan     : "\u001b[36m",
             green    : "\u001b[32m",
             nocolor  : "\u001b[39m",
-            none     : "\u001b[39m\u001b[0m", // List of ANSI formatting instructions
+            none     : "\u001b[39m\u001b[0m",
             normal   : "\u001b[0m",
             purple   : "\u001b[35m",
             red      : "\u001b[31m",
@@ -488,12 +488,24 @@
             .readFile(file, "utf8", function biddle_getpjson_readfile(err, fileData) {
                 if (err !== null && err !== undefined) {
                     if (err.toString().indexOf("no such file or directory") > 0) {
-                        return apps.errout({
-                            error: "The package.json file is missing from " + data.input[2] + ". biddle cannot publish without a package.json file. Perhaps " + apps.relToAbs(data.input[2], data.cwd) + " is the incorrect location.",
-                            name : "biddle_getpjson_readFile"
+                        file = file.replace(node.path.sep + "package.json", "");
+                        node.fs.stat(file, function biddle_getpjson_readfile_testdir(errs) {
+                            if (errs !== null && errs.toString().indexOf("no such file or directory") > -1) {
+                                apps.errout({
+                                    error: "Directory " + text.red + text.bold + file + text.none + " does not exist.",
+                                    name : "biddle_getpjson_readfile_testdir"
+                                });
+                            } else {
+                                apps.errout({
+                                    error: "The package.json file is missing from " + data.input[2] + ". biddle cannot publish without a package.json file. Perhaps " + apps.relToAbs(data.input[2], data.cwd) + " is the incorrect location.",
+                                    name : "biddle_getpjson_readFile_testdir"
+                                });
+                            }
                         });
+                    } else {
+                        apps.errout({error: err, name: "biddle_getpjson_readFile"});
                     }
-                    return apps.errout({error: err, name: "biddle_getpjson_readFile"});
+                    return;
                 }
                 data.packjson = JSON.parse(fileData);
                 if (typeof data.packjson.name !== "string" || data.packjson.name.length < 1) {
@@ -1437,6 +1449,29 @@
                 for (b = 0; b < len; b += 1) {
                     if (lines[b].slice(1).indexOf("|") > -1 && (/---+\|---+/).test(lines[b + 1]) === true) {
                         table();
+                    } else if ((/^(\s*```+\s*)$/).test(lines[b]) === true) {
+                        output.push("");
+                        b += 1;
+                        if (b < len) {
+                            if ((/^(\s*```+\s*)$/).test(lines[b]) === true) {
+                                output.push("");
+                            } else {
+                                lines[b] = text.green + lines[b];
+                                do {
+                                    if ((/^(\s*```+\s*)$/).test(lines[b + 1]) === true) {
+                                        lines[b] = ind + lines[b] + text.nocolor;
+                                        output.push(lines[b]);
+                                        b += 1;
+                                        break;
+                                    }
+                                    output.push(ind + lines[b]);
+                                    b += 1;
+                                } while (b < len);
+                                if ((/^(\s*```+\s*)$/).test(lines[b]) === true) {
+                                    lines[b] = "";
+                                }
+                            }
+                        }
                     } else if (lines[b].indexOf("#### ") === 0) {
                         listly   = [];
                         ind      = "    ";
@@ -2640,7 +2675,7 @@
             }, function biddle_test_get_childBinary(er, stdout, stder) {
                 var size     = "",
                     sizenumb = "",
-                    sizetest = " \u001b[1m\u001b[32m21,909\u001b[39m\u001b[0m";
+                    sizetest = " \u001b[1m\u001b[32m16,786\u001b[39m\u001b[0m";
                 if (er !== null) {
                     return apps.errout({error: er, name: "biddle_test_get_childBinary", stdout: stdout, time: humantime(true)});
                 }
@@ -3850,13 +3885,6 @@
                     });
                 });
             });
-            // readfile - test/biddletesta/package.json replace "99.99.1234" with
-            // "99.99.1235" writeFile biddle publish test/biddletesta  (run from an
-            // unfamiliar location as everything should be relative to the project
-            // directory) verify
-            // * latest files, 1234 files, and 1235 files
-            // * files are the proper sizes
-            // * verify index.html contains those files
         };
         phases.uninstall     = function biddle_test_uninstall() {
             node.child(childcmd + "uninstall biddletesta childtest", {
@@ -4342,7 +4370,7 @@
                     data.input[2] = data.command;
                     data.command  = "markdown";
                     apps.markdown();
-                } else if (commands[data.command] === undefined) {
+                } else if (commands[data.command] === undefined && commands[data.command + "s"] === undefined) {
                     apps.errout({
                         error: "Unrecognized command: " + text.red + data.command + text.nocolor + ".  Currently these commands are recognized:\r\n\r\n" + Object
                             .keys(commands)
@@ -4350,7 +4378,7 @@
                         name : "biddle_init_start"
                     });
                 } else {
-                    if (data.input[2] === undefined && data.command !== "commands" && data.command !== "global" && data.command !== "list" && data.command !== "status" && data.command !== "test") {
+                    if (data.input[2] === undefined && data.command !== "command" && data.command !== "global" && data.command !== "list" && data.command !== "status" && data.command !== "test") {
                         if (data.command === "copy" || data.command === "hash" || data.command === "markdown" || data.command === "remove" || data.command === "unzip" || data.command === "zip") {
                             valuetype = "path to a local file or directory";
                         } else if (data.command === "get" || data.command === "install" || data.command === "publish") {
@@ -4369,7 +4397,7 @@
                             name : "biddle_init_start"
                         });
                     }
-                    if (data.command === "commands") {
+                    if (data.command === "command" || data.command === "commands") {
                         apps.commands();
                     } else if (data.command === "copy") {
                         apps.copy(data.input[2], data.input[3], [], function biddle_init_start_copy() {
@@ -4459,7 +4487,11 @@
             ? data
                 .input[1]
                 .toLowerCase()
+                .replace(/(s\s*)$/, "")
             : "";
+        if (data.command === "statu") {
+            data.command = "status";
+        }
         data.abspath              = (function biddle_abspath() {
             var absarr = data
                 .input[0]
@@ -4514,63 +4546,73 @@
                 }
             });
         if (data.command === "get" || data.command === "install" || data.command === "publish") {
-            (function biddle_init_biddlerc() {
-                var rcpath = (data.command === "publish")
-                    ? apps.relToAbs(data.input[2].replace(/((\/|\\)+)$/, ""), data.cwd) + node.path.sep + ".biddlerc"
-                    : process.cwd() + node.path.sep + ".biddlerc";
-                node
-                    .fs
-                    .readFile(rcpath, "utf8", function biddle_init_biddlerc_readFile(err, fileData) {
-                        var parsed = {},
-                            dirs   = function biddle_init_biddlerc_dirs(type) {
-                                if (typeof parsed.directories[type] === "string") {
-                                    if (parsed.directories[type].length > 0) {
-                                        if (data.command === "publish") {
-                                            data.address[type] = apps.relToAbs(parsed.directories[type], apps.relToAbs(data.input[2], data.cwd)) + node.path.sep;
-                                        } else {
-                                            data.address[type] = apps.relToAbs(parsed.directories[type], data.abspath) + node.path.sep;
+            if (data.input.length < 3) {
+                return apps.errout({error: "Biddle command " + text.yellow + text.bold + data.command + text.none + " requires an address or file path.", name: "biddle_init"});
+            }
+            //if (data.childtest === true) {
+                // remove second arguments for publish and install
+                // add second argument for get
+                // publish input[2] can be relative but dirs must be relative to it
+                //data.address.applications = apps.relToAbs("../unittest/applications", );
+            //} else {
+                (function biddle_init_biddlerc() {
+                    var rcpath = (data.command === "publish")
+                        ? apps.relToAbs(data.input[2].replace(/((\/|\\)+)$/, ""), data.cwd) + node.path.sep + ".biddlerc"
+                        : process.cwd() + node.path.sep + ".biddlerc";
+                    node
+                        .fs
+                        .readFile(rcpath, "utf8", function biddle_init_biddlerc_readFile(err, fileData) {
+                            var parsed = {},
+                                dirs   = function biddle_init_biddlerc_dirs(type) {
+                                    if (typeof parsed.directories[type] === "string") {
+                                        if (parsed.directories[type].length > 0) {
+                                            if (data.command === "publish") {
+                                                data.address[type] = apps.relToAbs(parsed.directories[type], apps.relToAbs(data.input[2], data.cwd)) + node.path.sep;
+                                            } else {
+                                                data.address[type] = apps.relToAbs(parsed.directories[type], data.abspath) + node.path.sep;
+                                            }
+                                            data
+                                                .ignore
+                                                .push(parsed.directories[type]);
+                                            return;
                                         }
+                                    }
+                                };
+                            if (err !== null && err !== undefined) {
+                                if (err.toString().indexOf("no such file or directory") > 0) {
+                                    status.biddlerc = true;
+                                    if (status.installed === true && status.published === true) {
+                                        start();
+                                    }
+                                    return;
+                                }
+                                return apps.errout({error: err, name: "biddle_init_biddlerc_readFile"});
+                            }
+                            if (fileData !== "") {
+                                parsed = JSON.parse(fileData);
+                            }
+                            dirs("applications");
+                            dirs("downloads");
+                            dirs("publications");
+                            if (typeof parsed.exclusions === "object" && parsed.exclusions.length > 0) {
+                                parsed
+                                    .exclusions
+                                    .forEach(function biddle_init_biddlerc_readFile_exclusions(value) {
                                         data
                                             .ignore
-                                            .push(parsed.directories[type]);
-                                        return;
-                                    }
-                                }
-                            };
-                        if (err !== null && err !== undefined) {
-                            if (err.toString().indexOf("no such file or directory") > 0) {
-                                status.biddlerc = true;
-                                if (status.installed === true && status.published === true) {
-                                    start();
-                                }
-                                return;
+                                            .push(value.replace(/\\|\//g, node.path.sep));
+                                    });
+                                data
+                                    .ignore
+                                    .push(".biddlerc");
                             }
-                            return apps.errout({error: err, name: "biddle_init_biddlerc_readFile"});
-                        }
-                        if (fileData !== "") {
-                            parsed = JSON.parse(fileData);
-                        }
-                        dirs("applications");
-                        dirs("downloads");
-                        dirs("publications");
-                        if (typeof parsed.exclusions === "object" && parsed.exclusions.length > 0) {
-                            parsed
-                                .exclusions
-                                .forEach(function biddle_init_biddlerc_readFile_exclusions(value) {
-                                    data
-                                        .ignore
-                                        .push(value.replace(/\\|\//g, node.path.sep));
-                                });
-                            data
-                                .ignore
-                                .push(".biddlerc");
-                        }
-                        status.biddlerc = true;
-                        if (status.installed === true && status.published === true) {
-                            start();
-                        }
-                    });
-            }());
+                            status.biddlerc = true;
+                            if (status.installed === true && status.published === true) {
+                                start();
+                            }
+                        });
+                }());
+            //}
         } else {
             status.biddlerc = true;
             if (status.installed === true && status.published === true) {
