@@ -75,6 +75,10 @@ Prints to console a SHA512 hash against a local file.
 
     node biddle hash downloads/myfile.zip
 
+Hash a string by indicating *string* and a value instead of a file path.
+
+    node biddle hash string "my string value"
+
 ### help
 Prints the readme.md file contents to console in a human friendly way.
 
