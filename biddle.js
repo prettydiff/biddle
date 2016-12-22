@@ -2039,7 +2039,9 @@
         var abs     = reference
                 .replace(/((\/|\\)+)$/, "")
                 .split(node.path.sep),
-            rel     = filepath.split(node.path.sep),
+            rel     = filepath
+                .replace(/\\|\//g, node.path.sep)
+                .split(node.path.sep),
             cur     = data
                 .cwd
                 .split(node.path.sep),
