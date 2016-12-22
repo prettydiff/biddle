@@ -42,6 +42,7 @@
             uninstall: "Uninstall an application installed by biddle.",
             unpublish: "Unpublish an application published by biddle.",
             unzip    : "Unzip a zip file.",
+            version  : "Write out biddle version number.",
             zip      : "Zip a file or directory."
         },
         data     = {
@@ -4435,6 +4436,12 @@
                 }
             });
     };
+    apps.version     = function biddle_version() {
+        data.input[2] = data.abspath;
+        apps.getpjson(function biddle_version_vers() {
+            console.log(data.packjson.version);
+        });
+    };
     apps.zip         = function biddle_zip(callback, zippack) {
         var zipfile     = "",
             latestfile  = "",
@@ -4577,7 +4584,7 @@
                         name : "biddle_init_start"
                     });
                 } else {
-                    if (data.input[2] === undefined && data.command !== "command" && data.command !== "global" && data.command !== "list" && data.command !== "status" && data.command !== "test") {
+                    if (data.input[2] === undefined && data.command !== "command" && data.command !== "global" && data.command !== "list" && data.command !== "status" && data.command !== "test" && data.command !== "version") {
                         if (data.command === "copy" || data.command === "hash" || data.command === "markdown" || data.command === "remove" || data.command === "unzip" || data.command === "zip") {
                             valuetype = "path to a local file or directory";
                         } else if (data.command === "get" || data.command === "install" || data.command === "publish") {
@@ -4641,6 +4648,8 @@
                             location: apps.relToAbs(data.input[2], data.cwd),
                             name    : ""
                         });
+                    } else if (data.command === "version") {
+                        apps.version();
                     } else if (data.command === "zip") {
                         apps.zip(function biddle_init_start_zip(zipfile) {
                             return console.log("Zip file written: " + zipfile);
@@ -4683,14 +4692,13 @@
             return a;
         }());
         data.command              = (data.input.length > 1)
-            ? data
-                .input[1]
-                .toLowerCase()
-                .replace(/(s\s*)$/, "")
+            ? (data.command[data.input[1].toLowerCase().replace(/(s\s*)$/, "")] === undefined && data.input[1].toLowerCase() !== "status")
+                ? data
+                    .input[1]
+                    .toLowerCase()
+                    .replace(/(s\s*)$/, "")
+                : data.input[1].toLowerCase()
             : "";
-        if (data.command === "statu") {
-            data.command = "status";
-        }
         data.abspath              = (function biddle_abspath() {
             var absarr = data
                 .input[0]
