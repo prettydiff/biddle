@@ -4492,7 +4492,9 @@
                     if (data.latestVersion === true) {
                         latestfile = zipfile.replace(data.packjson.version + ".zip", "latest.zip");
                         latestcmd  = cmd.replace(data.packjson.version + ".zip", "latest.zip");
-                        childfunc(latestfile, latestcmd, false);
+                        apps.rmrecurse(zipfile, function biddle_zip_makepubdir_removeFile() {
+                            childfunc(latestfile, latestcmd, false);
+                        });
                     }
                     childfunc(zipfile, cmd, true);
                 });
