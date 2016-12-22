@@ -1876,7 +1876,7 @@
             }
             data.packjson.name  = apps.sanitizef(data.packjson.name);
             publoc              = data.address.publications + data.packjson.name + node.path.sep;
-            data.address.target = data.address.target + data.packjson.name + node.path.sep;
+            data.address.target = publoc;
             data
                 .published[data.packjson.name]
                 .versions
@@ -2289,7 +2289,8 @@
                 "get",
                 "zip",
                 "unzip",
-                "publish",
+                "publishA",
+                "publishB",
                 "install",
                 "listStatus",
                 "republish",
@@ -2974,8 +2975,7 @@
         };
         phases.listStatus    = function biddle_test_listStatus() {
             var listcmds  = [
-                    "publish " + data.abspath + "test" + node.path.sep + "biddletestb",
-                    "install " + data.abspath + "publications" + node.path.sep + "biddletestb" + node.path.sep + "biddletestb_latest.zip",
+                    "install " + data.abspath + "unittest" + node.path.sep + "publications" + node.path.sep + "biddletestb" + node.path.sep + "biddletestb_latest.zip",
                     "list",
                     "list published",
                     "list installed",
@@ -2991,8 +2991,8 @@
                     node.child(childcmd + listcmds[0] + " childtest", {
                         cwd: data.abspath
                     }, function biddle_test_listStatus_childWrapper_child(er, stdout, stder) {
-                        var listout = text.underline + "installed applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep + "\n\n" + text.underline + "published applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "publications" + node.path.sep + "biddletestb" + node.path.sep,
-                            listpub = text.underline + "published applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "publications" + node.path.sep + "biddletestb" + node.path.sep,
+                        var listout = text.underline + "installed applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep + "\n\n" + text.underline + "published applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "unittest" + node.path.sep + "publications" + node.path.sep + "biddletestb" + node.path.sep,
+                            listpub = text.underline + "published applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "unittest" + node.path.sep + "publications" + node.path.sep + "biddletestb" + node.path.sep,
                             listist = text.underline + "installed applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep,
                             statout = "\n" + text.underline + text.green + "all applications are current:" + text.none + "\n\n* biddletesta matches published version " + text.cyan + "99.99.xxxx" + text.nocolor + "\n* biddletestb matches published version " + text.cyan + "98.98.1234" + text.nocolor,
                             statpba = "\n* biddletesta matches published version " + text.cyan + "99.99.xxxx" + text.nocolor,
@@ -3565,10 +3565,10 @@
                 });
             });
         };
-        phases.publish       = function biddle_test_publish() {
+        phases.publishA      = function biddle_test_publishA() {
             node.child(childcmd + "publish " + data.abspath + "test" + node.path.sep + "biddletesta childtest", {
                 cwd: data.abspath
-            }, function biddle_test_publish_child(er, stdout, stder) {
+            }, function biddle_test_publishA_child(er, stdout, stder) {
                 var bgreen      = text.bold + text.green,
                     bcyan       = text.bold + text.cyan,
                     publishtest = "File publications/biddletesta/biddlesort.js written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletesta/biddletesta_" + bcyan + "xxx.zip" + text.none + " written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletesta/biddletesta_" + bcyan + "latest.zip" + text.none + " written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletesta/biddletesta_" + bcyan + "min_xxx.zip" + text.none + " written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletesta/biddletesta_" + bcyan + "min_latest.zip" + text.none + " written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletesta/biddletesta_" + bcyan + "prod_xxx.zip" + text.none + " written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletesta/biddletesta_" + bcyan + "prod_latest.zip" + text.none + " written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletesta/filedata.json written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletesta/index.xhtml written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletesta/latest.txt written at " + bgreen + "xxx" + text.none + " bytes.",
@@ -3576,7 +3576,7 @@
                         .replace(/(\s+)$/, "")
                         .replace("\r\n", "\n")
                         .split("\n")
-                        .sort(function biddle_test_publish_child_outSort(a, b) {
+                        .sort(function biddle_test_publishA_child_outSort(a, b) {
                             if (a > b) {
                                 return 1;
                             }
@@ -3585,21 +3585,21 @@
                     output      = "",
                     abspath     = new RegExp(data.abspath.replace(/\\/g, "\\\\"), "g");
                 if (er !== null) {
-                    apps.errout({error: er, name: "biddle_test_publish_child", stdout: stdout, time: humantime(true)});
+                    apps.errout({error: er, name: "biddle_test_publishA_child", stdout: stdout, time: humantime(true)});
                 }
                 if (stder !== null && stder !== "") {
-                    apps.errout({error: stder, name: "biddle_test_publish_child", stdout: stdout, time: humantime(true)});
+                    apps.errout({error: stder, name: "biddle_test_publishA_child", stdout: stdout, time: humantime(true)});
                 }
                 node
                     .fs
-                    .stat(data.abspath + "temp", function biddle_test_publish_child_statTemp(errtemp) {
+                    .stat(data.abspath + "temp", function biddle_test_publishA_child_statTemp(errtemp) {
                         if (errtemp === null) {
-                            return apps.errout({error: "Directory 'temp' from publish operation should have been removed.", name: "biddle_test_publish_child_statTemp", time: humantime(true)});
+                            return apps.errout({error: "Directory 'temp' from publish operation should have been removed.", name: "biddle_test_publishA_child_statTemp", time: humantime(true)});
                         }
                         if (errtemp.toString().indexOf("no such file or directory") < 0) {
-                            return apps.errout({error: errtemp, name: "biddle_test_publish_child_statTemp", time: humantime(true)});
+                            return apps.errout({error: errtemp, name: "biddle_test_publishA_child_statTemp", time: humantime(true)});
                         }
-                        outputs.forEach(function biddle_test_publish_child_statTemp_formatOutput(value, index, array) {
+                        outputs.forEach(function biddle_test_publishA_child_statTemp_formatOutput(value, index, array) {
                             var val = value.slice(value.indexOf("publications"));
                             array[index] = "File " + val;
                         });
@@ -3611,28 +3611,28 @@
                             .replace(abspath, "");
                         if (stdout.indexOf("Error") > 0) {
                             console.log(stdout);
-                            return apps.errout({error: "Error from child process", name: "biddle_test_publish_child_statTemp", stdout: stdout, time: humantime(true)});
+                            return apps.errout({error: "Error from child process", name: "biddle_test_publishA_child_statTemp", stdout: stdout, time: humantime(true)});
                         }
                         if (output !== publishtest) {
-                            return diffFiles("biddle_test_publish_child_statTemp", output, publishtest);
+                            return diffFiles("biddle_test_publishA_child_statTemp", output, publishtest);
                         }
                         console.log(humantime(false) + " " + text.green + "The stdout for publish is correct." + text.nocolor);
                         node
                             .fs
-                            .readFile(data.abspath + "published.json", "utf8", function biddle_test_publish_child_statTemp_readJSON(err, fileData) {
+                            .readFile(data.abspath + "published.json", "utf8", function biddle_test_publishA_child_statTemp_readJSON(err, fileData) {
                                 var jsondata = {},
                                     pub      = data.abspath + "publications" + node.path.sep + "biddletesta";
                                 if (err !== null && err !== undefined) {
-                                    return apps.errout({error: err, name: "biddle_test_publish_child_statTemp_readJSON", stdout: stdout, time: humantime(true)});
+                                    return apps.errout({error: err, name: "biddle_test_publishA_child_statTemp_readJSON", stdout: stdout, time: humantime(true)});
                                 }
                                 jsondata = JSON.parse(fileData);
                                 if (jsondata.biddletesta === undefined) {
-                                    return apps.errout({error: "No biddletesta property in published.json file.", name: "biddle_test_publish_child_statTemp_readJSON", stdout: stdout, time: humantime(true)});
+                                    return apps.errout({error: "No biddletesta property in published.json file.", name: "biddle_test_publishA_child_statTemp_readJSON", stdout: stdout, time: humantime(true)});
                                 }
                                 if ((/^(99\.99\.\d{4})$/).test(jsondata.biddletesta.latest) === false) {
                                     return apps.errout({
                                         error : "biddletesta.latest of published.json is '" + jsondata.biddletesta.latest + "' not equivalent to '99\\.99\\.\\d{4}'.",
-                                        name  : "biddle_test_publish_child_statTemp_readJSON",
+                                        name  : "biddle_test_publishA_child_statTemp_readJSON",
                                         stdout: stdout,
                                         time  : humantime(true)
                                     });
@@ -3640,39 +3640,39 @@
                                 console.log(humantime(false) + " " + text.green + "File published.json contains biddletesta" + text.nocolor);
                                 node
                                     .fs
-                                    .readdir(pub, function biddle_test_publish_child_statTemp_readJSON_readdir(errr, files) {
+                                    .readdir(pub, function biddle_test_publishA_child_statTemp_readJSON_readdir(errr, files) {
                                         var filetest = "biddlesort.js,biddletesta_v.hash,biddletesta_v.zip,biddletesta_latest.hash,biddl" +
                                                      "etesta_latest.zip,biddletesta_min_v.hash,biddletesta_min_v.zip,biddletesta_min_l" +
                                                      "atest.hash,biddletesta_min_latest.zip,biddletesta_prod_v.hash,biddletesta_prod_v" +
                                                      ".zip,biddletesta_prod_latest.hash,biddletesta_prod_latest.zip,filedata.json,inde" +
                                                      "x.xhtml,latest.txt",
                                             filelist = files
-                                                .sort(function biddle_test_publish_child_statTemp_readJSON_readdir_outSort(a, b) {
+                                                .sort(function biddle_test_publishA_child_statTemp_readJSON_readdir_outSort(a, b) {
                                                     if (a > b) {
                                                         return 1;
                                                     }
                                                     return -1;
                                                 })
                                                 .join(",")
-                                                .replace(/_\d+\.\d+\.\d+\.((zip)|(hash))/g, function biddle_test_publish_child_statTemp_readJSON_readdir_replace(x) {
+                                                .replace(/_\d+\.\d+\.\d+\.((zip)|(hash))/g, function biddle_test_publishA_child_statTemp_readJSON_readdir_replace(x) {
                                                     if (x.indexOf("zip") > 0) {
                                                         return "_v.zip";
                                                     }
                                                     return "_v.hash";
                                                 }),
                                             stats    = {},
-                                            statfile = function biddle_test_publish_child_statTemp_readJSON_readdir_statfile(index) {
+                                            statfile = function biddle_test_publishA_child_statTemp_readJSON_readdir_statfile(index) {
                                                 stats[files[index]] = false;
                                                 node
                                                     .fs
-                                                    .stat(pub + node.path.sep + files[index], function biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback(errs, statobj) {
+                                                    .stat(pub + node.path.sep + files[index], function biddle_test_publishA_child_statTemp_readJSON_readdir_statfile_statback(errs, statobj) {
                                                         if (errs !== null) {
-                                                            return apps.errout({error: errs, name: "biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback", stdout: stdout, time: humantime(true)});
+                                                            return apps.errout({error: errs, name: "biddle_test_publishA_child_statTemp_readJSON_readdir_statfile_statback", stdout: stdout, time: humantime(true)});
                                                         }
                                                         if (files[index].indexOf(".hash") === files[index].length - 5 && statobj.size !== 128) {
                                                             return apps.errout({
                                                                 error : "Expected hash file " + files[index] + " to be file size 128.",
-                                                                name  : "biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback",
+                                                                name  : "biddle_test_publishA_child_statTemp_readJSON_readdir_statfile_statback",
                                                                 stdout: stdout,
                                                                 time  : humantime(true)
                                                             });
@@ -3680,7 +3680,7 @@
                                                         if (files[index].indexOf(".zip") === files[index].length - 4 && statobj.size > 20000) {
                                                             return apps.errout({
                                                                 error : "Zip file " + files[index] + " is too big at " + apps.commas(statobj.size) + ".",
-                                                                name  : "biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback",
+                                                                name  : "biddle_test_publishA_child_statTemp_readJSON_readdir_statfile_statback",
                                                                 stdout: stdout,
                                                                 time  : humantime(true)
                                                             });
@@ -3691,7 +3691,7 @@
                                                             console.log(humantime(false) + " " + text.green + "publish test passed." + text.nocolor);
                                                             node.child(childcmd + "publish " + data.abspath + "test" + node.path.sep + "biddletesta childtest", {
                                                                 cwd: data.abspath
-                                                            }, function biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish(erx, stdoutx, stderx) {
+                                                            }, function biddle_test_publishA_child_statTemp_readJSON_readdir_statfile_statback_publish(erx, stdoutx, stderx) {
                                                                 var publishagain = text.bold + text.cyan + "Function:" + text.none + " biddle_publish_execution\n" + text.bold + text.red + "Error:" + text.none + " Attempted to publish biddletesta over existing version",
                                                                     stack        = [];
                                                                 if (erx !== null) {
@@ -3701,25 +3701,25 @@
                                                                             .split(" at ");
                                                                     }
                                                                     if (stack.length < 1 || stack[1].indexOf("ChildProcess.exithandler (child_process.js:2") < 0) {
-                                                                        return apps.errout({error: erx, name: "biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish", stdout: stdout, time: humantime(true)});
+                                                                        return apps.errout({error: erx, name: "biddle_test_publishA_child_statTemp_readJSON_readdir_statfile_statback_publish", stdout: stdout, time: humantime(true)});
                                                                     }
                                                                 }
                                                                 if (stderx !== null && stderx !== "") {
-                                                                    return apps.errout({error: stderx, name: "biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish", stdout: stdout, time: humantime(true)});
+                                                                    return apps.errout({error: stderx, name: "biddle_test_publishA_child_statTemp_readJSON_readdir_statfile_statback_publish", stdout: stdout, time: humantime(true)});
                                                                 }
                                                                 stdoutx = stdoutx
                                                                     .replace("\r\n", "\n")
                                                                     .replace(/(\u0020\d+\.\d+\.\d+\s*)$/, "");
                                                                 if (stdoutx !== publishagain) {
-                                                                    return diffFiles("biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish", stdoutx, publishagain);
+                                                                    return diffFiles("biddle_test_publishA_child_statTemp_readJSON_readdir_statfile_statback_publish", stdoutx, publishagain);
                                                                 }
                                                                 node
                                                                     .fs
-                                                                    .stat(data.abspath + "temp", function biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish_statTemp(errtemp) {
+                                                                    .stat(data.abspath + "temp", function biddle_test_publishA_child_statTemp_readJSON_readdir_statfile_statback_publish_statTemp(errtemp) {
                                                                         if (errtemp === null) {
                                                                             return apps.errout({
                                                                                 error: "Directory 'temp' from publish operation should have been removed.",
-                                                                                name : "biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish_st" +
+                                                                                name : "biddle_test_publishA_child_statTemp_readJSON_readdir_statfile_statback_publish_st" +
                                                                                           "atTemp",
                                                                                 time : humantime(true)
                                                                             });
@@ -3727,7 +3727,7 @@
                                                                         if (errtemp.toString().indexOf("no such file or directory") < 0) {
                                                                             return apps.errout({
                                                                                 error: errtemp,
-                                                                                name : "biddle_test_publish_child_statTemp_readJSON_readdir_statfile_statback_publish_st" +
+                                                                                name : "biddle_test_publishA_child_statTemp_readJSON_readdir_statfile_statback_publish_st" +
                                                                                           "atTemp",
                                                                                 time : humantime(true)
                                                                             });
@@ -3740,10 +3740,209 @@
                                                     });
                                             };
                                         if (errr !== null) {
-                                            return apps.errout({error: errr, name: "biddle_test_publish_child_statTemp_readJSON_readdir", stdout: stdout, time: humantime(true)});
+                                            return apps.errout({error: errr, name: "biddle_test_publishA_child_statTemp_readJSON_readdir", stdout: stdout, time: humantime(true)});
                                         }
                                         if (filelist !== filetest) {
-                                            return diffFiles("biddle_test_publish_child_statTemp_readJSON_readdir", filelist, filetest);
+                                            return diffFiles("biddle_test_publishA_child_statTemp_readJSON_readdir", filelist, filetest);
+                                        }
+                                        console.log(humantime(false) + " " + text.green + "List of files generated by publish is correct." + text.nocolor);
+                                        statfile(0);
+                                        statfile(1);
+                                        statfile(2);
+                                        statfile(3);
+                                        statfile(4);
+                                        statfile(5);
+                                        statfile(6);
+                                        statfile(7);
+                                        statfile(8);
+                                        statfile(9);
+                                        statfile(10);
+                                        statfile(11);
+                                    });
+                                return stdout;
+                            });
+                    });
+            });
+        };
+        phases.publishB      = function biddle_test_publishB() {
+            node.child(childcmd + "publish " + data.abspath + "test" + node.path.sep + "biddletestb childtest", {
+                cwd: data.abspath
+            }, function biddle_test_publishB_child(er, stdout, stder) {
+                var bgreen      = text.bold + text.green,
+                    bcyan       = text.bold + text.cyan,
+                    publishtest = "File publications/biddletestb/biddlesort.js written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletestb/biddletestb_" + bcyan + "xxx.zip" + text.none + " written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletestb/biddletestb_" + bcyan + "latest.zip" + text.none + " written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletestb/biddletestb_" + bcyan + "min_xxx.zip" + text.none + " written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletestb/biddletestb_" + bcyan + "min_latest.zip" + text.none + " written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletestb/biddletestb_" + bcyan + "prod_xxx.zip" + text.none + " written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletestb/biddletestb_" + bcyan + "prod_latest.zip" + text.none + " written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletestb/filedata.json written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletestb/index.xhtml written at " + bgreen + "xxx" + text.none + " bytes.\nFile publications/biddletestb/latest.txt written at " + bgreen + "xxx" + text.none + " bytes.",
+                    outputs     = stdout
+                        .replace(/(\s+)$/, "")
+                        .replace("\r\n", "\n")
+                        .split("\n")
+                        .sort(function biddle_test_publishB_child_outSort(a, b) {
+                            if (a > b) {
+                                return 1;
+                            }
+                            return -1;
+                        }),
+                    output      = "",
+                    abspath     = new RegExp(data.abspath.replace(/\\/g, "\\\\"), "g");
+                if (er !== null) {
+                    apps.errout({error: er, name: "biddle_test_publishA_child", stdout: stdout, time: humantime(true)});
+                }
+                if (stder !== null && stder !== "") {
+                    apps.errout({error: stder, name: "biddle_test_publishA_child", stdout: stdout, time: humantime(true)});
+                }
+                node
+                    .fs
+                    .stat(data.abspath + "temp", function biddle_test_publishB_child_statTemp(errtemp) {
+                        if (errtemp === null) {
+                            return apps.errout({error: "Directory 'temp' from publish operation should have been removed.", name: "biddle_test_publishB_child_statTemp", time: humantime(true)});
+                        }
+                        if (errtemp.toString().indexOf("no such file or directory") < 0) {
+                            return apps.errout({error: errtemp, name: "biddle_test_publishB_child_statTemp", time: humantime(true)});
+                        }
+                        outputs.forEach(function biddle_test_publishB_child_statTemp_formatOutput(value, index, array) {
+                            var val = value.slice(value.indexOf("publications"));
+                            array[index] = "File " + val;
+                        });
+                        output = outputs.join("\n");
+                        output = output.replace(/\\/g, "/");
+                        output = output
+                            .replace(/\d+\.\d+\.\d+\.zip/g, "xxx.zip")
+                            .replace(/(\u001b\[32m\d+(,\d+)*)/g, text.green + "xxx")
+                            .replace(abspath, "");
+                        if (stdout.indexOf("Error") > 0) {
+                            console.log(stdout);
+                            return apps.errout({error: "Error from child process", name: "biddle_test_publishB_child_statTemp", stdout: stdout, time: humantime(true)});
+                        }
+                        if (output !== publishtest) {
+                            return diffFiles("biddle_test_publishB_child_statTemp", output, publishtest);
+                        }
+                        console.log(humantime(false) + " " + text.green + "The stdout for publish is correct." + text.nocolor);
+                        node
+                            .fs
+                            .readFile(data.abspath + "published.json", "utf8", function biddle_test_publishB_child_statTemp_readJSON(err, fileData) {
+                                var jsondata = {},
+                                    pub      = data.abspath + "unittest" + node.path.sep + "publications" + node.path.sep + "biddletestb";
+                                if (err !== null && err !== undefined) {
+                                    return apps.errout({error: err, name: "biddle_test_publishB_child_statTemp_readJSON", stdout: stdout, time: humantime(true)});
+                                }
+                                jsondata = JSON.parse(fileData);
+                                if (jsondata.biddletestb === undefined) {
+                                    return apps.errout({error: "No biddletestb property in published.json file.", name: "biddle_test_publishB_child_statTemp_readJSON", stdout: stdout, time: humantime(true)});
+                                }
+                                if (jsondata.biddletestb.latest !== "98.98.1234") {
+                                    return apps.errout({
+                                        error : "biddletestb.latest of published.json is '" + jsondata.biddletestb.latest + "' not 98.98.1234'.",
+                                        name  : "biddle_test_publishB_child_statTemp_readJSON",
+                                        stdout: stdout,
+                                        time  : humantime(true)
+                                    });
+                                }
+                                console.log(humantime(false) + " " + text.green + "File published.json contains biddletestb" + text.nocolor);
+                                node
+                                    .fs
+                                    .readdir(pub, function biddle_test_publishB_child_statTemp_readJSON_readdir(errr, files) {
+                                        var filetest = "biddlesort.js,biddletestb_v.hash,biddletestb_v.zip,biddletestb_latest.hash,biddl" +
+                                                     "etestb_latest.zip,biddletestb_min_v.hash,biddletestb_min_v.zip,biddletestb_min_l" +
+                                                     "atest.hash,biddletestb_min_latest.zip,biddletestb_prod_v.hash,biddletestb_prod_v" +
+                                                     ".zip,biddletestb_prod_latest.hash,biddletestb_prod_latest.zip,filedata.json,inde" +
+                                                     "x.xhtml,latest.txt",
+                                            filelist = files
+                                                .sort(function biddle_test_publishB_child_statTemp_readJSON_readdir_outSort(a, b) {
+                                                    if (a > b) {
+                                                        return 1;
+                                                    }
+                                                    return -1;
+                                                })
+                                                .join(",")
+                                                .replace(/_\d+\.\d+\.\d+\.((zip)|(hash))/g, function biddle_test_publishB_child_statTemp_readJSON_readdir_replace(x) {
+                                                    if (x.indexOf("zip") > 0) {
+                                                        return "_v.zip";
+                                                    }
+                                                    return "_v.hash";
+                                                }),
+                                            stats    = {},
+                                            statfile = function biddle_test_publishB_child_statTemp_readJSON_readdir_statfile(index) {
+                                                stats[files[index]] = false;
+                                                node
+                                                    .fs
+                                                    .stat(pub + node.path.sep + files[index], function biddle_test_publishB_child_statTemp_readJSON_readdir_statfile_statback(errs, statobj) {
+                                                        if (errs !== null) {
+                                                            return apps.errout({error: errs, name: "biddle_test_publishB_child_statTemp_readJSON_readdir_statfile_statback", stdout: stdout, time: humantime(true)});
+                                                        }
+                                                        if (files[index].indexOf(".hash") === files[index].length - 5 && statobj.size !== 128) {
+                                                            return apps.errout({
+                                                                error : "Expected hash file " + files[index] + " to be file size 128.",
+                                                                name  : "biddle_test_publishB_child_statTemp_readJSON_readdir_statfile_statback",
+                                                                stdout: stdout,
+                                                                time  : humantime(true)
+                                                            });
+                                                        }
+                                                        if (files[index].indexOf(".zip") === files[index].length - 4 && statobj.size > 20000) {
+                                                            return apps.errout({
+                                                                error : "Zip file " + files[index] + " is too big at " + apps.commas(statobj.size) + ".",
+                                                                name  : "biddle_test_publishB_child_statTemp_readJSON_readdir_statfile_statback",
+                                                                stdout: stdout,
+                                                                time  : humantime(true)
+                                                            });
+                                                        }
+                                                        console.log(humantime(false) + " " + files[index] + " present at size " + text.bold + text.green + apps.commas(statobj.size) + text.none + " bytes.");
+                                                        stats[files[index]] = true;
+                                                        if (stats[files[0]] === true && stats[files[1]] === true && stats[files[2]] === true && stats[files[3]] === true && stats[files[4]] === true && stats[files[5]] === true && stats[files[6]] === true && stats[files[7]] === true && stats[files[8]] === true && stats[files[9]] === true && stats[files[10]] === true && stats[files[11]] === true) {
+                                                            console.log(humantime(false) + " " + text.green + "publish test passed." + text.nocolor);
+                                                            node.child(childcmd + "publish " + data.abspath + "test" + node.path.sep + "biddletestb childtest", {
+                                                                cwd: data.abspath
+                                                            }, function biddle_test_publishB_child_statTemp_readJSON_readdir_statfile_statback_publish(erx, stdoutx, stderx) {
+                                                                var publishagain = text.bold + text.cyan + "Function:" + text.none + " biddle_publish_execution\n" + text.bold + text.red + "Error:" + text.none + " Attempted to publish biddletestb over existing version",
+                                                                    stack        = [];
+                                                                if (erx !== null) {
+                                                                    if (typeof erx.stack === "string") {
+                                                                        stack = erx
+                                                                            .stack
+                                                                            .split(" at ");
+                                                                    }
+                                                                    if (stack.length < 1 || stack[1].indexOf("ChildProcess.exithandler (child_process.js:2") < 0) {
+                                                                        return apps.errout({error: erx, name: "biddle_test_publishB_child_statTemp_readJSON_readdir_statfile_statback_publish", stdout: stdout, time: humantime(true)});
+                                                                    }
+                                                                }
+                                                                if (stderx !== null && stderx !== "") {
+                                                                    return apps.errout({error: stderx, name: "biddle_test_publishB_child_statTemp_readJSON_readdir_statfile_statback_publish", stdout: stdout, time: humantime(true)});
+                                                                }
+                                                                stdoutx = stdoutx
+                                                                    .replace("\r\n", "\n")
+                                                                    .replace(/(\u0020\d+\.\d+\.\d+\s*)$/, "");
+                                                                if (stdoutx !== publishagain) {
+                                                                    return diffFiles("biddle_test_publishB_child_statTemp_readJSON_readdir_statfile_statback_publish", stdoutx, publishagain);
+                                                                }
+                                                                node
+                                                                    .fs
+                                                                    .stat(data.abspath + "temp", function biddle_test_publishB_child_statTemp_readJSON_readdir_statfile_statback_publish_statTemp(errtemp) {
+                                                                        if (errtemp === null) {
+                                                                            return apps.errout({
+                                                                                error: "Directory 'temp' from publish operation should have been removed.",
+                                                                                name : "biddle_test_publishB_child_statTemp_readJSON_readdir_statfile_statback_publish_st" +
+                                                                                          "atTemp",
+                                                                                time : humantime(true)
+                                                                            });
+                                                                        }
+                                                                        if (errtemp.toString().indexOf("no such file or directory") < 0) {
+                                                                            return apps.errout({
+                                                                                error: errtemp,
+                                                                                name : "biddle_test_publishB_child_statTemp_readJSON_readdir_statfile_statback_publish_st" +
+                                                                                          "atTemp",
+                                                                                time : humantime(true)
+                                                                            });
+                                                                        }
+                                                                        console.log(humantime(false) + " " + text.green + "Redundant publish test (error messaging) passed." + text.nocolor);
+                                                                        next();
+                                                                    });
+                                                            });
+                                                        }
+                                                    });
+                                            };
+                                        if (errr !== null) {
+                                            return apps.errout({error: errr, name: "biddle_test_publishB_child_statTemp_readJSON_readdir", stdout: stdout, time: humantime(true)});
+                                        }
+                                        if (filelist !== filetest) {
+                                            return diffFiles("biddle_test_publishB_child_statTemp_readJSON_readdir", filelist, filetest);
                                         }
                                         console.log(humantime(false) + " " + text.green + "List of files generated by publish is correct." + text.nocolor);
                                         statfile(0);
@@ -4549,70 +4748,64 @@
             if (data.input.length < 3) {
                 return apps.errout({error: "Biddle command " + text.yellow + text.bold + data.command + text.none + " requires an address or file path.", name: "biddle_init"});
             }
-            //if (data.childtest === true) {
-                // remove second arguments for publish and install
-                // add second argument for get
-                // publish input[2] can be relative but dirs must be relative to it
-                //data.address.applications = apps.relToAbs("../unittest/applications", );
-            //} else {
-                (function biddle_init_biddlerc() {
-                    var rcpath = (data.command === "publish")
-                        ? apps.relToAbs(data.input[2].replace(/((\/|\\)+)$/, ""), data.cwd) + node.path.sep + ".biddlerc"
+            (function biddle_init_biddlerc() {
+                var pubdir = apps.relToAbs(data.input[2].replace(/((\/|\\)+)$/, ""), data.cwd) + node.path.sep,
+                    rcpath = (data.command === "publish")
+                        ? pubdir + ".biddlerc"
                         : process.cwd() + node.path.sep + ".biddlerc";
-                    node
-                        .fs
-                        .readFile(rcpath, "utf8", function biddle_init_biddlerc_readFile(err, fileData) {
-                            var parsed = {},
-                                dirs   = function biddle_init_biddlerc_dirs(type) {
-                                    if (typeof parsed.directories[type] === "string") {
-                                        if (parsed.directories[type].length > 0) {
-                                            if (data.command === "publish") {
-                                                data.address[type] = apps.relToAbs(parsed.directories[type], apps.relToAbs(data.input[2], data.cwd)) + node.path.sep;
-                                            } else {
-                                                data.address[type] = apps.relToAbs(parsed.directories[type], data.abspath) + node.path.sep;
-                                            }
-                                            data
-                                                .ignore
-                                                .push(parsed.directories[type]);
-                                            return;
+                node
+                    .fs
+                    .readFile(rcpath, "utf8", function biddle_init_biddlerc_readFile(err, fileData) {
+                        var parsed = {},
+                            dirs   = function biddle_init_biddlerc_dirs(type) {
+                                if (typeof parsed.directories[type] === "string") {
+                                    if (parsed.directories[type].length > 0) {
+                                        if (data.command === "publish") {
+                                            data.address[type] = apps.relToAbs(parsed.directories[type], pubdir) + node.path.sep;
+                                        } else {
+                                            data.address[type] = apps.relToAbs(parsed.directories[type], data.abspath) + node.path.sep;
                                         }
-                                    }
-                                };
-                            if (err !== null && err !== undefined) {
-                                if (err.toString().indexOf("no such file or directory") > 0) {
-                                    status.biddlerc = true;
-                                    if (status.installed === true && status.published === true) {
-                                        start();
-                                    }
-                                    return;
-                                }
-                                return apps.errout({error: err, name: "biddle_init_biddlerc_readFile"});
-                            }
-                            if (fileData !== "") {
-                                parsed = JSON.parse(fileData);
-                            }
-                            dirs("applications");
-                            dirs("downloads");
-                            dirs("publications");
-                            if (typeof parsed.exclusions === "object" && parsed.exclusions.length > 0) {
-                                parsed
-                                    .exclusions
-                                    .forEach(function biddle_init_biddlerc_readFile_exclusions(value) {
                                         data
                                             .ignore
-                                            .push(value.replace(/\\|\//g, node.path.sep));
-                                    });
-                                data
-                                    .ignore
-                                    .push(".biddlerc");
+                                            .push(parsed.directories[type]);
+                                        return;
+                                    }
+                                }
+                            };
+                        if (err !== null && err !== undefined) {
+                            if (err.toString().indexOf("no such file or directory") > 0) {
+                                status.biddlerc = true;
+                                if (status.installed === true && status.published === true) {
+                                    start();
+                                }
+                                return;
                             }
-                            status.biddlerc = true;
-                            if (status.installed === true && status.published === true) {
-                                start();
-                            }
-                        });
-                }());
-            //}
+                            return apps.errout({error: err, name: "biddle_init_biddlerc_readFile"});
+                        }
+                        if (fileData !== "") {
+                            parsed = JSON.parse(fileData);
+                        }
+                        dirs("applications");
+                        dirs("downloads");
+                        dirs("publications");
+                        if (typeof parsed.exclusions === "object" && parsed.exclusions.length > 0) {
+                            parsed
+                                .exclusions
+                                .forEach(function biddle_init_biddlerc_readFile_exclusions(value) {
+                                    data
+                                        .ignore
+                                        .push(value.replace(/\\|\//g, node.path.sep));
+                                });
+                            data
+                                .ignore
+                                .push(".biddlerc");
+                        }
+                        status.biddlerc = true;
+                        if (status.installed === true && status.published === true) {
+                            start();
+                        }
+                    });
+            }());
         } else {
             status.biddlerc = true;
             if (status.installed === true && status.published === true) {
