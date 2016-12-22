@@ -4577,10 +4577,10 @@
                     data.command  = "markdown";
                     apps.markdown();
                 } else if (commands[data.command] === undefined && commands[data.command + "s"] === undefined) {
+                    apps.commands();
+                    console.log("");
                     apps.errout({
-                        error: "Unrecognized command: " + text.red + data.command + text.nocolor + ".  Currently these commands are recognized:\r\n\r\n" + Object
-                            .keys(commands)
-                            .join("\r\n") + "\r\n",
+                        error: "Unrecognized command: " + text.red + text.bold + data.command + text.none,
                         name : "biddle_init_start"
                     });
                 } else {
