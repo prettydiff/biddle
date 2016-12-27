@@ -65,6 +65,7 @@
             installed    : {}, // Parsed data of the installed.json file.  Data about applications installed with biddle.
             latestVersion: false, // Used in the publish command to determine if the application is the latest version
             packjson     : {}, // Parsed data of a directory's package.json file.  Used with the publish command.
+            platform     : "", // Lowercase of Node's process.platform
             publications : "publications", // default location to store published applications
             published    : {}, // Parsed data of the published.json file.  Data about applications published by biddle.
             sudo         : false // If biddle is executed with administrative rights in POSIX.
@@ -856,7 +857,7 @@
                             location = apps.relToAbs(data.input[2], data.cwd);
                             pubs     = apps.relToAbs(data.input[2].slice(0, data.input[2].lastIndexOf(node.path.sep) + 1), data.cwd);
                         }
-                        apps.zip(function biddle_install_callback() {
+                        apps.zip(function biddle_install_callback(zipfilename, writejson, delay) {
                             var status   = {
                                     packjson: false,
                                     remove  : false
@@ -886,6 +887,7 @@
                                     complete();
                                 }
                             });
+                            return [zipfilename, writejson, delay];
                         }, {
                             location: location,
                             name    : ""
@@ -1674,7 +1676,7 @@
                 });
             },
             zippy     = function biddle_publish_zippy(vardata) {
-                apps.zip(function biddle_publish_zippy_zip(zipfilename, writejson) {
+                apps.zip(function biddle_publish_zippy_zip(zipfilename, writejson, delay) {
                     node
                         .fs
                         .stat(zipfilename, function biddle_publish_zippy_zip_stat(erstat, stats) {
@@ -1744,14 +1746,19 @@
                             }
                         });
                     apps.hash(zipfilename, "hashFile", function biddle_publish_zippy_zip_hash() {
-                        apps.writeFile(data.hashFile, zipfilename.replace(".zip", ".hash"), function biddle_publish_zippy_zip_hash_writehash() {
-                            return true;
+                        var hashname = zipfilename.replace(".zip", ".hash");
+                        apps.remove(hashname, function biddle_publish_zippy_zip_hash_remove() {
+                            apps.writeFile(data.hashFile, hashname, function biddle_publish_zippy_zip_hash_remove_writehash() {
+                                return true;
+                            });
                         });
                         if (vardata.final === true && writejson === true) {
                             apps.writeFile(JSON.stringify(data.published), data.abspath + "published.json", function biddle_publish_zippy_zip_hash_writeJSON() {
-                                apps.remove(data.abspath + "temp", function biddle_publish_zippy_zip_hash_delay_removeTemp() {
-                                    return true;
-                                });
+                                setTimeout(function biddle_publish_zippy_zip_hash_writeJSON_delay() {
+                                    apps.remove(data.abspath + "temp", function biddle_publish_zippy_zip_hash_writeJSON_delay_removeTemp() {
+                                        return true;
+                                    });
+                                }, delay);
                             });
                             return true;
                         }
@@ -4186,7 +4193,7 @@
                                 return apps.errout({error: "Expected (published.json).biddletesta.versions of published.json to have two version numbers", name: "biddle_test_republish_read_write_publish_readPublished", stdout: stdout, time: humantime(true)});
                             }
                             console.log(humantime(false) + " " + text.green + "(published.json).biddletesta.versions has two version numbers" + text.nocolor);
-                            if (pub.biddletesta.directory !== data.abspath + "publications" + node.path.sep + "biddletesta/") {
+                            if (pub.biddletesta.directory !== data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep) {
                                 return diffFiles("biddle_test_republish_read_write_publish_readPublished", pub.biddletesta.directory, data.abspath + "publications" + node.path.sep + "biddletesta/");
                             }
                             console.log(humantime(false) + " " + text.green + "(published.json).biddletesta.directory is correct location" + text.nocolor);
@@ -4572,6 +4579,14 @@
                 node.child(zipcmd, {
                     cwd: zipdir
                 }, function biddle_zip_childfunc_child(err, stdout, stderr) {
+                    var callb = function biddle_zip_childfunc_child_wrapper() {
+                        var delay = (data.platform === "win32" && data.command === "publish")
+                            ? 250
+                            : 0;
+                        setTimeout(function biddle_zip_childfunc_child_wrapper_delay() {
+                            callback(zipfilename, writejson, delay);
+                        }, delay);
+                    };
                     if (err !== null && stderr.toString().indexOf("No such file or directory") < 0) {
                         return apps.errout({error: err, name: "biddle_zip_childfunc_child"});
                     }
@@ -4586,10 +4601,10 @@
                                     return apps.errout({error: erf, name: "biddle_zip_childfunc_child_install"});
                                 }
                                 data.packjson = JSON.parse(filedata);
-                                callback(zipfilename, writejson);
+                                callb();
                             });
                     } else {
-                        callback(zipfilename, writejson);
+                        callb();
                     }
                     return stdout;
                 });
@@ -4607,7 +4622,7 @@
                     if (data.latestVersion === true) {
                         latestfile = zipfile.replace(data.packjson.version + ".zip", "latest.zip");
                         latestcmd  = cmd.replace(data.packjson.version + ".zip", "latest.zip");
-                        apps.remove(zipfile, function biddle_zip_makepubdir_removeFile() {
+                        apps.remove(latestfile, function biddle_zip_makepubdir_removeFile() {
                             childfunc(latestfile, latestcmd, false);
                         });
                     }
@@ -4761,8 +4776,9 @@
                     } else if (data.command === "unpublish") {
                         apps.unpublish(false);
                     } else if (data.command === "unzip") {
-                        apps.zip(function biddle_init_start_unzip(zipfile) {
-                            return console.log("File " + zipfile + " unzipped to: " + data.address.target);
+                        apps.zip(function biddle_init_start_unzip(zipfilename, writejson, delay) {
+                            console.log("File " + zipfilename + " unzipped to: " + data.address.target);
+                            return [zipfilename, writejson, delay];
                         }, {
                             location: apps.relToAbs(data.input[2], data.cwd),
                             name    : ""
@@ -4770,8 +4786,9 @@
                     } else if (data.command === "version") {
                         apps.version();
                     } else if (data.command === "zip") {
-                        apps.zip(function biddle_init_start_zip(zipfile) {
-                            return console.log("Zip file written: " + zipfile);
+                        apps.zip(function biddle_init_start_zip(zipfilename, writejson, delay) {
+                            console.log("Zip file written: " + zipfilename);
+                            return [zipfilename, writejson, delay];
                         }, {
                             location: apps.relToAbs(data.input[2], data.cwd),
                             name    : ""
