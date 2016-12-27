@@ -14,7 +14,7 @@ Command|Local|Argument Type|Second Argument
 ---|---|---|---
 commands|✓|none|none
 copy|✓|local file system address|directory path
-get|?|local or web address|none
+get|?|local or web address|directory path
 global|✓|application name|none or "*remove*"
 hash|✓|file path or "*string*"|string value
 help|✓|number|none
@@ -37,18 +37,18 @@ These commands are found in the **cmds** object in biddle.js near the top of the
 
 ## .biddlerc File
 An application may contain a file named *.biddlerc* to serve as a preset.  This file will contain JSON in this format:
-
-    {
-        "directories": {
-            "applications": "applications",
-            "downloads"   : "downloads",
-            "publications": "publications"
-        },
-        "exclusions" : [
-            "file", "file", "directory"
-        ]
-    }
-
+```
+{
+    "directories": {
+        "applications": "applications",
+        "downloads"   : "downloads",
+        "publications": "publications"
+    },
+    "exclusions" : [
+        "file", "file", "directory"
+    ]
+}
+```
 There are two key properties supported in the *.biddlerc* file: *directories* and *exclusions*.  The *directories* object allows application specific defaults to be defined for the three directories that biddle will write to.  The addresses are relative to the application directory and absolute addresses are also supported.  The *exclusions* object allows an application specific list of files or directories to exclude when running the **publish** command.
 
 ## Publication and the published.json File

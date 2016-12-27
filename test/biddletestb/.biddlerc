@@ -1,0 +1,14 @@
+{
+    "directories": {
+        "applications": "applications",
+        "downloads"   : "downloads",
+        "publications": "../../unittest/publications"
+    },
+    "exclusions" : [
+        ".DC_Store",
+        "._DC_Store",
+        ".git",
+        ".gitmodules",
+        "node_modules"
+    ]
+}
