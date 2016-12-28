@@ -2148,9 +2148,9 @@
             },
             dirs    = {},
             util    = {},
-            verbose = false;
-        if (data.command === "copy") {
             verbose = true;
+        if (data.command === "copy") {
+            verbose = false;
         }
         util.complete = function biddle_remove_complete() {
             var out = ["biddle removed "];
@@ -2777,7 +2777,7 @@
             node.child(childcmd + "copy " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta.js " + testpath + " childtest", {
                 cwd: data.abspath
             }, function biddle_test_copy_child(er, stdout, stder) {
-                var copytest = "Copied " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta.js to " + data.abspath + "unittest\nFiles: 1, Directories: 0, Symlinks: 0",
+                var copytest = "biddle copied " + text.green + text.bold + "0" + text.none + " directories, " + text.green + text.bold + "1" + text.none + " files, and " + text.green + text.bold + "0" + text.none + " symbolic links at " + text.green + text.bold + "23,177" + text.none + " bytes.\nCopied " + text.cyan + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta.js" + text.nocolor + " to " + text.green + data.abspath + "unittest" + text.nocolor,
                     copyfile = data.abspath + "unittest" + node.path.sep + "biddletesta.js";
                 if (er !== null) {
                     return apps.errout({error: er, name: "biddle_test_copy_child", stdout: stdout, time: humantime(true)});
@@ -4146,7 +4146,7 @@
                 cwd: data.abspath
             }, function biddle_test_remove_child(er, stdout, stder) {
                 var removefile = testpath + node.path.sep + "biddletesta.js",
-                    removetest = "biddle removed " + text.red + text.bold + "0" + text.none + " directories, " + text.red + text.bold + "1" + text.none + " files, " + text.red + text.bold + "0" + text.none + " symbolic links, and " + text.red + text.bold + "0" + text.none + " other types at " + text.red + text.bold + "23,177" + text.none + " bytes.\nRemoved " + removefile;
+                    removetest = "biddle removed " + text.red + text.bold + "0" + text.none + " directories, " + text.red + text.bold + "1" + text.none + " files, " + text.red + text.bold + "0" + text.none + " symbolic links, and " + text.red + text.bold + "0" + text.none + " other types at " + text.red + text.bold + "23,177" + text.none + " bytes.\nRemoved " + text.cyan + removefile + text.nocolor;
                 if (er !== null) {
                     return apps.errout({error: er, name: "biddle_test_remove_child", stdout: stdout, time: humantime(true)});
                 }
