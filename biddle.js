@@ -150,56 +150,55 @@
                 dirs : 0,
                 end  : 0,
                 files: 0,
-                links: 0,
+                link : 0,
                 size : 0,
                 start: 0
             },
+            start = "",
+            dest  = "",
             exlen = exclusions.length,
+            dirs  = {},
             util  = {};
-        util.complete = function biddle_copy_complete(item) {
+        util.complete = function biddle_copy_complete() {
             var out = ["biddle copied "];
-            numb.end += 1;
-            if (numb.end === numb.start) {
-                if (data.command === "copy") {
-                    out.push(text.green);
-                    out.push(text.bold);
-                    out.push(numb.dirs);
-                    out.push(text.none);
-                    out.push(" director");
-                    if (numb.dirs === 1) {
-                        out.push("y, ");
-                    } else {
-                        out.push("ies, ");
-                    }
-                    out.push(text.green);
-                    out.push(text.bold);
-                    out.push(numb.files);
-                    out.push(text.none);
-                    out.push(" file");
-                    if (numb.dirs !== 1) {
-                        out.push("s");
-                    }
-                    out.push(", and ");
-                    out.push(text.green);
-                    out.push(text.bold);
-                    out.push(numb.links);
-                    out.push(text.none);
-                    out.push(" symbolic link");
-                    if (numb.symb !== 1) {
-                        out.push("s");
-                    }
-                    out.push(" at ");
-                    out.push(text.green);
-                    out.push(text.bold);
-                    out.push(apps.commas(numb.size));
-                    out.push(text.none);
-                    out.push(" bytes.");
-                    console.log(out.join(""));
-                    console.log("Copied " + text.cyan + target + text.nocolor + " to " + text.green + destination + text.nocolor);
+            if (data.command === "copy") {
+                out.push(text.green);
+                out.push(text.bold);
+                out.push(numb.dirs);
+                out.push(text.none);
+                out.push(" director");
+                if (numb.dirs === 1) {
+                    out.push("y, ");
+                } else {
+                    out.push("ies, ");
                 }
-                callback();
+                out.push(text.green);
+                out.push(text.bold);
+                out.push(numb.files);
+                out.push(text.none);
+                out.push(" file");
+                if (numb.files !== 1) {
+                    out.push("s");
+                }
+                out.push(", and ");
+                out.push(text.green);
+                out.push(text.bold);
+                out.push(numb.link);
+                out.push(text.none);
+                out.push(" symbolic link");
+                if (numb.link !== 1) {
+                    out.push("s");
+                }
+                out.push(" at ");
+                out.push(text.green);
+                out.push(text.bold);
+                out.push(apps.commas(numb.size));
+                out.push(text.none);
+                out.push(" bytes.");
+                console.log(out.join(""));
+                console.log("Copied " + text.cyan + target + text.nocolor + " to " + text.green + destination + text.nocolor);
             }
-            return item;
+            callback();
         };
         util.eout     = function biddle_copy_eout(er, name) {
             var filename = target.split(node.path.sep);
@@ -207,34 +206,43 @@
                 apps.errout({error: er, name: name});
             });
         };
-        util.dir      = function biddle_copy_dir(item, dest) {
-            var readdir = function biddle_copy_dir_readdir() {
-                node
-                    .fs
-                    .readdir(item, function biddle_copy_dir_readdir_callback(err, files) {
-                        if (err !== null) {
-                            return util.eout(err, "biddle_copy_dir_readdir_callback");
+        util.dir      = function biddle_copy_dir(item, dir) {
+            node.fs.readdir(item, function biddle_copy_dir_makedir_readdir(er, files) {
+                if (er !== null) {
+                    return util.eout(er, "biddle_copy_dir_readdir");
+                }
+                apps.makedir(dest + item, function biddle_copy_dir_makedir() {
+                    dirs[dir] -= 1;
+                    if (files.length > 0) {
+                        dirs[item] = files.length;
+                        files.forEach(function biddle_copy_dir_makedir_readdir_each(value) {
+                            util.stat(item + node.path.sep + value, item);
+                        });
+                    } else {
+                        delete dirs[item];
+                        if (dirs[dir] < 1) {
+                            delete dirs[dir];
+                            if (Object.keys(dirs).length < 1) {
+                                util.complete();
+                            }
                         }
-                        if (files.length > 0) {
-                            numb.end += 1;
-                            files.forEach(function biddle_copy_dir_readdir_callback_each(value) {
-                                util.stat(item + node.path.sep + value, dest);
-                            });
-                        } else {
-                            util.complete(item);
-                        }
-                    });
-            };
-            apps.makedir(dest, readdir);
+                    }
+                });
+            });
         };
-        util.file     = function biddle_copy_file(item, dest, prop) {
+        util.file     = function biddle_copy_file(item, dir, prop) {
             var readStream  = node
                     .fs
                     .createReadStream(item),
-                writeStream = node
-                    .fs
-                    .createWriteStream(dest, {mode: prop.mode}),
-                errorflag   = false;
+                writeStream = {},
+                errorflag   = false,
+                place       = dest + item;
+            if (item === dir) {
+                place = dest + item.split(node.path.sep).pop();
+            }
+            writeStream = node
+                .fs
+                .createWriteStream(place, {mode: prop.mode});
             readStream.on("error", function biddle_copy_file_readError(error) {
                 errorflag = true;
                 return util.eout(error, "biddle_copy_file_readError");
@@ -253,12 +261,22 @@
                 var filename = item.split(node.path.sep);
                 node
                     .fs
-                    .utimes(dest + node.path.sep + filename[filename.length - 1], prop.atime, prop.mtime, function biddle_copy_file_finish_utimes() {
-                        util.complete(item);
+                    .utimes(place + node.path.sep + filename[filename.length - 1], prop.atime, prop.mtime, function biddle_copy_file_finish_utimes() {
+                        if (item === dir) {
+                            util.complete();
+                        } else {
+                            dirs[dir] -= 1;
+                            if (dirs[dir] < 1) {
+                                delete dirs[dir];
+                                if (Object.keys(dirs).length < 1) {
+                                    util.complete();
+                                }
+                            }
+                        }
                     });
             });
         };
-        util.link     = function biddle_copy_link(item, dest) {
+        util.link     = function biddle_copy_link(item, dir) {
             node
                 .fs
                 .readlink(item, function biddle_copy_link_readlink(err, resolvedlink) {
@@ -269,95 +287,99 @@
                     node
                         .fs
                         .stat(resolvedlink, function biddle_copy_link_readlink_stat(ers, stats) {
-                            var type = "file";
+                            var type  = "file",
+                                place = dest + item;
                             if (ers !== null) {
                                 return util.eout(ers, "biddle_copy_link_readlink_stat");
                             }
                             if (stats === undefined || stats.isFile === undefined) {
                                 return util.eout("Error in performing stat against " + item, "biddle_copy_link_readlink_stat");
                             }
+                            if (item === dir) {
+                                place = dest + item.split(node.path.sep).pop();
+                            }
                             if (stats.isDirectory() === true) {
                                 type = "junction";
                             }
                             node
                                 .fs
-                                .symlink(resolvedlink, dest, type, function biddle_copy_link_readlink_stat_makelink(erl) {
+                                .symlink(resolvedlink, place, type, function biddle_copy_link_readlink_stat_makelink(erl) {
                                     if (erl !== null) {
                                         return util.eout(erl, "biddle_copy_link_readlink_stat_makelink");
                                     }
-                                    util.complete(item);
+                                    if (item === dir) {
+                                        util.complete();
+                                    } else {
+                                        dirs[dir] -= 1;
+                                        if (dirs[dir] < 1) {
+                                            delete dirs[dir];
+                                            if (Object.keys(dirs).length < 1) {
+                                                util.complete();
+                                            }
+                                        }
+                                    }
                                 });
                         });
                 });
         };
-        util.stat     = function biddle_copy_stat(item, dest) {
-            var func     = (data.command === "copy")
+        util.stat     = function biddle_copy_stat(item, dir) {
+            var a    = 0,
+                func = (data.command === "copy")
                     ? "lstat"
-                    : "stat",
-                filename = item.split(node.path.sep),
-                expath   = [],
-                a        = 0,
-                delay    = function biddle_copy_stat_statIt_delay() {
-                    util.complete(item);
-                };
-            numb.start += 1;
-            if (filename.length > 1 && filename[filename.length - 1] === "") {
-                filename.pop();
-            }
-            dest = dest.replace(/((\/|\\)+)$/, "") + node.path.sep + filename[filename.length - 1];
+                    : "stat";
             if (exlen > 0) {
                 do {
-                    if (dest.lastIndexOf(exclusions[a]) === dest.length - exclusions[a].length && dest.length - exclusions[a].length > 0) {
-                        expath = exclusions[a].split(node.path.sep);
-                        if (expath[expath.length - 1] === filename[filename.length - 1]) {
-                            return setTimeout(delay, 20);
+                    if (item.replace(target + node.path.sep, "") === exclusions[a]) {
+                        if (item === dir || Object.keys(dirs).length < 1) {
+                            util.complete();
+                        } else {
+                            exclusions.splice(a, 1);
+                            exlen -= 1;
+                            if (item !== dir) {
+                                dirs[dir] -= 1;
+                                if (dirs[dir] < 1) {
+                                    delete dirs[dir];
+                                    if (Object.keys(dirs).length < 1) {
+                                        util.complete();
+                                    }
+                                }
+                            }
                         }
+                        return;
                     }
                     a += 1;
                 } while (a < exlen);
             }
-            node.fs[func](item, function biddle_copy_stat_statIt(er, stats) {
-                var action = function biddle_copy_stat_statIt_action() {
-                    if (stats.isFile() === true) {
-                        numb.files += 1;
-                        numb.size  += stats.size;
-                        return util.file(item, dest, {
-                            atime: (Date.parse(stats.atime) / 1000),
-                            mode : stats.mode,
-                            mtime: (Date.parse(stats.mtime) / 1000)
-                        });
-                    }
-                    if (stats.isDirectory() === true) {
-                        numb.dirs += 1;
-                        return util.dir(item, dest);
-                    }
-                    if (stats.isSymbolicLink() === true) {
-                        numb.link += 1;
-                        return util.link(item, dest);
-                    }
-                    util.complete(item);
-                };
+            node.fs[func](item, function biddle_copy_stat_callback(er, stats) {
                 if (er !== null) {
-                    return apps.errout({error: er, name: "biddle_copy_stat_statIt"});
+                    util.eout(er, "biddle_copy_stat_callback");
                 }
                 if (stats === undefined || stats.isFile === undefined) {
-                    return apps.errout({
-                        error: "Error in performing stat against " + item,
-                        name : "biddle_copy_stat_statIt"
-                    });
+                    util.eout("stats object is undefined", "biddle_copy_stat_callback");
                 }
-                if (numb.start === 1 && stats.isDirectory() === false && data.command === "copy") {
-                    expath = dest.split(node.path.sep);
-                    expath.pop();
-                    apps.makedir(expath.join(node.path.sep), function biddle_copy_stat_statIt_makedir() {
-                        action();
+                if (stats.isFile() === true) {
+                    numb.files += 1;
+                    numb.size += stats.size;
+                    util.file(item, dir, {
+                        atime: (Date.parse(stats.atime) / 1000),
+                        mode : stats.mode,
+                        mtime: (Date.parse(stats.mtime) / 1000)
                     });
-                } else {
-                    action();
+                } else if (stats.isDirectory() === true) {
+                    numb.dirs += 1;
+                    dirs[item] = 0;
+                    util.dir(item, dir);
+                } else if (stats.isSymbolicLink() === true) {
+                    numb.link += 1;
+                    util.link(item, dir);
                 }
             });
-        };
-        util.stat(apps.relToAbs(target, data.cwd), apps.relToAbs(destination, data.cwd));
+        }
+        target        = target.replace(/(\\|\/)/g, node.path.sep);
+        destination   = destination.replace(/(\\|\/)/g, node.path.sep);
+        dest          = apps.relToAbs(destination, data.cwd) + node.path.sep;
+        start         = target.replace(data.cwd + node.path.sep, "");
+        util.stat(start, start);
     };
     apps.errout      = function biddle_errout(errData) {
         var error = (typeof errData.error !== "string" || errData.error.toString().indexOf("Error: ") === 0)
@@ -1048,27 +1070,32 @@
                 var dirs   = [],
                     ind    = 0,
                     len    = 0,
+                    ers    = "",
                     restat = function biddle_makedir_stat_restat() {
                         node
                             .fs
                             .stat(dirs.slice(0, ind + 1).join(node.path.sep), function biddle_makedir_stat_restat_callback(erra, stata) {
+                                var erras = "";
                                 ind += 1;
-                                if ((erra !== null && erra.toString().indexOf("no such file or directory") > 0) || (typeof erra === "object" && erra !== null && erra.code === "ENOENT")) {
-                                    return node
-                                        .fs
-                                        .mkdir(dirs.slice(0, ind).join(node.path.sep), function biddle_makedir_stat_restat_callback_mkdir(errb) {
-                                            if (errb !== null && errb.toString().indexOf("file already exists") < 0) {
-                                                return apps.errout({error: errb, name: "biddle_makedir_stat_restat_callback_mkdir"});
-                                            }
-                                            if (ind < len) {
-                                                biddle_makedir_stat_restat();
-                                            } else {
-                                                callback();
-                                            }
-                                        });
-                                }
-                                if (erra !== null && erra.toString().indexOf("file already exists") < 0) {
-                                    return apps.errout({error: erra, name: "biddle_makedir_stat_restat_callback"});
+                                if (erra !== null) {
+                                    erras = erra.toString();
+                                    if (erras.indexOf("no such file or directory") > 0 || erra.code === "ENOENT") {
+                                        return node
+                                            .fs
+                                            .mkdir(dirs.slice(0, ind).join(node.path.sep), function biddle_makedir_stat_restat_callback_mkdir(errb) {
+                                                if (errb !== null && errb.toString().indexOf("file already exists") < 0) {
+                                                    return apps.errout({error: errb, name: "biddle_makedir_stat_restat_callback_mkdir"});
+                                                }
+                                                if (ind < len) {
+                                                    biddle_makedir_stat_restat();
+                                                } else {
+                                                    callback();
+                                                }
+                                            });
+                                    }
+                                    if (erras.indexOf("file already exists") < 0) {
+                                        return apps.errout({error: erra, name: "biddle_makedir_stat_restat_callback"});
+                                    }
                                 }
                                 if (stata.isFile() === true) {
                                     return apps.errout({
@@ -1083,16 +1110,19 @@
                                 }
                             });
                     };
-                if ((err !== null && err.toString().indexOf("no such file or directory") > 0) || (typeof err === "object" && err !== null && err.code === "ENOENT")) {
-                    dirs = dirToMake.split(node.path.sep);
-                    if (dirs[0] === "") {
-                        ind += 1;
+                if (err !== null) {
+                    ers = err.toString();
+                    if (ers.indexOf("no such file or directory") > 0 || err.code === "ENOENT") {
+                        dirs = dirToMake.split(node.path.sep);
+                        if (dirs[0] === "") {
+                            ind += 1;
+                        }
+                        len = dirs.length;
+                        return restat();
                     }
-                    len = dirs.length;
-                    return restat();
-                }
-                if (err !== null && err.toString().indexOf("file already exists") < 0) {
-                    return apps.errout({error: err, name: "biddle_makedir_stat"});
+                    if (ers.indexOf("file already exists") < 0) {
+                        return apps.errout({error: err, name: "biddle_makedir_stat"});
+                    }
                 }
                 if (stats.isFile() === true) {
                     return apps.errout({
@@ -1594,6 +1624,7 @@
             varlen    = 0,
             varcount  = 0,
             publoc    = "",
+            varnames  = {},
             indexfile = function biddle_publish_indexfile() {
                 var rows   = [],
                     file   = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><!DOCTYPE html PUBLIC \"-//W3C//DTD X" +
@@ -1788,7 +1819,12 @@
                                 return true;
                             });
                         });
-                        if (vardata.final === true && writejson === true) {
+                        if (vardata.name === "") {
+                            delete varnames.biddletempprimary;
+                        } else {
+                            delete varnames[vardata.name];
+                        }
+                        if (Object.keys(varnames).length < 1 && writejson === true) {
                             apps.writeFile(JSON.stringify(data.published), data.abspath + "published.json", function biddle_publish_zippy_zip_hash_writeJSON() {
                                 setTimeout(function biddle_publish_zippy_zip_hash_writeJSON_delay() {
                                     apps.remove(data.abspath + "temp", function biddle_publish_zippy_zip_hash_writeJSON_delay_removeTemp() {
@@ -1807,6 +1843,7 @@
                         ? Object.keys(data.packjson.publication_variants)
                         : [];
                 variants.push("biddletempprimary");
+                varnames.biddletempprimary = true;
                 varlen = (data.latestVersion === true)
                     ? variants.length * 2
                     : variants.length;
@@ -1821,6 +1858,7 @@
                                 ? 250
                                 : 0;
                         value = apps.sanitizef(value);
+                        varnames[value] = true;
                         if (typeof varobj.exclusions !== "object" || typeof varobj.exclusions.join !== "function") {
                             varobj.exclusions = [];
                         }
@@ -1836,11 +1874,9 @@
                                         var location = data.abspath + "temp" + node.path.sep + value + node.path.sep + data.packjson.name,
                                             valname  = (value === "biddletempprimary")
                                                 ? ""
-                                                : value,
-                                            finalVar = (vflag === variants.length - 1);
+                                                : value;
                                         vflag += 1;
                                         zippy({
-                                            final   : finalVar,
                                             location: location,
                                             name    : valname
                                         });
@@ -3773,10 +3809,10 @@
                     .fs
                     .stat(data.abspath + "temp", function biddle_test_publishA_child_statTemp(errtemp) {
                         if (errtemp === null) {
-                            return apps.errout({error: "Directory 'temp' from publish operation should have been removed.", name: "biddle_test_publishA_child_statTemp", time: humantime(true)});
+                            return apps.errout({error: "Failed to remove directory 'temp' from publish operation.", name: "biddle_test_publishA_child_statTemp", stdout: stdout, time: humantime(true)});
                         }
                         if (errtemp.toString().indexOf("no such file or directory") < 0) {
-                            return apps.errout({error: errtemp, name: "biddle_test_publishA_child_statTemp", time: humantime(true)});
+                            return apps.errout({error: errtemp, name: "biddle_test_publishA_child_statTemp", stdout: stdout, time: humantime(true)});
                         }
                         outputs.forEach(function biddle_test_publishA_child_statTemp_formatOutput(value, index, array) {
                             var val = value.slice(value.indexOf("publications"));
@@ -3896,7 +3932,7 @@
                                                                     .stat(data.abspath + "temp", function biddle_test_publishA_child_statTemp_readJSON_readdir_statfile_statback_publish_statTemp(errtemp) {
                                                                         if (errtemp === null) {
                                                                             return apps.errout({
-                                                                                error: "Directory 'temp' from publish operation should have been removed.",
+                                                                                error: "Failed to remove directory 'temp' from publish operation.",
                                                                                 name : "biddle_test_publishA_child_statTemp_readJSON_readdir_statfile_statback_publish_st" +
                                                                                           "atTemp",
                                                                                 time : humantime(true)
@@ -3971,10 +4007,10 @@
                     .fs
                     .stat(data.abspath + "temp", function biddle_test_publishB_child_statTemp(errtemp) {
                         if (errtemp === null) {
-                            return apps.errout({error: "Directory 'temp' from publish operation should have been removed.", name: "biddle_test_publishB_child_statTemp", time: humantime(true)});
+                            return apps.errout({error: "Failed to remove directory 'temp' from publish operation.", name: "biddle_test_publishB_child_statTemp", stdout: stdout, time: humantime(true)});
                         }
                         if (errtemp.toString().indexOf("no such file or directory") < 0) {
-                            return apps.errout({error: errtemp, name: "biddle_test_publishB_child_statTemp", time: humantime(true)});
+                            return apps.errout({error: errtemp, name: "biddle_test_publishB_child_statTemp", stdout: stdout, time: humantime(true)});
                         }
                         outputs.forEach(function biddle_test_publishB_child_statTemp_formatOutput(value, index, array) {
                             var val = value.slice(value.indexOf("publications"));
@@ -4095,7 +4131,7 @@
                                                                     .stat(data.abspath + "temp", function biddle_test_publishB_child_statTemp_readJSON_readdir_statfile_statback_publish_statTemp(errtemp) {
                                                                         if (errtemp === null) {
                                                                             return apps.errout({
-                                                                                error: "Directory 'temp' from publish operation should have been removed.",
+                                                                                error: "Failed to remove directory 'temp' from publish operation.",
                                                                                 name : "biddle_test_publishB_child_statTemp_readJSON_readdir_statfile_statback_publish_st" +
                                                                                           "atTemp",
                                                                                 time : humantime(true)
