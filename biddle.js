@@ -154,7 +154,6 @@
             },
             start = "",
             dest  = "",
-            pubex = "",
             exlen = exclusions.length,
             dirs  = {},
             util  = {};
@@ -238,7 +237,7 @@
                 });
             });
         };
-        util.file     = function biddle_copy_file(item, dir, size, prop) {
+        util.file     = function biddle_copy_file(item, dir, prop) {
             var place       = (data.command === "publish")
                     ? dest + item.replace(start + node.path.sep, "")
                     : dest + item.replace(data.cwd.toLowerCase() + node.path.sep, ""),
@@ -269,37 +268,6 @@
                     util.complete(item);
                 });
             });
-            /*node
-                .fs
-                .open(item, "r", function biddle_copy_file_open(err, fd) {
-                    var buff  = new Buffer(size);
-                    if (err !== null) {
-                        return apps.errout({error: err, name: "biddle_copy_file_open"});
-                    }
-                    node
-                        .fs
-                        .read(fd, buff, 0, size, 1, function biddle_copy_file_open_read(erra, bytes, buffer) {
-                            if (erra !== null) {
-                                return apps.errout({error: erra, name: "biddle_copy_file_open_read"});
-                            }
-                            node
-                                .fs
-                                .writeFile(place, buffer, {
-                                    encoding: "utf8"
-                                }, function biddle_copy_file_open_read_write(errb) {
-                                    var filename = item.split(node.path.sep);
-                                    if (errb !== null && errb.toString().indexOf("no such file or directory") < 0) {
-                                        return apps.errout({error: errb, name: "biddle_copy_file_open_read_write"});
-                                    }
-                                    node
-                                        .fs
-                                        .utimes(place + node.path.sep + filename[filename.length - 1], prop.atime, prop.mtime, function biddle_copy_file_utimes_exec() {
-                                            util.complete(item);
-                                        });
-                                });
-                            return bytes;
-                        });
-                });*/
         };
         util.link     = function biddle_copy_link(item, dir) {
             node
@@ -365,14 +333,14 @@
                     numb.size += stats.size;
                     if (item === dir) {
                         apps.makedir(dest, function biddle_copy_stat_callback_file() {
-                            util.file(item, dir, stats.size, {
+                            util.file(item, dir, {
                                 atime: (Date.parse(stats.atime) / 1000),
                                 mode : stats.mode,
                                 mtime: (Date.parse(stats.mtime) / 1000)
                             });
                         });
                     } else {
-                        util.file(item, dir, stats.size, {
+                        util.file(item, dir, {
                             atime: (Date.parse(stats.atime) / 1000),
                             mode : stats.mode,
                             mtime: (Date.parse(stats.mtime) / 1000)
@@ -2522,10 +2490,11 @@
                 "install",
                 "listStatus",
                 "republish",
-                "update",
+                //"update",
                 "uninstall",
                 "unpublish"
             ],
+            phasenumb = 0,
             options   = {
                 correct     : false,
                 crlf        : false,
@@ -2823,6 +2792,8 @@
                 order.splice(0, 1);
             };
         phases.copy          = function biddle_test_copy() {
+            phasenumb += 1;
+            console.log(phasenumb + ". Copy tests");
             node.child(childcmd + "copy " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta.js " + testpath + " childtest", {
                 cwd: data.abspath
             }, function biddle_test_copy_child(er, stdout, stder) {
@@ -2864,6 +2835,8 @@
                 binary: false,
                 text  : false
             };
+            phasenumb += 1;
+            console.log(phasenumb + ". Get tests");
             node.child(childcmd + "get https://s0.2mdn.net/879366/express_html_inpage_rendering_lib_200_150.js " + data.abspath + "unittest childtest", {
                 cwd: data.abspath
             }, function biddle_test_get_childText(er, stdout, stder) {
@@ -2936,6 +2909,8 @@
             });
         };
         phases.hashFile      = function biddle_test_hashFile() {
+            phasenumb += 1;
+            console.log(phasenumb + ". Hash file test");
             node.child(childcmd + "hash " + data.abspath + "LICENSE childtest", {
                 cwd: data.abspath
             }, function biddle_test_hashFile_child(er, stdout, stder) {
@@ -2956,6 +2931,8 @@
             });
         };
         phases.hashString    = function biddle_test_hashString() {
+            phasenumb += 1;
+            console.log(phasenumb + ". Hash string test");
             node.child(childcmd + "hash string \"a moderately long string to hash and test in the unit tests of bid" +
                     "dle\" childtest", {
                 cwd: data.abspath
@@ -2977,6 +2954,8 @@
             });
         };
         phases.install       = function biddle_test_install() {
+            phasenumb += 1;
+            console.log(phasenumb + ". Install tests");
             node.child(childcmd + "install " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta_latest.zip childtest", {
                 cwd: data.abspath
             }, function biddle_test_install_child(er, stdout, stder) {
@@ -3120,7 +3099,8 @@
                     };
                     files.forEach(lintit);
                 };
-            console.log(text.cyan + "Beautifying and Linting" + text.nocolor);
+            phasenumb += 1;
+            console.log(phasenumb + ". Lint tests");
             console.log("** Note that line numbers of error messaging reflects beautified code line.");
             ignoreDirectory.forEach(function biddle_test_lint_absignore(value, index, array) {
                 array[index] = data.abspath + value;
@@ -3303,6 +3283,8 @@
                         }
                     });
                 };
+            phasenumb += 1;
+            console.log(phasenumb + ". List and status tests");
             listChild();
         };
         phases.markdown      = function biddle_test_markdown() {
@@ -3311,6 +3293,8 @@
                 "60" : false,
                 "80" : false
             };
+            phasenumb += 1;
+            console.log(phasenumb + ". Markdown tests");
             node.child(childcmd + "markdown " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "READMEa.md 60 childtest", {
                 cwd: data.abspath
             }, function biddle_test_markdown_60(er, stdout, stder) {
@@ -3794,6 +3778,8 @@
             });
         };
         phases.publishA      = function biddle_test_publishA() {
+            phasenumb += 1;
+            console.log(phasenumb + ". First set of publish tests");
             node.child(childcmd + "publish " + data.abspath + "test" + node.path.sep + "biddletesta childtest", {
                 cwd: data.abspath
             }, function biddle_test_publishA_child(er, stdout, stder) {
@@ -3992,6 +3978,8 @@
             });
         };
         phases.publishB      = function biddle_test_publishB() {
+            phasenumb += 1;
+            console.log(phasenumb + ". Second set of publish tests");
             node.child(childcmd + "publish " + data.abspath + "test" + node.path.sep + "biddletestb childtest", {
                 cwd: data.abspath
             }, function biddle_test_publishB_child(er, stdout, stder) {
@@ -4191,6 +4179,8 @@
             });
         };
         phases.remove        = function biddle_test_remove() {
+            phasenumb += 1;
+            console.log(phasenumb + ". Remove tests");
             node.child(childcmd + "remove " + testpath + node.path.sep + "biddletesta.js childtest", {
                 cwd: data.abspath
             }, function biddle_test_remove_child(er, stdout, stder) {
@@ -4219,6 +4209,8 @@
         };
         phases.republish     = function biddle_test_republish() {
             var packpath = data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "package.json";
+            phasenumb += 1;
+            console.log(phasenumb + ". Republish tests");
             node.fs.readFile(packpath, function biddle_test_republish_read(rfer, packjson) {
                 var pack = JSON.parse(packjson),
                     ver  = pack
@@ -4313,6 +4305,8 @@
             });
         };
         phases.uninstall     = function biddle_test_uninstall() {
+            phasenumb += 1;
+            console.log(phasenumb + ". Uninstall tests");
             node.child(childcmd + "uninstall biddletesta childtest", {
                 cwd: data.abspath
             }, function biddle_test_uninstall_child(er, stdout, stder) {
@@ -4399,6 +4393,8 @@
             return;
         };
         phases.unpublish     = function biddle_test_unpublish() {
+            phasenumb += 1;
+            console.log(phasenumb + ". Unpublish tests");
             node.child(childcmd + "unpublish biddletesta childtest", {
                 cwd: data.abspath
             }, function biddle_test_unpublish_child(er, stdout, stder) {
@@ -4482,6 +4478,8 @@
             });
         };
         phases.unzip         = function biddle_test_unzip() {
+            phasenumb += 1;
+            console.log(phasenumb + ". Unzip tests");
             node.child(childcmd + "unzip " + data.abspath + "unittest" + node.path.sep + "biddletesta.zip " + data.abspath + "unittest" + node.path.sep + "unzip childtest", {
                 cwd: data.abspath
             }, function biddle_test_unzip_child(er, stdout, stder) {
@@ -4530,6 +4528,8 @@
             });
         };
         phases.zip           = function biddle_test_zip() {
+            phasenumb += 1;
+            console.log(phasenumb + ". Zip tests");
             node.child(childcmd + "zip " + data.abspath + "test" + node.path.sep + "biddletesta " + data.abspath + "unittest childtest", {
                 cwd: data.abspath
             }, function biddle_test_zip_child(er, stdout, stder) {
