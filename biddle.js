@@ -148,57 +148,58 @@
     apps.copy        = function biddle_copy(target, destination, exclusions, callback) {
         var numb  = {
                 dirs : 0,
-                end  : 0,
                 files: 0,
                 link : 0,
-                size : 0,
-                start: 0
+                size : 0
             },
             start = "",
             dest  = "",
             exlen = exclusions.length,
             dirs  = {},
             util  = {};
-        util.complete = function biddle_copy_complete() {
+        util.complete = function biddle_copy_complete(item) {
             var out = ["biddle copied "];
-            if (data.command === "copy") {
-                out.push(text.green);
-                out.push(text.bold);
-                out.push(numb.dirs);
-                out.push(text.none);
-                out.push(" director");
-                if (numb.dirs === 1) {
-                    out.push("y, ");
-                } else {
-                    out.push("ies, ");
+            delete dirs[item];
+            if (Object.keys(dirs).length < 1) {
+                if (data.command === "copy") {
+                    out.push(text.green);
+                    out.push(text.bold);
+                    out.push(numb.dirs);
+                    out.push(text.none);
+                    out.push(" director");
+                    if (numb.dirs === 1) {
+                        out.push("y, ");
+                    } else {
+                        out.push("ies, ");
+                    }
+                    out.push(text.green);
+                    out.push(text.bold);
+                    out.push(numb.files);
+                    out.push(text.none);
+                    out.push(" file");
+                    if (numb.files !== 1) {
+                        out.push("s");
+                    }
+                    out.push(", and ");
+                    out.push(text.green);
+                    out.push(text.bold);
+                    out.push(numb.link);
+                    out.push(text.none);
+                    out.push(" symbolic link");
+                    if (numb.link !== 1) {
+                        out.push("s");
+                    }
+                    out.push(" at ");
+                    out.push(text.green);
+                    out.push(text.bold);
+                    out.push(apps.commas(numb.size));
+                    out.push(text.none);
+                    out.push(" bytes.");
+                    console.log(out.join(""));
+                    console.log("Copied " + text.cyan + target + text.nocolor + " to " + text.green + destination + text.nocolor);
                 }
-                out.push(text.green);
-                out.push(text.bold);
-                out.push(numb.files);
-                out.push(text.none);
-                out.push(" file");
-                if (numb.files !== 1) {
-                    out.push("s");
-                }
-                out.push(", and ");
-                out.push(text.green);
-                out.push(text.bold);
-                out.push(numb.link);
-                out.push(text.none);
-                out.push(" symbolic link");
-                if (numb.link !== 1) {
-                    out.push("s");
-                }
-                out.push(" at ");
-                out.push(text.green);
-                out.push(text.bold);
-                out.push(apps.commas(numb.size));
-                out.push(text.none);
-                out.push(" bytes.");
-                console.log(out.join(""));
-                console.log("Copied " + text.cyan + target + text.nocolor + " to " + text.green + destination + text.nocolor);
+                callback();
             }
-            callback();
         };
         util.eout     = function biddle_copy_eout(er, name) {
             var filename = target.split(node.path.sep);
@@ -206,75 +207,66 @@
                 apps.errout({error: er, name: name});
             });
         };
-        util.dir      = function biddle_copy_dir(item, dir) {
+        util.dir      = function biddle_copy_dir(item) {
             node.fs.readdir(item, function biddle_copy_dir_makedir_readdir(er, files) {
                 if (er !== null) {
                     return util.eout(er, "biddle_copy_dir_readdir");
                 }
                 apps.makedir(dest + item, function biddle_copy_dir_makedir() {
-                    dirs[dir] -= 1;
-                    if (files.length > 0) {
-                        dirs[item] = files.length;
-                        files.forEach(function biddle_copy_dir_makedir_readdir_each(value) {
-                            util.stat(item + node.path.sep + value, item);
-                        });
-                    } else {
+                    var a = files.length,
+                        b = 0;
+                    if (a > 0) {
                         delete dirs[item];
-                        if (dirs[dir] < 1) {
-                            delete dirs[dir];
-                            if (Object.keys(dirs).length < 1) {
-                                util.complete();
-                            }
-                        }
+                        do {
+                            dirs[item + node.path.sep + files[b]] = true;
+                            b += 1;
+                        } while (b < a);
+                        b = 0;
+                        do {
+                            util.stat(item + node.path.sep + files[b], item);
+                            b += 1;
+                        } while (b < a);
+                    } else {
+                        util.complete(item);
                     }
                 });
             });
         };
-        util.file     = function biddle_copy_file(item, dir, prop) {
-            var readStream  = node
-                    .fs
-                    .createReadStream(item),
-                writeStream = {},
-                errorflag   = false,
-                place       = dest + item;
-            if (item === dir) {
-                place = dest + item.split(node.path.sep).pop();
-            }
-            writeStream = node
+        util.file     = function biddle_copy_file(item, dir, size, prop) {
+            var place = (item === dir)
+                    ? dest + item.split(node.path.sep).pop()
+                    : dest + item;
+            node
                 .fs
-                .createWriteStream(place, {mode: prop.mode});
-            readStream.on("error", function biddle_copy_file_readError(error) {
-                errorflag = true;
-                return util.eout(error, "biddle_copy_file_readError");
-            });
-            writeStream.on("error", function biddle_copy_file_writeError(error) {
-                errorflag = true;
-                return util.eout(error, "biddle_copy_file_writeError");
-            });
-            if (errorflag === true) {
-                return;
-            }
-            writeStream.on("open", function biddle_copy_file_write() {
-                readStream.pipe(writeStream);
-            });
-            writeStream.once("finish", function biddle_copy_file_finish() {
-                var filename = item.split(node.path.sep);
-                node
-                    .fs
-                    .utimes(place + node.path.sep + filename[filename.length - 1], prop.atime, prop.mtime, function biddle_copy_file_finish_utimes() {
-                        if (item === dir) {
-                            util.complete();
-                        } else {
-                            dirs[dir] -= 1;
-                            if (dirs[dir] < 1) {
-                                delete dirs[dir];
-                                if (Object.keys(dirs).length < 1) {
-                                    util.complete();
-                                }
+                .open(item, "r", function biddle_copy_file_open(err, fd) {
+                    var buff  = new Buffer(size);
+                    if (err !== null) {
+                        return apps.errout({error: err, name: "biddle_copy_file_open"});
+                    }
+                    node
+                        .fs
+                        .read(fd, buff, 0, size, 1, function biddle_copy_file_open_read(erra, bytes, buffer) {
+                            if (erra !== null) {
+                                return apps.errout({error: erra, name: "biddle_copy_file_open_read"});
                             }
-                        }
-                    });
-            });
+                            node
+                                .fs
+                                .writeFile(place, buffer, {
+                                    encoding: "utf8"
+                                }, function biddle_copy_file_open_read_write(errb) {
+                                    var filename = item.split(node.path.sep);
+                                    if (errb !== null && errb.toString().indexOf("no such file or directory") < 0) {
+                                        return apps.errout({error: errb, name: "biddle_copy_file_open_read_write"});
+                                    }
+                                    node
+                                        .fs
+                                        .utimes(place + node.path.sep + filename[filename.length - 1], prop.atime, prop.mtime, function biddle_copy_file_utimes_exec() {
+                                            util.complete(item);
+                                        });
+                                });
+                            return bytes;
+                        });
+                });
         };
         util.link     = function biddle_copy_link(item, dir) {
             node
@@ -307,17 +299,7 @@
                                     if (erl !== null) {
                                         return util.eout(erl, "biddle_copy_link_readlink_stat_makelink");
                                     }
-                                    if (item === dir) {
-                                        util.complete();
-                                    } else {
-                                        dirs[dir] -= 1;
-                                        if (dirs[dir] < 1) {
-                                            delete dirs[dir];
-                                            if (Object.keys(dirs).length < 1) {
-                                                util.complete();
-                                            }
-                                        }
-                                    }
+                                    util.complete(item);
                                 });
                         });
                 });
@@ -330,21 +312,9 @@
             if (exlen > 0) {
                 do {
                     if (item.replace(target + node.path.sep, "") === exclusions[a]) {
-                        if (item === dir || Object.keys(dirs).length < 1) {
-                            util.complete();
-                        } else {
-                            exclusions.splice(a, 1);
-                            exlen -= 1;
-                            if (item !== dir) {
-                                dirs[dir] -= 1;
-                                if (dirs[dir] < 1) {
-                                    delete dirs[dir];
-                                    if (Object.keys(dirs).length < 1) {
-                                        util.complete();
-                                    }
-                                }
-                            }
-                        }
+                        exclusions.splice(a, 1);
+                        exlen -= 1;
+                        util.complete(item);
                         return;
                     }
                     a += 1;
@@ -352,26 +322,27 @@
             }
             node.fs[func](item, function biddle_copy_stat_callback(er, stats) {
                 if (er !== null) {
-                    util.eout(er, "biddle_copy_stat_callback");
+                    return util.eout(er, "biddle_copy_stat_callback");
                 }
                 if (stats === undefined || stats.isFile === undefined) {
-                    util.eout("stats object is undefined", "biddle_copy_stat_callback");
+                    return util.eout("stats object is undefined", "biddle_copy_stat_callback");
                 }
                 if (stats.isFile() === true) {
                     numb.files += 1;
                     numb.size += stats.size;
-                    util.file(item, dir, {
+                    util.file(item, dir, stats.size, {
                         atime: (Date.parse(stats.atime) / 1000),
                         mode : stats.mode,
                         mtime: (Date.parse(stats.mtime) / 1000)
                     });
                 } else if (stats.isDirectory() === true) {
                     numb.dirs += 1;
-                    dirs[item] = 0;
-                    util.dir(item, dir);
+                    util.dir(item);
                 } else if (stats.isSymbolicLink() === true) {
                     numb.link += 1;
                     util.link(item, dir);
+                } else {
+                    util.complete(item);
                 }
             });
         }
@@ -1871,7 +1842,7 @@
                         setTimeout(function biddle_publish_execution_variantsDir_each_delay() {
                             apps.copy(data.input[2], data.abspath + "temp" + node.path.sep + value, varobj.exclusions, function biddle_publish_execution_variantsDir_each_delay_copy() {
                                 var complete = function biddle_publish_execution_variantsDir_each_delay_copy_complete() {
-                                        var location = data.abspath + "temp" + node.path.sep + value + node.path.sep + data.packjson.name,
+                                        var location = data.abspath + "temp" + node.path.sep + value + node.path.sep + "test" + node.path.sep + data.packjson.name,
                                             valname  = (value === "biddletempprimary")
                                                 ? ""
                                                 : value;
@@ -2813,7 +2784,7 @@
             node.child(childcmd + "copy " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta.js " + testpath + " childtest", {
                 cwd: data.abspath
             }, function biddle_test_copy_child(er, stdout, stder) {
-                var copytest = "biddle copied " + text.green + text.bold + "0" + text.none + " directories, " + text.green + text.bold + "1" + text.none + " files, and " + text.green + text.bold + "0" + text.none + " symbolic links at " + text.green + text.bold + "23,177" + text.none + " bytes.\nCopied " + text.cyan + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta.js" + text.nocolor + " to " + text.green + data.abspath + "unittest" + text.nocolor,
+                var copytest = "biddle copied " + text.green + text.bold + "0" + text.none + " directories, " + text.green + text.bold + "1" + text.none + " file, and " + text.green + text.bold + "0" + text.none + " symbolic links at " + text.green + text.bold + "23,177" + text.none + " bytes.\nCopied " + text.cyan + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta.js" + text.nocolor + " to " + text.green + data.abspath + "unittest" + text.nocolor,
                     copyfile = data.abspath + "unittest" + node.path.sep + "biddletesta.js";
                 if (er !== null) {
                     return apps.errout({error: er, name: "biddle_test_copy_child", stdout: stdout, time: humantime(true)});
