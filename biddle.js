@@ -2253,7 +2253,12 @@
             node.fs.rmdir(item, function biddle_remove_delete_callback_rmdir(er) {
                 var dirlist = item.split(node.path.sep),
                     dir     = "";
-                if (verbose === true && er !== null) {
+                if (er !== null && er.toString().indexOf("resource busy or locked") > 0) {
+                    return setTimeout(function biddle_remove_rmdir_delay() {
+                        biddle_remove_rmdir(item);
+                    }, 1000);
+                }
+                if (verbose === true && er !== null && er.toString("no such file or directory") < 0) {
                     return apps.errout({error:er, name:"biddle_remove_rmdir_callback"});
                 }
                 delete dirs[item];
@@ -3906,7 +3911,8 @@
                                                             node.child(childcmd + "publish " + data.abspath + "test" + node.path.sep + "biddletesta childtest", {
                                                                 cwd: data.abspath
                                                             }, function biddle_test_publishA_child_statTemp_readJSON_readdir_statfile_statback_publish(erx, stdoutx, stderx) {
-                                                                var stack        = [];
+                                                                var publishagain = text.bold + text.cyan + "Function:" + text.none + " biddle_publish_execution\n" + text.bold + text.red + "Error:" + text.none + " Attempted to publish biddletesta over existing version",
+                                                                    stack        = [];
                                                                 if (erx !== null) {
                                                                     if (typeof erx.stack === "string") {
                                                                         stack = erx
@@ -3923,9 +3929,9 @@
                                                                 stdoutx = stdoutx
                                                                     .replace("\r\n", "\n")
                                                                     .replace(/(\u0020\d+\.\d+\.\d+\s*)$/, "");
-                                                                /*if (stdoutx !== publishagain) {
+                                                                if (stdoutx !== publishagain) {
                                                                     return diffFiles("biddle_test_publishA_child_statTemp_readJSON_readdir_statfile_statback_publish", stdoutx, publishagain);
-                                                                }*/
+                                                                }
                                                                 node
                                                                     .fs
                                                                     .stat(data.abspath + "temp", function biddle_test_publishA_child_statTemp_readJSON_readdir_statfile_statback_publish_statTemp(errtemp) {
