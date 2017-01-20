@@ -909,7 +909,7 @@
                                     remove  : false
                                 },
                                 complete = function biddle_install_compareHash_hash_complete() {
-                                    console.log("Application " + text.cyan + data.packjson.name + text.nocolor + "m is installed to version: " + data.packjson.version);
+                                    console.log("Application " + text.cyan + data.packjson.name + text.nocolor + " is installed to version: " + text.bold + text.red + data.packjson.version + text.none);
                                 };
                             data.installed[data.packjson.name] = {};
                             data
@@ -1013,12 +1013,12 @@
                     };
                 listtype[type].sort();
                 if (listtype[type].length === 0) {
-                    console.log(text.underline + proper + " applications:" + text.normal);
+                    console.log(text.underline + text.cyan + proper + " applications:" + text.none);
                     console.log("");
                     console.log("No applications are " + type + " by biddle.");
                     console.log("");
                 } else {
-                    console.log(text.underline + proper + " applications:" + text.normal);
+                    console.log(text.underline + text.cyan + proper + " applications:" + text.none);
                     console.log("");
                     len          = listtype[type].length;
                     pads.name    = 0;
@@ -1919,7 +1919,7 @@
         apps.getpjson(function biddle_publish_callback() {
             if (data.published[data.packjson.name] !== undefined && data.published[data.packjson.name].versions.indexOf(data.packjson.version) > -1) {
                 return apps.errout({
-                    error: "Attempted to publish " + data.packjson.name + " over existing version " + data.packjson.version,
+                    error: "Attempted to publish " + data.packjson.name + " over existing version " + text.bold + text.red + data.packjson.version + text.none,
                     name : "biddle_publish_execution"
                 });
             }
@@ -2221,7 +2221,7 @@
         };
         util.delete   = function biddle_remove_delete(item, dir) {
             node.fs.unlink(item, function biddle_remove_delete_callback(er) {
-                if (verbose === true && er !== null) {
+                if (verbose === true && er !== null && er.toString("no such file or directory") < 0) {
                     return apps.errout({error:er, name:"biddle_remove_delete_callback"});
                 }
                 if (item === dir) {
@@ -2235,7 +2235,7 @@
         };
         util.readdir  = function biddle_remove_readdir(item) {
             node.fs.readdir(item, function biddle_remove_readdir_callback(er, files) {
-                if (verbose === true && er !== null) {
+                if (verbose === true && er !== null && er.toString("no such file or directory") < 0) {
                     return apps.errout({error:er, name:"biddle_remove_readdir_callback"});
                 }
                 dirs[item] = 0;
@@ -3204,9 +3204,9 @@
                     node.child(childcmd + listcmds[0] + " childtest", {
                         cwd: data.abspath
                     }, function biddle_test_listStatus_childWrapper_child(er, stdout, stder) {
-                        var listout = text.underline + "installed applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep + "\n\n" + text.underline + "published applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "unittest" + node.path.sep + "publications" + node.path.sep + "biddletestb" + node.path.sep,
-                            listpub = text.underline + "published applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "unittest" + node.path.sep + "publications" + node.path.sep + "biddletestb" + node.path.sep,
-                            listist = text.underline + "installed applications:" + text.normal + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep,
+                        var listout = text.underline + text.cyan + "installed applications:" + text.none + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep + "\n\n" + text.underline + text.cyan + "published applications:" + text.none + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "unittest" + node.path.sep + "publications" + node.path.sep + "biddletestb" + node.path.sep,
+                            listpub = text.underline + text.cyan + "published applications:" + text.none + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "unittest" + node.path.sep + "publications" + node.path.sep + "biddletestb" + node.path.sep,
+                            listist = text.underline + text.cyan + "installed applications:" + text.none + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep,
                             statout = "\n" + text.underline + text.green + "all applications are current:" + text.none + "\n\n* biddletesta matches published version " + text.cyan + "99.99.xxxx" + text.nocolor + "\n* biddletestb matches published version " + text.cyan + "98.98.1234" + text.nocolor,
                             statpba = "\n* biddletesta matches published version " + text.cyan + "99.99.xxxx" + text.nocolor,
                             statpbb = "\n" + text.underline + "outdated applications:" + text.normal + "\n\n* biddletesta is installed at version " + text.bold + text.red + "99.99.xxxx" + text.none + " but published version is " + text.cyan + "11.22.6789" + text.nocolor + "\n\n" + text.underline + "current applications:" + text.normal + "\n\n* biddletestb matches published version " + text.cyan + "98.98.1234" + text.nocolor,
@@ -3928,7 +3928,8 @@
                                                                 }
                                                                 stdoutx = stdoutx
                                                                     .replace("\r\n", "\n")
-                                                                    .replace(/(\u0020\d+\.\d+\.\d+\s*)$/, "");
+                                                                    .replace(/(\u0020\d+\.\d+\.\d+\s*)$/, "")
+                                                                    .slice(0, stdoutx.indexOf(" version") + 8);
                                                                 if (stdoutx !== publishagain) {
                                                                     return diffFiles("biddle_test_publishA_child_statTemp_readJSON_readdir_statfile_statback_publish", stdoutx, publishagain);
                                                                 }
@@ -4129,7 +4130,8 @@
                                                                 }
                                                                 stdoutx = stdoutx
                                                                     .replace("\r\n", "\n")
-                                                                    .replace(/(\u0020\d+\.\d+\.\d+\s*)$/, "");
+                                                                    .replace(/(\u0020\d+\.\d+\.\d+\s*)$/, "")
+                                                                    .slice(0, stdoutx.indexOf(" version") + 8);
                                                                 if (stdoutx !== publishagain) {
                                                                     return diffFiles("biddle_test_publishB_child_statTemp_readJSON_readdir_statfile_statback_publish", stdoutx, publishagain);
                                                                 }
@@ -4675,10 +4677,17 @@
             });
     };
     apps.version     = function biddle_version() {
-        data.input[2] = data.abspath;
-        apps.getpjson(function biddle_version_vers() {
-            console.log(data.packjson.version);
-        });
+        if (data.input[2] === undefined) {
+            apps.getpjson(function biddle_version_vers() {
+                console.log(text.cyan + "biddle" + text.nocolor + " - " + data.packjson.version);
+            });
+        } else {
+            if (data.installed[data.input[2]] === undefined) {
+                apps.errout({error: text.red + data.input[2] + text.nocolor + " is not installed by biddle", name: "biddle_version"});
+            } else {
+                console.log(text.cyan + data.input[2] + text.nocolor + " - " + data.installed[data.input[2]].version);
+            }
+        }
     };
     apps.zip         = function biddle_zip(callback, zippack) {
         var zipfile     = "",

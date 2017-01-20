@@ -28,6 +28,7 @@ test|?|application name|none
 uninstall|✓|application name|none
 unpublish|✓|application name|none
 unzip|✓|path to zip file|directory path
+version|✓|none or installed app name|none
 zip|✓|local file system address|directory path
 
 ### cmds Object
