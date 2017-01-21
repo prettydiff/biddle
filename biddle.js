@@ -1617,67 +1617,6 @@
             publoc      = "",
             varnames    = {},
             variants    = [],
-            variantsDir = function biddle_publish_variantsDir(value) {
-                var varobj = (value === "biddletempprimary")
-                        ? {}
-                        : data
-                            .packjson
-                            .publication_variants[value];
-                value = apps.sanitizef(value);
-                varnames[value] = true;
-                if (typeof varobj.exclusions !== "object" || typeof varobj.exclusions.join !== "function") {
-                    varobj.exclusions = [];
-                }
-                varobj.exclusions = varobj
-                    .exclusions
-                    .concat(data.ignore);
-                varobj
-                    .exclusions
-                    .sort();
-                apps.copy(data.input[2], data.abspath + "temp" + node.path.sep + value, varobj.exclusions, function biddle_publish_variantsDir_copy() {
-                    var complete = function biddle_publish_variantsDir_copy_complete() {
-                            var location = data.abspath + "temp" + node.path.sep + value,
-                                valname  = (value === "biddletempprimary")
-                                    ? ""
-                                    : value;
-                            zippy({
-                                location: location,
-                                name    : valname
-                            });
-                        },
-                        tasks    = function biddle_publish_variantsDir_copy_tasks() {
-                            node.child(varobj.tasks[0], function biddle_publish_variantsDir_copy_tasks_child(ert, stdoutt, stdert) {
-                                var len = varobj.tasks.length - 1;
-                                if (ert !== null) {
-                                    console.log(text.bold + text.red + "Error:" + text.none + " with variant " + value + " on publish task");
-                                    console.log(varobj.tasks[0]);
-                                    console.log(ert);
-                                } else if (stdert !== null && stdert !== "") {
-                                    console.log(text.bold + text.red + "Error:" + text.none + " with variant " + value + " on publish task");
-                                    console.log(varobj.tasks[0]);
-                                    console.log(stdert);
-                                } else {
-                                    console.log(text.bold + text.green + "Complete:" + text.none + " with variant " + value + " on publish task");
-                                    console.log(varobj.tasks[0]);
-                                    console.log(stdoutt);
-                                }
-                                varobj
-                                    .tasks
-                                    .splice(0, 1);
-                                if (len > 0) {
-                                    biddle_publish_variantsDir_copy_tasks();
-                                } else {
-                                    complete();
-                                }
-                            });
-                        };
-                    if (varobj.tasks === "object" && varobj.tasks.length > 0) {
-                        tasks();
-                    } else {
-                        complete();
-                    }
-                });
-            },
             indexfile   = function biddle_publish_indexfile() {
                 var rows   = [],
                     file   = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><!DOCTYPE html PUBLIC \"-//W3C//DTD X" +
@@ -1795,107 +1734,69 @@
                     return true;
                 });
             },
-            zippy       = function biddle_publish_zippy(vardata) {
-                apps.zip(function biddle_publish_zippy_zip(zipfilename) {
-                    node
-                        .fs
-                        .stat(zipfilename, function biddle_publish_zippy_zip_stat(erstat, stats) {
-                            var filename = zipfilename
-                                    .split(node.path.sep)
-                                    .pop(),
-                                variants = filename
-                                    .replace(data.packjson.name, "")
-                                    .split("_"),
-                                variant  = "",
-                                sdate    = new Date(),
-                                year     = String(sdate.getUTCFullYear()),
-                                month    = String(sdate.getMonth() + 1),
-                                day      = String(sdate.getDate());
-                            if (erstat !== null) {
-                                return apps.errout({error: erstat, name: "biddle_publish_zippy_zip_stat"});
-                            }
-                            if (typeof stats !== "object") {
-                                return apps.errout({error: "stats is not an object, from node.fs.stat", name: "biddle_publish_zippy_zip_stat"});
-                            }
-                            if (month.length < 2) {
-                                month = "0" + month;
-                            }
-                            if (day.length < 2) {
-                                day = "0" + day;
-                            }
-                            if (variants.length > 2) {
-                                variant = variants[1];
-                            }
-                            filedata.push({
-                                date    : year + month + day,
-                                filename: filename,
-                                size    : stats.size,
-                                variant : variant,
-                                version : data.packjson.version
+            zippy       = function biddle_publish_zippy_init() {
+                return;
+            },
+            variantsDir = function biddle_publish_variantsDir(value) {
+                var varobj = (value === "biddletempprimary")
+                        ? {}
+                        : data
+                            .packjson
+                            .publication_variants[value];
+                value = apps.sanitizef(value);
+                varnames[value] = true;
+                if (typeof varobj.exclusions !== "object" || typeof varobj.exclusions.join !== "function") {
+                    varobj.exclusions = [];
+                }
+                varobj.exclusions = varobj
+                    .exclusions
+                    .concat(data.ignore);
+                varobj
+                    .exclusions
+                    .sort();
+                apps.copy(data.input[2], data.abspath + "temp" + node.path.sep + value, varobj.exclusions, function biddle_publish_variantsDir_copy() {
+                    var complete = function biddle_publish_variantsDir_copy_complete() {
+                            var location = data.abspath + "temp" + node.path.sep + value,
+                                valname  = (value === "biddletempprimary")
+                                    ? ""
+                                    : value;
+                            zippy({
+                                location: location,
+                                name    : valname
                             });
-                            varcount += 1;
-                            if (varcount === varlen) {
-                                node
-                                    .fs
-                                    .readFile(publoc + "filedata.json", function biddle_publish_zippy_zip_stat_readfiledata(erd, catalogue) {
-                                        var parsed = {},
-                                            x      = 0;
-                                        if (erd !== null && erd !== "") {
-                                            if (erd.toString().indexOf("no such file or directory") > 0) {
-                                                apps.writeFile(JSON.stringify({filedata: filedata}), publoc + "filedata.json", function biddle_publish_zippy_zip_stat_readfiledata_writeNew() {
-                                                    return true;
-                                                });
-                                                return indexfile();
-                                            }
-                                            return apps.errout({error: erd, name: "biddle_publish_zippy_zip_stat_readfiledata"});
-                                        }
-                                        parsed   = JSON.parse(catalogue);
-                                        x        = parsed.filedata.length - 1;
-                                        do {
-                                            if (parsed.filedata[x].filename.indexOf("_latest.zip") === parsed.filedata[x].filename.length - 11) {
-                                                parsed.filedata.splice(x, 1);
-                                            }
-                                            x -= 1;
-                                        } while (x > -1);
-                                        filedata = filedata.concat(parsed.filedata);
-                                        apps.writeFile(JSON.stringify({filedata: filedata}), publoc + "filedata.json", function biddle_publish_zippy_zip_stat_readfiledata_write() {
-                                            return true;
-                                        });
-                                        indexfile();
-                                    });
-                            }
-                        });
-                    apps.hash(zipfilename, "hashFile", function biddle_publish_zippy_zip_hash() {
-                        var hashname = zipfilename.replace(".zip", ".hash"),
-                            a        = variants.length;
-                        apps.remove(hashname, function biddle_publish_zippy_zip_hash_remove() {
-                            apps.writeFile(data.hashFile, hashname, function biddle_publish_zippy_zip_hash_remove_writehash() {
-                                return true;
-                            });
-                        });
-                        varlen -= 1;
-                        if (data.parallel === false) {
-                            do {
-                                a -= 1;
-                                if (variants[a] === vardata.name || (variants[a] === "biddletempprimary" && vardata.name === "")) {
-                                    variants.splice(a, 1);
-                                    a = variants.length;
-                                    if (a > 0) {
-                                        return variantsDir(variants[variants.length - 1]);
-                                    }
-                                    break;
+                        },
+                        tasks    = function biddle_publish_variantsDir_copy_tasks() {
+                            node.child(varobj.tasks[0], function biddle_publish_variantsDir_copy_tasks_child(ert, stdoutt, stdert) {
+                                var len = varobj.tasks.length - 1;
+                                if (ert !== null) {
+                                    console.log(text.bold + text.red + "Error:" + text.none + " with variant " + value + " on publish task");
+                                    console.log(varobj.tasks[0]);
+                                    console.log(ert);
+                                } else if (stdert !== null && stdert !== "") {
+                                    console.log(text.bold + text.red + "Error:" + text.none + " with variant " + value + " on publish task");
+                                    console.log(varobj.tasks[0]);
+                                    console.log(stdert);
+                                } else {
+                                    console.log(text.bold + text.green + "Complete:" + text.none + " with variant " + value + " on publish task");
+                                    console.log(varobj.tasks[0]);
+                                    console.log(stdoutt);
                                 }
-                            } while (a > 0);
-                        }
-                        if (varlen < 1) {
-                            apps.writeFile(JSON.stringify(data.published), data.abspath + "published.json", function biddle_publish_zippy_zip_hash_writeJSON() {
-                                apps.remove(data.abspath + "temp", function biddle_publish_zippy_zip_hash_writeJSON_removeTemp() {
-                                    return true;
-                                });
+                                varobj
+                                    .tasks
+                                    .splice(0, 1);
+                                if (len > 0) {
+                                    biddle_publish_variantsDir_copy_tasks();
+                                } else {
+                                    complete();
+                                }
                             });
-                        }
-                    });
-                }, vardata);
+                        };
+                    if (varobj.tasks === "object" && varobj.tasks.length > 0) {
+                        tasks();
+                    } else {
+                        complete();
+                    }
+                });
             },
             execution   = function biddle_publish_execution() {
                 variants.push("biddletempprimary");
@@ -1929,6 +1830,105 @@
                     }
                 });
             };
+        zippy = function biddle_publish_zippy(vardata) {
+            apps.zip(function biddle_publish_zippy_zip(zipfilename) {
+                node
+                    .fs
+                    .stat(zipfilename, function biddle_publish_zippy_zip_stat(erstat, stats) {
+                        var filename = zipfilename
+                                .split(node.path.sep)
+                                .pop(),
+                            safevars = filename
+                                .replace(data.packjson.name, "")
+                                .split("_"),
+                            variant  = "",
+                            sdate    = new Date(),
+                            year     = String(sdate.getUTCFullYear()),
+                            month    = String(sdate.getMonth() + 1),
+                            day      = String(sdate.getDate());
+                        if (erstat !== null) {
+                            return apps.errout({error: erstat, name: "biddle_publish_zippy_zip_stat"});
+                        }
+                        if (typeof stats !== "object") {
+                            return apps.errout({error: "stats is not an object, from node.fs.stat", name: "biddle_publish_zippy_zip_stat"});
+                        }
+                        if (month.length < 2) {
+                            month = "0" + month;
+                        }
+                        if (day.length < 2) {
+                            day = "0" + day;
+                        }
+                        if (safevars.length > 2) {
+                            variant = safevars[1];
+                        }
+                        filedata.push({
+                            date    : year + month + day,
+                            filename: filename,
+                            size    : stats.size,
+                            variant : variant,
+                            version : data.packjson.version
+                        });
+                        varlen -= 1;
+                        if (varlen < 1) {
+                            apps.writeFile(JSON.stringify(data.published), data.abspath + "published.json", function biddle_publish_zippy_zip_hash_writeJSON() {
+                                apps.remove(data.abspath + "temp", function biddle_publish_zippy_zip_hash_writeJSON_removeTemp() {
+                                    return true;
+                                });
+                            });
+                            node
+                                .fs
+                                .readFile(publoc + "filedata.json", function biddle_publish_zippy_zip_stat_readfiledata(erd, catalogue) {
+                                    var parsed = {},
+                                        x      = 0;
+                                    if (erd !== null && erd !== "") {
+                                        if (erd.toString().indexOf("no such file or directory") > 0) {
+                                            apps.writeFile(JSON.stringify({filedata: filedata}), publoc + "filedata.json", function biddle_publish_zippy_zip_stat_readfiledata_writeNew() {
+                                                return true;
+                                            });
+                                            return indexfile();
+                                        }
+                                        return apps.errout({error: erd, name: "biddle_publish_zippy_zip_stat_readfiledata"});
+                                    }
+                                    parsed   = JSON.parse(catalogue);
+                                    x        = parsed.filedata.length - 1;
+                                    do {
+                                        if (parsed.filedata[x].filename.indexOf("_latest.zip") === parsed.filedata[x].filename.length - 11) {
+                                            parsed.filedata.splice(x, 1);
+                                        }
+                                        x -= 1;
+                                    } while (x > -1);
+                                    filedata = filedata.concat(parsed.filedata);
+                                    apps.writeFile(JSON.stringify({filedata: filedata}), publoc + "filedata.json", function biddle_publish_zippy_zip_stat_readfiledata_write() {
+                                        return true;
+                                    });
+                                    indexfile();
+                                });
+                        }
+                    });
+                apps.hash(zipfilename, "hashFile", function biddle_publish_zippy_zip_hash() {
+                    var hashname = zipfilename.replace(".zip", ".hash"),
+                        a        = variants.length;
+                    apps.remove(hashname, function biddle_publish_zippy_zip_hash_remove() {
+                        apps.writeFile(data.hashFile, hashname, function biddle_publish_zippy_zip_hash_remove_writehash() {
+                            return true;
+                        });
+                    });
+                    if (data.parallel === false) {
+                        do {
+                            a -= 1;
+                            if (variants[a] === vardata.name || (variants[a] === "biddletempprimary" && vardata.name === "")) {
+                                variants.splice(a, 1);
+                                a = variants.length;
+                                if (a > 0) {
+                                    return variantsDir(variants[variants.length - 1]);
+                                }
+                                break;
+                            }
+                        } while (a > 0);
+                    }
+                });
+            }, vardata);
+        };
         apps.getpjson(function biddle_publish_callback() {
             if (data.published[data.packjson.name] !== undefined && data.published[data.packjson.name].versions.indexOf(data.packjson.version) > -1) {
                 return apps.errout({
@@ -5057,6 +5057,7 @@
                             }
                             return apps.errout({error: err, name: "biddle_init_biddlerc_readFile"});
                         }
+                        parsed = JSON.parse(fileData);
                         dirs("applications");
                         dirs("downloads");
                         dirs("publications");
