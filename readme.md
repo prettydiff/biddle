@@ -182,9 +182,19 @@ Will delete an installed application by name and remove the application from the
     node biddle uninstall myApplicationName
 
 ### unpublish
-Will delete a published application by name and remove the application from the published list.
+Will delete a published application by name and version then remove the respective files.
 
-    node biddle unpublish myApplicationName
+Unpublish an application by version.
+
+    node biddle unpublish myApplicationName 1.0.0
+
+Unpublish an application's latest version
+
+    node biddle unpublish myApplicationName latest
+
+Remove the published application entirely.
+
+    node biddle unpublish myApplicationName all
 
 ### unzip
 Unzips a local zipped file.
@@ -196,6 +206,17 @@ Unzip to the default location, the supplied *downloads* directory.
 Unzip to a specified location.
 
     node biddle unzip myZipFile.zip myDirectory
+
+### version
+Prints the version number/name of biddle or a named installed application.
+
+    If no application is specified the current version of biddle is output.
+
+    node biddle version
+
+    Output the current version of "myApplication".
+
+    node biddle version myApplication
 
 ### zip
 Zips local files or local directories into a zip file.

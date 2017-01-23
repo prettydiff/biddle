@@ -40,9 +40,9 @@
                           "ersion.",
             test     : "Test automation.",
             uninstall: "Uninstall an application installed by biddle.",
-            unpublish: "Unpublish an application published by biddle.",
+            unpublish: "Unpublish an application, or a version, published by biddle.",
             unzip    : "Unzip a zip file.",
-            version  : "Write out biddle version number.",
+            version  : "Output an installed application's version number.",
             zip      : "Zip a file or directory."
         },
         data     = {
@@ -4634,7 +4634,23 @@
         });
     };
     apps.unpublish   = function biddle_unpublish(fromTest) {
-        var app = data.published[data.input[2]];
+        var app    = {},
+            ver    = "",
+            vers   = [],
+            latest = false,
+            vert   = false,
+            a      = 0;
+        if (data.input[2] === undefined) {
+            if (fromTest === true) {
+                return apps.errout({
+                    error: "Unpublish from biddle test failed. " + data.input[2] + " is not present in data.published.",
+                    name : "biddle_unpublish"
+                });
+            }
+            return console.log("Attempted to unpublish " + text.cyan + data.input[2] + text.nocolor + " which is " + text.bold + text.red + "absent" + text.none + " from the list of published applications. Try using the command " + text.green + "biddle list published" + text.nocolor + ".");
+        }
+        data.input[2] = apps.sanitizef(data.input[2]);
+        app = data.published[data.input[2]];
         if (app === undefined) {
             if (fromTest === true) {
                 return apps.errout({
@@ -4644,22 +4660,154 @@
             }
             return console.log("Attempted to unpublish " + text.cyan + data.input[2] + text.nocolor + " which is " + text.bold + text.red + "absent" + text.none + " from the list of published applications. Try using the command " + text.green + "biddle list published" + text.nocolor + ".");
         }
-        if (fromTest === true) {
-            delete data.published.biddletestb;
-            apps.remove(data.abspath + "publications" + node.path.sep + "biddletestb", function biddle_unpublish_removeTest() {
-                return true;
+        if (data.input[3] === undefined) {
+            return apps.errout({
+                error: "Please specify a version or \"all\" for all versions.",
+                name : "biddle_unpublish"
             });
         }
-        apps.remove(app.directory, function biddle_unpublish_remove() {
-            var str = "";
-            delete data.published[data.input[2]];
-            str = JSON.stringify(data.published);
-            apps.writeFile(str, data.abspath + "published.json", function biddle_unpublish_remove_writeFile() {
-                if (fromTest === false) {
-                    console.log("App " + text.cyan + data.input[2] + text.nocolor + " is unpublished.");
+        ver = apps.sanitizef(data.input[3]);
+        if (ver.toLowerCase() === "all") {
+            ver = "all";
+        } else if (ver.toLowerCase() === "latest") {
+            ver = app.latest;
+        }
+        vers = data.published[data.input[2]].versions;
+        if (ver !== "all") {
+            a = vers.length;
+            do {
+                a -= 1;
+                if (vers[a] === ver) {
+                    vers.splice(a, 1);
+                    vert = true;
+                    break;
+                }
+            } while (a > 0);
+            if (vert === false) {
+                return apps.errout({
+                    error: "Specified version, " + text.bold + text.red + ver + text.none + ", is not a published version of " + text.cyan + data.input[2] + text.nocolor,
+                    name : "biddle_unpublish"
+                });
+            }
+            if (app.latest === ver) {
+                latest = true;
+            }
+        }
+        if (ver === "all" || vers.length === 0) {
+            if (fromTest === true) {
+                delete data.published.biddletestb;
+                apps.remove(data.abspath + "publications" + node.path.sep + "biddletestb", function biddle_unpublish_removeTest() {
+                    return true;
+                });
+            }
+            apps.remove(app.directory, function biddle_unpublish_remove() {
+                var str = "";
+                delete data.published[data.input[2]];
+                str = JSON.stringify(data.published);
+                apps.writeFile(str, data.abspath + "published.json", function biddle_unpublish_remove_writeFile() {
+                    if (fromTest === false) {
+                        console.log("All versions of app " + text.cyan + data.input[2] + text.nocolor + " are unpublished.");
+                    }
+                });
+            });
+        } else {
+            node.fs.readdir(app.directory, function biddle_unpublish_readdir(er, files) {
+                var later   = (latest === true)
+                        ? app.versions[app.versions.length - 1]
+                        : app.latest,
+                    destroy = function biddle_unpublish_readdir_destroy() {
+                        var aa = files.length;
+                        do {
+                            aa -= 1;
+                            if (files[aa].indexOf("_" + ver + ".zip") === files[aa].length - (ver.length + 5) || files[aa].indexOf("_" + ver + ".hash") === files[aa].length - (ver.length + 6)) {
+                                apps.remove(app.directory + files[aa], function biddle_unpublish_readdir_destory_removeNormal() {
+                                    return true;
+                                });
+                            } else if (latest === true && files[aa].length > 11 && (files[aa].indexOf("_latest.zip") === files[aa].length - 11 || files[aa].indexOf("_latest.hash") === files[aa].length - 12)) {
+                                apps.remove(app.directory + files[aa], function biddle_unpublish_readdir_destory_removeLatest() {
+                                    return true;
+                                });
+                            }
+                        } while (aa > 0);
+                        node.fs.readFile(app.directory + "filedata.json", "utf8", function biddle_unpublish_readdir_destory_readFileData(err, filedata) {
+                            var parsed = {},
+                                bb     = 0;
+                            if (err !== null && err !== undefined) {
+                                return apps.errout({
+                                    error: err,
+                                    name : "biddle_unpublish_readdir_destory_readFileData"
+                                });
+                            }
+                            parsed = JSON.parse(filedata).filedata;
+                            bb     = parsed.length;
+                            do {
+                                bb -= 1;
+                                if (parsed[bb].filename.indexOf("_" + ver + ".zip") === parsed[bb].filename.length - (ver.length + 5) || parsed[bb].filename.indexOf("_" + ver + ".hash") === parsed[bb].filename.length - (ver.length + 6)) {
+                                    parsed.splice(bb, 1);
+                                } else if (latest === true && (parsed[bb].filename.indexOf("_latest.zip") === parsed[bb].filename.length - 11 || parsed[bb].filename.indexOf("_latest.hash") === parsed[bb].filename.length - 12)) {
+                                    parsed.splice(bb, 1);
+                                }
+                            } while (bb > 0);
+                            apps.writeFile(JSON.stringify({filedata: parsed}), app.directory + "filedata.json", function biddle_unpublish_readdir_destory_readFileData_writeFileData() {
+                                node.fs.readFile(app.directory + "index.xhtml", "utf8", function biddle_unpublish_readdir_destory_readFileData_writeFileData_readIndex(errr, index) {
+                                    var lex = [],
+                                        cc  = 0,
+                                        dd  = 0,
+                                        row = false;
+                                    if (errr !== null && errr !== undefined) {
+                                        return apps.errout({
+                                            error: errr,
+                                            name : "biddle_unpublish_readdir_destory_readFileData_writeFileData_readIndex"
+                                        });
+                                    }
+                                    lex = index.split("");
+                                    cc  = index.indexOf("</tbody");
+                                    do {
+                                        cc -= 1;
+                                        if (lex[cc - 4] === "<" && lex[cc - 3] === "/" && lex[cc - 2] === "t" && lex[cc - 1] === "r" &&lex[cc] === ">") {
+                                            dd  = cc + 1;
+                                            row = false;
+                                        }
+                                        if (lex[cc] === "." && lex[cc + 1] === "z" && lex[cc + 2] === "i" && lex[cc + 3] === "p" && lex[cc + 4] === "<" && lex[cc + 5] === "/" && lex[cc + 6] === "a" && lex[cc + 7] === ">") {
+                                            if (latest === true && lex.slice(cc - 7, cc).join("") === "_latest") {
+                                                row = true;
+                                            } else if (lex.slice(cc - ver.length, cc).join("") === ver) {
+                                                row = true;
+                                            }
+                                        }
+                                        if (lex[cc] === "<" && lex[cc + 1] === "t" && lex[cc + 2] === "r" && lex[cc + 3] === ">" && row === true) {
+                                            lex.splice(cc, dd - cc);
+                                        }
+                                        if (lex[cc - 5] === "<" && lex[cc - 4] === "t" && lex[cc - 3] === "b" && lex[cc - 2] === "o" && lex[cc - 1] === "d" && lex[cc] === "y") {
+                                            break;
+                                        }
+                                    } while (cc > 0);
+                                    index = lex.join("");
+                                    apps.writeFile(index, app.directory + "index.xhtml", function biddle_unpublish_readdir_destory_readFileData_writeFileData_readIndex_writeIndex() {
+                                        apps.writeFile(JSON.stringify(data.published), data.abspath + "published.json", function biddle_unpublish_readdir_destory_readFileData_writeFileData_readIndex_writeIndex_writePublished() {
+                                            if (fromTest === false) {
+                                                console.log("Version " + text.bold + text.red + ver + text.none + " of app " + text.cyan + data.input[2] + text.nocolor + " is unpublished.");
+                                            }
+                                        });
+                                    });
+                                });
+                            });
+                        });
+                    };
+                if (er !== null) {
+                    return apps.errout({
+                        error: er,
+                        name : "biddle_unpublish_readdir"
+                    });
+                }
+                if (latest === true) {
+                    data.published[data.input[2]].latest = later;
+                    apps.writeFile(later, app.directory + "latest.txt", destroy);
+                } else {
+                    destroy();
                 }
             });
-        });
+        }
     };
     apps.writeFile   = function biddle_writeFile(fileData, fileName, callback) {
         var callbacker = function biddle_writeFile_callbacker(size) {
@@ -4979,8 +5127,15 @@
                     .input[1]
                     .toLowerCase()
                     .replace(/(s\s*)$/, "")
+                    .replace(/^(-+)/, "")
                 : data.input[1].toLowerCase()
             : "";
+        if (data.command === "v" || data.command === "ver") {
+            data.command = "version";
+        }
+        if (data.command === "h") {
+            data.command = "help";
+        }
         data.abspath              = (function biddle_abspath() {
             var absarr = data
                 .input[0]
