@@ -3228,7 +3228,7 @@
                     "status biddletesta",
                     "status",
                     "uninstall biddletestb",
-                    "unpublish biddletestb"
+                    "unpublish biddletestb all"
                 ],
                 changed   = false,
                 listChild = function biddle_test_listStatus_childWrapper() {
@@ -4434,10 +4434,10 @@
         phases.unpublish     = function biddle_test_unpublish() {
             phasenumb += 1;
             console.log(phasenumb + ". Unpublish tests");
-            node.child(childcmd + "unpublish biddletesta childtest", {
+            node.child(childcmd + "unpublish biddletesta all childtest", {
                 cwd: data.abspath
             }, function biddle_test_unpublish_child(er, stdout, stder) {
-                var unpubtest = "App " + text.cyan + "biddletesta" + text.nocolor + " is unpublished.";
+                var unpubtest = "All versions of app " + text.cyan + "biddletesta" + text.nocolor + " are unpublished.";
                 if (er !== null) {
                     return apps.errout({error: er, name: "biddle_test_unpublish_child", stdout: stdout, time: humantime(true)});
                 }
@@ -4479,7 +4479,7 @@
                                         return apps.errout({error: "biddletesta property still present in published.json file", name: "biddle_test_unpublish_child_stat_readfile", stdout: stdout, time: humantime(true)});
                                     }
                                     console.log(humantime(false) + " " + text.green + "unpublish test passed." + text.nocolor);
-                                    node.child(childcmd + "unpublish biddletesta childtest", {
+                                    node.child(childcmd + "unpublish biddletesta all childtest", {
                                         cwd: data.abspath
                                     }, function biddle_test_unpublish_child_stat_readfile_again(erx, stdoutx, stderx) {
                                         var unpubagain = "Attempted to unpublish " + text.cyan + "biddletesta" + text.nocolor + " which is " + text.bold + text.red + "absent" + text.none + " from the list of published applications. Try using the command " + text.green + "biddle list published" + text.nocolor + ".",
