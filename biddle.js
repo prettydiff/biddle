@@ -40,9 +40,9 @@
                           "ersion.",
             test     : "Test automation.",
             uninstall: "Uninstall an application installed by biddle.",
-            unpublish: "Unpublish an application published by biddle.",
+            unpublish: "Unpublish an application, or a version, published by biddle.",
             unzip    : "Unzip a zip file.",
-            version  : "Write out biddle version number.",
+            version  : "Output an installed application's version number.",
             zip      : "Zip a file or directory."
         },
         data     = {
@@ -1615,69 +1615,77 @@
             varlen      = 0,
             varcount    = 0,
             publoc      = "",
+            primaryzip  = "",
             varnames    = {},
             variants    = [],
             indexfile   = function biddle_publish_indexfile() {
                 var rows   = [],
                     file   = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><!DOCTYPE html PUBLIC \"-//W3C//DTD X" +
-                           "HTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\"><html xml:lang=" +
-                           "\"en\" xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>!!app name!! - Public" +
-                           "ations</title> <meta content=\"application/xhtml+xml;charset=UTF-8\" http-equiv=" +
-                           "\"Content-Type\"/> <meta content=\"text/css\" http-equiv=\"content-style-type\"/" +
-                           "> <meta content=\"application/javascript\" http-equiv=\"content-script-type\"/> " +
-                           "<meta content=\"Global\" name=\"distribution\"/> <meta content=\"width=device-wi" +
-                           "dth, initial-scale=1\" name=\"viewport\"/> <meta content=\"index, follow\" name=" +
-                           "\"robots\"/> <style type=\"text/css\">body{background:#e8ddd8;font-family:\"Cent" +
-                           "ury Gothic\",\"Trebuchet MS\";font-size:10px;margin:0;padding:1em}table{border-c" +
-                           "ollapse:collapse}td,th{border:#333 solid 0.09em;font-size:1.6em;padding:0.5em 1e" +
-                           "m}h1{background:#fff8e8;border:0.05em solid #321;display:inline-block;margin:0;p" +
-                           "adding:0.2em}p{font-size:1.6em}tfoot td{font-size:1.2em;text-align:right}tfoot,t" +
-                           "head{background:#e8e8e8}thead th{cursor:pointer;height:1.5em;text-align:center;v" +
-                           "ertical-align:baseline}tbody tr:hover{background:#dfd}tr.odd{background:#e8e8ff}" +
-                           "tr.even{background:#fff}.sort{float:left;margin:0 0.5em 0 -0.5em;width:1em}td[da" +
-                           "ta-size]{text-align:right}</style></head><body><h1>!!app name!! - Publications</" +
-                           "h1><p>Click on table headings to sort.</p><table><thead><tr><th><span aria-descr" +
-                           "ibedby=\"aria-arrow\" class=\"sort\" style=\"visibility:hidden;\">&#x25bc;</span" +
-                           "> Version</th><th><span aria-describedby=\"aria-arrow\" class=\"sort\" style=\"v" +
-                           "isibility:hidden;\">&#x25bc;</span> Date</th><th><span aria-describedby=\"aria-a" +
-                           "rrow\" class=\"sort\" style=\"visibility:hidden;\">&#x25bc;</span> Size</th><th>" +
-                           "<span aria-describedby=\"aria-arrow\" class=\"sort\" style=\"visibility:hidden;" +
-                           "\">&#x25bc;</span> Variant Name</th><th><span aria-describedby=\"aria-arrow\" cl" +
-                           "ass=\"sort\" style=\"visibility:hidden;\">&#x25bc;</span> Zip File</th></tr></th" +
-                           "ead><tbody>!!row!!</tbody><tfoot><tr><td colspan=\"5\">Published with <a href=\"" +
-                           "https://github.com/prettydiff/biddle\">biddle</a>.</td></tr></tfoot></table><p a" +
-                           "ria-hidden=\"true\" id=\"aria-arrow\" style=\"display:none;\"></p><script src=\"" +
-                           "biddlesort.js\" type=\"application/javascript\"></script></body></html>",
-                    script = "(function(){var headings=document.getElementsByTagName(\"thead\")[0].getElements" +
-                           "ByTagName(\"th\"),hlen=headings.length,a=0,start=1,sorter=function(heading){var " +
-                           "b=0,ind=0,len=headings.length,span=\"\",rows=[],rowlist=[],tbody=document.getEle" +
-                           "mentsByTagName(\"tbody\")[0],ascend=false,rowsort=function(a,b){var vala=\"\",va" +
-                           "lb=\"\";if(ind===1){vala=Number(a.getElementsByTagName(\"td\")[1].getAttribute(" +
-                           "\"data-date\"));valb=Number(b.getElementsByTagName(\"td\")[1].getAttribute(\"dat" +
-                           "a-date\"))}else if(ind===2){vala=Number(a.getElementsByTagName(\"td\")[2].getAtt" +
-                           "ribute(\"data-size\"));valb=Number(b.getElementsByTagName(\"td\")[2].getAttribut" +
-                           "e(\"data-size\"))}else{vala=a.getElementsByTagName(\"td\")[ind].innerHTML.toLowe" +
-                           "rCase();valb=b.getElementsByTagName(\"td\")[ind].innerHTML.toLowerCase()}if(asce" +
-                           "nd===true){if(vala>valb){return 1}else{return -1}}else{if(vala>valb){return -1}e" +
-                           "lse{return 1}}};do{span=headings[b].getElementsByTagName(\"span\")[0];if(heading" +
-                           "===headings[b]){ind=b;if(span.style.visibility===\"visible\"){if(span.innerHTML=" +
-                           "==\"▲\"){span.innerHTML=\"▼\"}else{span.innerHTML=\"▲\"}}else{span.style.visibil" +
-                           "ity=\"visible\"}if(span.innerHTML===\"▲\"){ascend=true;document.getElementById(" +
-                           "\"aria-arrow\").innerHTML=\"Sorting by \"+headings[b].lastChild.textContent+\" a" +
-                           "scending\"}else{ascend=false;document.getElementById(\"aria-arrow\").innerHTML=" +
-                           "\"Sorting by \"+headings[b].lastChild.textContent+\" descending\"}}else{span.sty" +
-                           "le.visibility=\"hidden\"}b+=1}while(b<len);rowlist=[];rows=tbody.getElementsByTa" +
-                           "gName(\"tr\");len=rows.length;b=0;do{rowlist.push(rows[b]);b+=1}while(b<len);row" +
-                           "list.sort(rowsort);b=0;do{if(b%2===0){rowlist[b].setAttribute(\"class\",\"even\"" +
-                           ")}else{rowlist[b].setAttribute(\"class\",\"odd\")}tbody.removeChild(rowlist[b]);" +
-                           "tbody.appendChild(rowlist[b]);b+=1}while(b<len)};do{headings[a].onclick=function" +
-                           "(e){sorter(this);e.preventDefault();return false;};a+=1}while(a<hlen);document.g" +
-                           "etElementsByTagName(\"thead\")[0].getElementsByTagName(\"th\")[start].getElement" +
-                           "sByTagName(\"span\")[0].innerHTML=\"▲\";document.getElementsByTagName(\"thead\")" +
-                           "[0].getElementsByTagName(\"th\")[start].getElementsByTagName(\"span\")[0].style." +
-                           "visibility=\"visible\";sorter(document.getElementsByTagName(\"thead\")[0].getEle" +
-                           "mentsByTagName(\"th\")[start])}());";
+                            "HTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\"><html xml:lang=" +
+                            "\"en\" xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>!!app name!! - Public" +
+                            "ations</title> <meta content=\"application/xhtml+xml;charset=UTF-8\" http-equiv=" +
+                            "\"Content-Type\"/> <meta content=\"text/css\" http-equiv=\"content-style-type\"/" +
+                            "> <meta content=\"application/javascript\" http-equiv=\"content-script-type\"/> " +
+                            "<meta content=\"Global\" name=\"distribution\"/> <meta content=\"width=device-wi" +
+                            "dth, initial-scale=1\" name=\"viewport\"/> <meta content=\"index, follow\" name=" +
+                            "\"robots\"/> <style type=\"text/css\">body{background:#e8ddd8;font-family:\"Cent" +
+                            "ury Gothic\",\"Trebuchet MS\";font-size:10px;margin:0;padding:1em}table{border-c" +
+                            "ollapse:collapse}td,th{border:#333 solid 0.09em;font-size:1.6em;padding:0.5em 1e" +
+                            "m}h1{background:#fff8e8;border:0.05em solid #321;display:inline-block;margin:0;p" +
+                            "adding:0.2em}p{font-size:1.6em}tfoot td{font-family:monospace;font-size:1.2em}tf" +
+                            "oot,thead{background:#e8e8e8}thead th{cursor:pointer;height:1.5em;text-align:cen" +
+                            "ter;vertical-align:baseline}tbody tr:hover{background:#dfd}tr.odd{background:#e8" +
+                            "e8ff}tr.even{background:#fff}.sort{float:left;margin:0 0.5em 0 -0.5em;width:1em}" +
+                            "td[data-size]{text-align:right}.hash{display:block;font-family:monospace;overflo" +
+                            "w:hidden;text-overflow:ellipsis;white-space:nowrap;width:6em}</style></head><bod" +
+                            "y><h1>!!app name!! - Publications</h1><p>Click on table headings to sort.</p><ta" +
+                            "ble><thead><tr><th><span aria-describedby=\"aria-arrow\" class=\"sort\" style=\"" +
+                            "visibility:hidden;\">&#x25bc;</span> Version</th><th><span aria-describedby=\"ar" +
+                            "ia-arrow\" class=\"sort\" style=\"visibility:hidden;\">&#x25bc;</span> Date</th>" +
+                            "<th><span aria-describedby=\"aria-arrow\" class=\"sort\" style=\"visibility:hidd" +
+                            "en;\">&#x25bc;</span> Size</th><th><span aria-describedby=\"aria-arrow\" class=" +
+                            "\"sort\" style=\"visibility:hidden;\">&#x25bc;</span> Variant Name</th><th><span" +
+                            " aria-describedby=\"aria-arrow\" class=\"sort\" style=\"visibility:hidden;\">&#x" +
+                            "25bc;</span> Zip File</th><th><span aria-describedby=\"aria-arrow\" class=\"sort" +
+                            "\" style=\"visibility:hidden;\">&#x25bc;</span> Hash</th></tr></thead><tbody>!!r" +
+                            "ow!!</tbody><tfoot><tr><td colspan=\"6\"><a href=\"https://github.com/prettydiff" +
+                            "/biddle\">biddle</a> install !!install!!</td></tr></tfoot></table><p aria-hidden" +
+                            "=\"true\" id=\"aria-arrow\" style=\"display:none;\"></p><script src=\"biddlesort" +
+                            ".js\" type=\"application/javascript\"></script></body></html>",
+                    script = "(function(){var abspath=location.href.replace(/^(file:\\/\\/)/,\"\").replace(/(i" +
+                            "ndex\\.xhtml)$/,\"\"),headings=document.getElementsByTagName(\"thead\")[0].getEl" +
+                            "ementsByTagName(\"th\"),hlen=headings.length,a=0,start=1,sorter=function(heading" +
+                            "){var b=0,ind=0,len=headings.length,span=\"\",rows=[],rowlist=[],tbody=document." +
+                            "getElementsByTagName(\"tbody\")[0],ascend=false,rowsort=function(a,b){var vala=" +
+                            "\"\",valb=\"\";if(ind===1){vala=Number(a.getElementsByTagName(\"td\")[1].getAttr" +
+                            "ibute(\"data-date\"));valb=Number(b.getElementsByTagName(\"td\")[1].getAttribute" +
+                            "(\"data-date\"))}else if(ind===2){vala=Number(a.getElementsByTagName(\"td\")[2]." +
+                            "getAttribute(\"data-size\"));valb=Number(b.getElementsByTagName(\"td\")[2].getAt" +
+                            "tribute(\"data-size\"))}else{vala=a.getElementsByTagName(\"td\")[ind].innerHTML." +
+                            "toLowerCase();valb=b.getElementsByTagName(\"td\")[ind].innerHTML.toLowerCase()}i" +
+                            "f(ascend===true){if(vala>valb){return 1}else{return -1}}else{if(vala>valb){retur" +
+                            "n -1}else{return 1}}};do{span=headings[b].getElementsByTagName(\"span\")[0];if(h" +
+                            "eading===headings[b]){ind=b;if(span.style.visibility===\"visible\"){if(span.inne" +
+                            "rHTML===\"▲\"){span.innerHTML=\"▼\"}else{span.innerHTML=\"▲\"}}else{span.style.v" +
+                            "isibility=\"visible\"}if(span.innerHTML===\"▲\"){ascend=true;document.getElement" +
+                            "ById(\"aria-arrow\").innerHTML=\"Sorting by \"+headings[b].lastChild.textContent" +
+                            "+\" ascending\"}else{ascend=false;document.getElementById(\"aria-arrow\").innerH" +
+                            "TML=\"Sorting by \"+headings[b].lastChild.textContent+\" descending\"}}else{span" +
+                            ".style.visibility=\"hidden\"}b+=1}while(b<len);rowlist=[];rows=tbody.getElements" +
+                            "ByTagName(\"tr\");len=rows.length;b=0;do{rowlist.push(rows[b]);b+=1}while(b<len)" +
+                            ";rowlist.sort(rowsort);b=0;do{if(b%2===0){rowlist[b].setAttribute(\"class\",\"ev" +
+                            "en\")}else{rowlist[b].setAttribute(\"class\",\"odd\")}tbody.removeChild(rowlist[" +
+                            "b]);tbody.appendChild(rowlist[b]);b+=1}while(b<len)};if(abspath.charAt(abspath.l" +
+                            "ength-1)!==\"/\"){abspath=abspath+\"/\"}document.getElementById(\"address\").inn" +
+                            "erHTML=abspath;do{headings[a].onclick=function(e){sorter(this);e.preventDefault(" +
+                            ");return false};a+=1}while(a<hlen);document.getElementsByTagName(\"thead\")[0].g" +
+                            "etElementsByTagName(\"th\")[start].getElementsByTagName(\"span\")[0].innerHTML=" +
+                            "\"▲\";document.getElementsByTagName(\"thead\")[0].getElementsByTagName(\"th\")[s" +
+                            "tart].getElementsByTagName(\"span\")[0].style.visibility=\"visible\";sorter(docu" +
+                            "ment.getElementsByTagName(\"thead\")[0].getElementsByTagName(\"th\")[start])}())" +
+                            ";";
                 file = file.replace(/\!\!app\u0020name\!\!/g, data.packjson.name);
+                file = file.replace(/\!\!install\!\!/, "<span id=\"address\"></span>" + primaryzip);
                 if (typeof data.packjson.author === "string") {
                     file = file.replace("</title> <", "</title> <meta content=\"" + data.packjson.author.replace(/\s+/g, " ").replace(/"/g, "") + "\" name=\"author\"/> <");
                 }
@@ -1723,6 +1731,10 @@
                     build.push(val.filename);
                     build.push("\">");
                     build.push(val.filename);
+                    build.push("</a></td><td><a class=\"hash\" href=\"");
+                    build.push(val.filename.replace(/(\.zip)$/, ".hash"));
+                    build.push("\">");
+                    build.push(val.hash);
                     build.push("</a></td></tr>");
                     rows.push(build.join(""));
                 });
@@ -1861,72 +1873,75 @@
                         if (safevars.length > 2) {
                             variant = safevars[1];
                         }
-                        filedata.push({
-                            date    : year + month + day,
-                            filename: filename,
-                            size    : stats.size,
-                            variant : variant,
-                            version : data.packjson.version
-                        });
-                        varlen -= 1;
-                        if (varlen < 1) {
-                            apps.writeFile(JSON.stringify(data.published), data.abspath + "published.json", function biddle_publish_zippy_zip_hash_writeJSON() {
-                                apps.remove(data.abspath + "temp", function biddle_publish_zippy_zip_hash_writeJSON_removeTemp() {
-                                    return true;
-                                });
-                            });
-                            node
-                                .fs
-                                .readFile(publoc + "filedata.json", function biddle_publish_zippy_zip_stat_readfiledata(erd, catalogue) {
-                                    var parsed = {},
-                                        x      = 0;
-                                    if (erd !== null && erd !== "") {
-                                        if (erd.toString().indexOf("no such file or directory") > 0) {
-                                            apps.writeFile(JSON.stringify({filedata: filedata}), publoc + "filedata.json", function biddle_publish_zippy_zip_stat_readfiledata_writeNew() {
+                        apps.hash(zipfilename, "hashFile", function biddle_publish_zippy_zip_hash() {
+                            var hashname = zipfilename.replace(".zip", ".hash"),
+                                a        = variants.length;
+                            apps.remove(hashname, function biddle_publish_zippy_zip_hash_remove() {
+                                apps.writeFile(data.hashFile, hashname, function biddle_publish_zippy_zip_hash_remove_writehash() {
+                                    if (vardata.name === "" && (primaryzip === "" || zipfilename.indexOf("_latest.zip") > 0)) {
+                                        primaryzip = filename;
+                                    }
+                                    filedata.push({
+                                        date    : year + month + day,
+                                        filename: filename,
+                                        hash    : data.hashFile,
+                                        size    : stats.size,
+                                        variant : variant,
+                                        version : data.packjson.version
+                                    });
+                                    varlen -= 1;
+                                    if (varlen < 1) {
+                                        apps.writeFile(JSON.stringify(data.published), data.abspath + "published.json", function biddle_publish_zippy_zip_hash_writeJSON() {
+                                            apps.remove(data.abspath + "temp", function biddle_publish_zippy_zip_hash_writeJSON_removeTemp() {
                                                 return true;
                                             });
-                                            return indexfile();
-                                        }
-                                        return apps.errout({error: erd, name: "biddle_publish_zippy_zip_stat_readfiledata"});
+                                        });
+                                        node
+                                            .fs
+                                            .readFile(publoc + "filedata.json", function biddle_publish_zippy_zip_stat_readfiledata(erd, catalogue) {
+                                                var parsed = {},
+                                                    x      = 0;
+                                                if (erd !== null && erd !== "") {
+                                                    if (erd.toString().indexOf("no such file or directory") > 0) {
+                                                        apps.writeFile(JSON.stringify({filedata: filedata}), publoc + "filedata.json", function biddle_publish_zippy_zip_stat_readfiledata_writeNew() {
+                                                            return true;
+                                                        });
+                                                        return indexfile();
+                                                    }
+                                                    return apps.errout({error: erd, name: "biddle_publish_zippy_zip_stat_readfiledata"});
+                                                }
+                                                parsed   = JSON.parse(catalogue);
+                                                x        = parsed.filedata.length - 1;
+                                                do {
+                                                    if (parsed.filedata[x].filename.indexOf("_latest.zip") === parsed.filedata[x].filename.length - 11) {
+                                                        parsed.filedata.splice(x, 1);
+                                                    }
+                                                    x -= 1;
+                                                } while (x > -1);
+                                                filedata = filedata.concat(parsed.filedata);
+                                                apps.writeFile(JSON.stringify({filedata: filedata}), publoc + "filedata.json", function biddle_publish_zippy_zip_stat_readfiledata_write() {
+                                                    return true;
+                                                });
+                                                indexfile();
+                                            });
                                     }
-                                    parsed   = JSON.parse(catalogue);
-                                    x        = parsed.filedata.length - 1;
-                                    do {
-                                        if (parsed.filedata[x].filename.indexOf("_latest.zip") === parsed.filedata[x].filename.length - 11) {
-                                            parsed.filedata.splice(x, 1);
-                                        }
-                                        x -= 1;
-                                    } while (x > -1);
-                                    filedata = filedata.concat(parsed.filedata);
-                                    apps.writeFile(JSON.stringify({filedata: filedata}), publoc + "filedata.json", function biddle_publish_zippy_zip_stat_readfiledata_write() {
-                                        return true;
-                                    });
-                                    indexfile();
                                 });
-                        }
-                    });
-                apps.hash(zipfilename, "hashFile", function biddle_publish_zippy_zip_hash() {
-                    var hashname = zipfilename.replace(".zip", ".hash"),
-                        a        = variants.length;
-                    apps.remove(hashname, function biddle_publish_zippy_zip_hash_remove() {
-                        apps.writeFile(data.hashFile, hashname, function biddle_publish_zippy_zip_hash_remove_writehash() {
-                            return true;
+                            });
+                            if (data.parallel === false) {
+                                do {
+                                    a -= 1;
+                                    if (variants[a] === vardata.name || (variants[a] === "biddletempprimary" && vardata.name === "")) {
+                                        variants.splice(a, 1);
+                                        a = variants.length;
+                                        if (a > 0) {
+                                            return variantsDir(variants[variants.length - 1]);
+                                        }
+                                        break;
+                                    }
+                                } while (a > 0);
+                            }
                         });
                     });
-                    if (data.parallel === false) {
-                        do {
-                            a -= 1;
-                            if (variants[a] === vardata.name || (variants[a] === "biddletempprimary" && vardata.name === "")) {
-                                variants.splice(a, 1);
-                                a = variants.length;
-                                if (a > 0) {
-                                    return variantsDir(variants[variants.length - 1]);
-                                }
-                                break;
-                            }
-                        } while (a > 0);
-                    }
-                });
             }, vardata);
         };
         apps.getpjson(function biddle_publish_callback() {
@@ -2513,7 +2528,8 @@
                 "republish",
                 //"update",
                 "uninstall",
-                "unpublish"
+                "unpublishLatest",
+                "unpublishAll"
             ],
             phasenumb = 0,
             options   = {
@@ -3213,7 +3229,7 @@
                     "status biddletesta",
                     "status",
                     "uninstall biddletestb",
-                    "unpublish biddletestb"
+                    "unpublish biddletestb all"
                 ],
                 changed   = false,
                 listChild = function biddle_test_listStatus_childWrapper() {
@@ -4416,37 +4432,34 @@
         phases.update        = function biddle_test_update() {
             return;
         };
-        phases.unpublish     = function biddle_test_unpublish() {
+        phases.unpublishAll  = function biddle_test_unpublishAll() {
             phasenumb += 1;
-            console.log(phasenumb + ". Unpublish tests");
-            node.child(childcmd + "unpublish biddletesta childtest", {
+            console.log(phasenumb + ". Unpublish All tests");
+            node.child(childcmd + "unpublish biddletesta all childtest", {
                 cwd: data.abspath
-            }, function biddle_test_unpublish_child(er, stdout, stder) {
-                var unpubtest = "App " + text.cyan + "biddletesta" + text.nocolor + " is unpublished.";
+            }, function biddle_test_unpublishAll_child(er, stdout, stder) {
+                var unpubtest = "All versions of app " + text.cyan + "biddletesta" + text.nocolor + " are unpublished.";
                 if (er !== null) {
-                    return apps.errout({error: er, name: "biddle_test_unpublish_child", stdout: stdout, time: humantime(true)});
+                    return apps.errout({error: er, name: "biddle_test_unpublishAll_child", stdout: stdout, time: humantime(true)});
                 }
                 if (stder !== null && stder !== "") {
-                    return apps.errout({error: stder, name: "biddle_test_unpublish_child", stdout: stdout, time: humantime(true)});
+                    return apps.errout({error: stder, name: "biddle_test_unpublishAll_child", stdout: stdout, time: humantime(true)});
                 }
                 stdout = stdout.replace(/(\s+)$/, "");
                 if (stdout !== unpubtest) {
-                    return diffFiles("biddle_test_unpublish_child", stdout, unpubtest);
-                }
-                if (data.published.biddletesta !== undefined) {
-                    return apps.errout({error: "biddletesta property not removed from data.published object", name: "biddle_test_unpublish_child", stdout: stdout, time: humantime(true)});
+                    return diffFiles("biddle_test_unpublishAll_child", stdout, unpubtest);
                 }
                 console.log(humantime(false) + " " + text.green + "biddletesta removed from published.json." + text.nocolor);
                 node
                     .fs
-                    .stat(data.abspath + "publications" + node.path.sep + "biddletesta", function biddle_test_unpublish_child_stat(err, stat) {
+                    .stat(data.abspath + "publications" + node.path.sep + "biddletesta", function biddle_test_unpublishAll_child_stat(err, stat) {
                         if (err !== null && err.toString().indexOf("no such file or directory") < 0) {
-                            return apps.errout({error: err, name: "biddle_test_unpublish_child_stat", time: humantime(true)});
+                            return apps.errout({error: err, name: "biddle_test_unpublishAll_child_stat", time: humantime(true)});
                         }
                         if (stat !== undefined && stat.isDirectory() === true) {
                             return apps.errout({
                                 error : "publications" + node.path.sep + "biddletesta directory not deleted by unpublish command",
-                                name  : "biddle_test_unpublish_child_stat",
+                                name  : "biddle_test_unpublishAll_child_stat",
                                 stdout: stdout,
                                 time  : humantime(true)
                             });
@@ -4454,19 +4467,19 @@
                         if (err.toString().indexOf("no such file or directory") > 0) {
                             node
                                 .fs
-                                .readFile(data.abspath + "published.json", function biddle_test_unpublish_child_stat_readfile(erf, filedata) {
+                                .readFile(data.abspath + "published.json", function biddle_test_unpublishAll_child_stat_readfile(erf, filedata) {
                                     var jsondata = {};
                                     if (erf !== null && erf !== undefined) {
-                                        return apps.errout({error: erf, name: "biddle_test_unpublish_child_stat_readfile", stdout: stdout, time: humantime(true)});
+                                        return apps.errout({error: erf, name: "biddle_test_unpublishAll_child_stat_readfile", stdout: stdout, time: humantime(true)});
                                     }
                                     jsondata = JSON.parse(filedata);
                                     if (jsondata.biddletesta !== undefined) {
-                                        return apps.errout({error: "biddletesta property still present in published.json file", name: "biddle_test_unpublish_child_stat_readfile", stdout: stdout, time: humantime(true)});
+                                        return apps.errout({error: "biddletesta property still present in published.json file", name: "biddle_test_unpublishAll_child_stat_readfile", stdout: stdout, time: humantime(true)});
                                     }
-                                    console.log(humantime(false) + " " + text.green + "unpublish test passed." + text.nocolor);
-                                    node.child(childcmd + "unpublish biddletesta childtest", {
+                                    console.log(humantime(false) + " " + text.green + "unpublish all test passed." + text.nocolor);
+                                    node.child(childcmd + "unpublish biddletesta all childtest", {
                                         cwd: data.abspath
-                                    }, function biddle_test_unpublish_child_stat_readfile_again(erx, stdoutx, stderx) {
+                                    }, function biddle_test_unpublishAll_child_stat_readfile_again(erx, stdoutx, stderx) {
                                         var unpubagain = "Attempted to unpublish " + text.cyan + "biddletesta" + text.nocolor + " which is " + text.bold + text.red + "absent" + text.none + " from the list of published applications. Try using the command " + text.green + "biddle list published" + text.nocolor + ".",
                                             stack      = [];
                                         if (erx !== null) {
@@ -4476,28 +4489,73 @@
                                                     .split(" at ");
                                             }
                                             if (stack.length < 1 || stack[1].indexOf("ChildProcess.exithandler (child_process.js:202:12)") < 0) {
-                                                return apps.errout({error: erx, name: "biddle_test_unpublish_child_stat_readfile_again", stdout: stdout, time: humantime(true)});
+                                                return apps.errout({error: erx, name: "biddle_test_unpublishAll_child_stat_readfile_again", stdout: stdout, time: humantime(true)});
                                             }
                                         }
                                         if (stderx !== null && stderx !== "") {
-                                            return apps.errout({error: stderx, name: "biddle_test_unpublish_child_stat_readfile_again", stdout: stdout, time: humantime(true)});
+                                            return apps.errout({error: stderx, name: "biddle_test_unpublishAll_child_stat_readfile_again", stdout: stdout, time: humantime(true)});
                                         }
                                         stdoutx = stdoutx.replace(/(\s+)$/, "");
                                         if (stdoutx !== unpubagain) {
-                                            return diffFiles("biddle_test_unpublish_child_stat_readfile_again", stdoutx, unpubagain);
+                                            return diffFiles("biddle_test_unpublishAll_child_stat_readfile_again", stdoutx, unpubagain);
                                         }
-                                        console.log(humantime(false) + " " + text.green + "Redundant unpublish test (error messaging) passed." + text.nocolor);
+                                        console.log(humantime(false) + " " + text.green + "Redundant unpublish all test (error messaging) passed." + text.nocolor);
                                         next();
                                     });
                                 });
                         } else {
                             return apps.errout({
                                 error : "directory publications" + node.path.sep + "biddletesta changed to something else and not deleted",
-                                name  : "biddle_test_unpublish_child_stat",
+                                name  : "biddle_test_unpublishAll_child_stat",
                                 stdout: stdout,
                                 time  : humantime(true)
                             });
                         }
+                    });
+            });
+        };
+        phases.unpublishLatest = function biddle_test_unpublishLatest() {
+            phasenumb += 1;
+            console.log(phasenumb + ". Unpublish Latest tests");
+            node.child(childcmd + "unpublish biddletesta latest childtest", {
+                cwd: data.abspath
+            }, function biddle_test_unpublishLatest_child(er, stdout, stder) {
+                var unpubtest = "Version " + text.bold + text.red + "99.99.xxxx" + text.none + " of app " + text.cyan + "biddletesta" + text.nocolor + " is unpublished.";
+                if (er !== null) {
+                    return apps.errout({error: er, name: "biddle_test_unpublishLatest_child", stdout: stdout, time: humantime(true)});
+                }
+                if (stder !== null && stder !== "") {
+                    return apps.errout({error: stder, name: "biddle_test_unpublishLatest_child", stdout: stdout, time: humantime(true)});
+                }
+                stdout = stdout.replace(/(\s+)$/, "");
+                stdout = stdout.replace(/99\.99\.\d\d\d\d/, "99.99.xxxx");
+                if (stdout !== unpubtest) {
+                    return diffFiles("biddle_test_unpublishLatest_child", stdout, unpubtest);
+                }
+                console.log(humantime(false) + " " + text.green + "biddletesta removed from published.json." + text.nocolor);
+                node
+                    .fs
+                    .stat(data.abspath + "publications" + node.path.sep + "biddletesta", function biddle_test_unpublishLatest_child_stat(err, stat) {
+                        if (err !== null) {
+                            return apps.errout({error: err, name: "biddle_test_unpublishLatest_child_stat", time: humantime(true)});
+                        }
+                        if (stat === undefined) {
+                            return apps.errout({error: "Error reading publications" + node.path.sep + "biddletesta", name: "biddle_test_unpublishLatest_child_stat", time: humantime(true)});
+                        }
+                        node
+                            .fs
+                            .readFile(data.abspath + "published.json", function biddle_test_unpublishLatest_child_stat_readfile(erf, filedata) {
+                                var jsondata = {};
+                                if (erf !== null && erf !== undefined) {
+                                    return apps.errout({error: erf, name: "biddle_test_unpublishLatest_child_stat_readfile", stdout: stdout, time: humantime(true)});
+                                }
+                                jsondata = JSON.parse(filedata);
+                                if (jsondata.biddletesta === undefined) {
+                                    return apps.errout({error: "biddletesta property prematurely deleted from published.json file", name: "biddle_test_unpublishLatest_child_stat_readfile", stdout: stdout, time: humantime(true)});
+                                }
+                                console.log(humantime(false) + " " + text.green + "unpublish latest test passed." + text.nocolor);
+                                next();
+                            });
                     });
             });
         };
@@ -4619,7 +4677,23 @@
         });
     };
     apps.unpublish   = function biddle_unpublish(fromTest) {
-        var app = data.published[data.input[2]];
+        var app    = {},
+            ver    = "",
+            vers   = [],
+            latest = false,
+            vert   = false,
+            a      = 0;
+        if (data.input[2] === undefined) {
+            if (fromTest === true) {
+                return apps.errout({
+                    error: "Unpublish from biddle test failed. " + data.input[2] + " is not present in data.published.",
+                    name : "biddle_unpublish"
+                });
+            }
+            return console.log("Attempted to unpublish " + text.cyan + data.input[2] + text.nocolor + " which is " + text.bold + text.red + "absent" + text.none + " from the list of published applications. Try using the command " + text.green + "biddle list published" + text.nocolor + ".");
+        }
+        data.input[2] = apps.sanitizef(data.input[2]);
+        app = data.published[data.input[2]];
         if (app === undefined) {
             if (fromTest === true) {
                 return apps.errout({
@@ -4629,22 +4703,163 @@
             }
             return console.log("Attempted to unpublish " + text.cyan + data.input[2] + text.nocolor + " which is " + text.bold + text.red + "absent" + text.none + " from the list of published applications. Try using the command " + text.green + "biddle list published" + text.nocolor + ".");
         }
-        if (fromTest === true) {
-            delete data.published.biddletestb;
-            apps.remove(data.abspath + "publications" + node.path.sep + "biddletestb", function biddle_unpublish_removeTest() {
-                return true;
+        if (data.input[3] === undefined) {
+            return apps.errout({
+                error: "Please specify a version or \"all\" for all versions.",
+                name : "biddle_unpublish"
             });
         }
-        apps.remove(app.directory, function biddle_unpublish_remove() {
-            var str = "";
-            delete data.published[data.input[2]];
-            str = JSON.stringify(data.published);
-            apps.writeFile(str, data.abspath + "published.json", function biddle_unpublish_remove_writeFile() {
-                if (fromTest === false) {
-                    console.log("App " + text.cyan + data.input[2] + text.nocolor + " is unpublished.");
+        ver = apps.sanitizef(data.input[3]);
+        if (ver.toLowerCase() === "all") {
+            ver = "all";
+        } else if (ver.toLowerCase() === "latest") {
+            ver = app.latest;
+        }
+        vers = data.published[data.input[2]].versions;
+        if (ver !== "all") {
+            a = vers.length;
+            do {
+                a -= 1;
+                if (vers[a] === ver) {
+                    vers.splice(a, 1);
+                    vert = true;
+                    break;
+                }
+            } while (a > 0);
+            if (vert === false) {
+                return apps.errout({
+                    error: "Specified version, " + text.bold + text.red + ver + text.none + ", is not a published version of " + text.cyan + data.input[2] + text.nocolor,
+                    name : "biddle_unpublish"
+                });
+            }
+            if (app.latest === ver) {
+                latest = true;
+            }
+        }
+        if (ver === "all" || vers.length === 0) {
+            if (fromTest === true) {
+                delete data.published.biddletestb;
+                apps.remove(data.abspath + "publications" + node.path.sep + "biddletestb", function biddle_unpublish_removeTest() {
+                    return true;
+                });
+            }
+            apps.remove(app.directory, function biddle_unpublish_remove() {
+                var str = "";
+                delete data.published[data.input[2]];
+                str = JSON.stringify(data.published);
+                apps.writeFile(str, data.abspath + "published.json", function biddle_unpublish_remove_writeFile() {
+                    if (fromTest === false) {
+                        console.log("All versions of app " + text.cyan + data.input[2] + text.nocolor + " are unpublished.");
+                    }
+                });
+            });
+        } else {
+            node.fs.readdir(app.directory, function biddle_unpublish_readdir(er, files) {
+                var later   = (latest === true)
+                        ? app.versions[app.versions.length - 1]
+                        : app.latest,
+                    destroy = function biddle_unpublish_readdir_destroy() {
+                        var aa = files.length;
+                        do {
+                            aa -= 1;
+                            if (files[aa].indexOf("_" + ver + ".zip") === files[aa].length - (ver.length + 5) || files[aa].indexOf("_" + ver + ".hash") === files[aa].length - (ver.length + 6)) {
+                                apps.remove(app.directory + files[aa], function biddle_unpublish_readdir_destory_removeNormal() {
+                                    return true;
+                                });
+                            } else if (latest === true && files[aa].length > 11 && (files[aa].indexOf("_latest.zip") === files[aa].length - 11 || files[aa].indexOf("_latest.hash") === files[aa].length - 12)) {
+                                apps.remove(app.directory + files[aa], function biddle_unpublish_readdir_destory_removeLatest() {
+                                    return true;
+                                });
+                            }
+                        } while (aa > 0);
+                        node.fs.readFile(app.directory + "filedata.json", "utf8", function biddle_unpublish_readdir_destory_readFileData(err, filedata) {
+                            var parsed = {},
+                                bb     = 0;
+                            if (err !== null && err !== undefined) {
+                                return apps.errout({
+                                    error: err,
+                                    name : "biddle_unpublish_readdir_destory_readFileData"
+                                });
+                            }
+                            parsed = JSON.parse(filedata).filedata;
+                            bb     = parsed.length;
+                            do {
+                                bb -= 1;
+                                if (parsed[bb].filename.indexOf("_" + ver + ".zip") === parsed[bb].filename.length - (ver.length + 5) || parsed[bb].filename.indexOf("_" + ver + ".hash") === parsed[bb].filename.length - (ver.length + 6)) {
+                                    parsed.splice(bb, 1);
+                                } else if (latest === true && (parsed[bb].filename.indexOf("_latest.zip") === parsed[bb].filename.length - 11 || parsed[bb].filename.indexOf("_latest.hash") === parsed[bb].filename.length - 12)) {
+                                    parsed.splice(bb, 1);
+                                }
+                            } while (bb > 0);
+                            apps.writeFile(JSON.stringify({filedata: parsed}), app.directory + "filedata.json", function biddle_unpublish_readdir_destory_readFileData_writeFileData() {
+                                node.fs.readFile(app.directory + "index.xhtml", "utf8", function biddle_unpublish_readdir_destory_readFileData_writeFileData_readIndex(errr, index) {
+                                    var lex = [],
+                                        cc  = 0,
+                                        dd  = 0,
+                                        row = false;
+                                    if (errr !== null && errr !== undefined) {
+                                        return apps.errout({
+                                            error: errr,
+                                            name : "biddle_unpublish_readdir_destory_readFileData_writeFileData_readIndex"
+                                        });
+                                    }
+                                    lex = index.split("");
+                                    cc  = index.indexOf("</tbody");
+                                    do {
+                                        cc -= 1;
+                                        if (lex[cc - 4] === "<" && lex[cc - 3] === "/" && lex[cc - 2] === "t" && lex[cc - 1] === "r" &&lex[cc] === ">") {
+                                            dd  = cc + 1;
+                                            row = false;
+                                        }
+                                        if (lex[cc] === "." && lex[cc + 1] === "z" && lex[cc + 2] === "i" && lex[cc + 3] === "p" && lex[cc + 4] === "<" && lex[cc + 5] === "/" && lex[cc + 6] === "a" && lex[cc + 7] === ">") {
+                                            if (latest === true && lex.slice(cc - 7, cc).join("") === "_latest") {
+                                                row = true;
+                                            } else if (lex.slice(cc - ver.length, cc).join("") === ver) {
+                                                row = true;
+                                            }
+                                        }
+                                        if (lex[cc] === "<" && lex[cc + 1] === "t" && lex[cc + 2] === "r" && lex[cc + 3] === ">" && row === true) {
+                                            lex.splice(cc, dd - cc);
+                                        }
+                                        if (lex[cc - 5] === "<" && lex[cc - 4] === "t" && lex[cc - 3] === "b" && lex[cc - 2] === "o" && lex[cc - 1] === "d" && lex[cc] === "y") {
+                                            break;
+                                        }
+                                    } while (cc > 0);
+                                    index = lex.join("");
+                                    if (latest === true) {
+                                        dd = index.indexOf("</a>");
+                                        cc = dd;
+                                        do {
+                                            cc -= 1;
+                                        } while (index.charAt(cc - 1) !== ">");
+                                        lex[0] = index.slice(cc, dd);
+                                        index = index.replace(data.input[2] + "_latest.zip", lex[0]);
+                                    }
+                                    apps.writeFile(index, app.directory + "index.xhtml", function biddle_unpublish_readdir_destory_readFileData_writeFileData_readIndex_writeIndex() {
+                                        apps.writeFile(JSON.stringify(data.published), data.abspath + "published.json", function biddle_unpublish_readdir_destory_readFileData_writeFileData_readIndex_writeIndex_writePublished() {
+                                            if (fromTest === false) {
+                                                console.log("Version " + text.bold + text.red + ver + text.none + " of app " + text.cyan + data.input[2] + text.nocolor + " is unpublished.");
+                                            }
+                                        });
+                                    });
+                                });
+                            });
+                        });
+                    };
+                if (er !== null) {
+                    return apps.errout({
+                        error: er,
+                        name : "biddle_unpublish_readdir"
+                    });
+                }
+                if (latest === true) {
+                    data.published[data.input[2]].latest = later;
+                    apps.writeFile(later, app.directory + "latest.txt", destroy);
+                } else {
+                    destroy();
                 }
             });
-        });
+        }
     };
     apps.writeFile   = function biddle_writeFile(fileData, fileName, callback) {
         var callbacker = function biddle_writeFile_callbacker(size) {
@@ -4964,8 +5179,15 @@
                     .input[1]
                     .toLowerCase()
                     .replace(/(s\s*)$/, "")
+                    .replace(/^(-+)/, "")
                 : data.input[1].toLowerCase()
             : "";
+        if (data.command === "v" || data.command === "ver") {
+            data.command = "version";
+        }
+        if (data.command === "h") {
+            data.command = "help";
+        }
         data.abspath              = (function biddle_abspath() {
             var absarr = data
                 .input[0]

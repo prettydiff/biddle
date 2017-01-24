@@ -26,7 +26,7 @@ remove|✓|local file system address|none
 status|?|none or application name|none
 test|?|application name|none
 uninstall|✓|application name|none
-unpublish|✓|application name|none
+unpublish|✓|application name|"*all*" or "*latest*" or version
 unzip|✓|path to zip file|directory path
 version|✓|none or installed app name|none
 zip|✓|local file system address|directory path
