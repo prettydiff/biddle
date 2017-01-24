@@ -2528,7 +2528,8 @@
                 "republish",
                 //"update",
                 "uninstall",
-                "unpublish"
+                "unpublishLatest",
+                "unpublishAll"
             ],
             phasenumb = 0,
             options   = {
@@ -4431,37 +4432,34 @@
         phases.update        = function biddle_test_update() {
             return;
         };
-        phases.unpublish     = function biddle_test_unpublish() {
+        phases.unpublishAll  = function biddle_test_unpublishAll() {
             phasenumb += 1;
-            console.log(phasenumb + ". Unpublish tests");
+            console.log(phasenumb + ". Unpublish All tests");
             node.child(childcmd + "unpublish biddletesta all childtest", {
                 cwd: data.abspath
-            }, function biddle_test_unpublish_child(er, stdout, stder) {
+            }, function biddle_test_unpublishAll_child(er, stdout, stder) {
                 var unpubtest = "All versions of app " + text.cyan + "biddletesta" + text.nocolor + " are unpublished.";
                 if (er !== null) {
-                    return apps.errout({error: er, name: "biddle_test_unpublish_child", stdout: stdout, time: humantime(true)});
+                    return apps.errout({error: er, name: "biddle_test_unpublishAll_child", stdout: stdout, time: humantime(true)});
                 }
                 if (stder !== null && stder !== "") {
-                    return apps.errout({error: stder, name: "biddle_test_unpublish_child", stdout: stdout, time: humantime(true)});
+                    return apps.errout({error: stder, name: "biddle_test_unpublishAll_child", stdout: stdout, time: humantime(true)});
                 }
                 stdout = stdout.replace(/(\s+)$/, "");
                 if (stdout !== unpubtest) {
-                    return diffFiles("biddle_test_unpublish_child", stdout, unpubtest);
-                }
-                if (data.published.biddletesta !== undefined) {
-                    return apps.errout({error: "biddletesta property not removed from data.published object", name: "biddle_test_unpublish_child", stdout: stdout, time: humantime(true)});
+                    return diffFiles("biddle_test_unpublishAll_child", stdout, unpubtest);
                 }
                 console.log(humantime(false) + " " + text.green + "biddletesta removed from published.json." + text.nocolor);
                 node
                     .fs
-                    .stat(data.abspath + "publications" + node.path.sep + "biddletesta", function biddle_test_unpublish_child_stat(err, stat) {
+                    .stat(data.abspath + "publications" + node.path.sep + "biddletesta", function biddle_test_unpublishAll_child_stat(err, stat) {
                         if (err !== null && err.toString().indexOf("no such file or directory") < 0) {
-                            return apps.errout({error: err, name: "biddle_test_unpublish_child_stat", time: humantime(true)});
+                            return apps.errout({error: err, name: "biddle_test_unpublishAll_child_stat", time: humantime(true)});
                         }
                         if (stat !== undefined && stat.isDirectory() === true) {
                             return apps.errout({
                                 error : "publications" + node.path.sep + "biddletesta directory not deleted by unpublish command",
-                                name  : "biddle_test_unpublish_child_stat",
+                                name  : "biddle_test_unpublishAll_child_stat",
                                 stdout: stdout,
                                 time  : humantime(true)
                             });
@@ -4469,19 +4467,19 @@
                         if (err.toString().indexOf("no such file or directory") > 0) {
                             node
                                 .fs
-                                .readFile(data.abspath + "published.json", function biddle_test_unpublish_child_stat_readfile(erf, filedata) {
+                                .readFile(data.abspath + "published.json", function biddle_test_unpublishAll_child_stat_readfile(erf, filedata) {
                                     var jsondata = {};
                                     if (erf !== null && erf !== undefined) {
-                                        return apps.errout({error: erf, name: "biddle_test_unpublish_child_stat_readfile", stdout: stdout, time: humantime(true)});
+                                        return apps.errout({error: erf, name: "biddle_test_unpublishAll_child_stat_readfile", stdout: stdout, time: humantime(true)});
                                     }
                                     jsondata = JSON.parse(filedata);
                                     if (jsondata.biddletesta !== undefined) {
-                                        return apps.errout({error: "biddletesta property still present in published.json file", name: "biddle_test_unpublish_child_stat_readfile", stdout: stdout, time: humantime(true)});
+                                        return apps.errout({error: "biddletesta property still present in published.json file", name: "biddle_test_unpublishAll_child_stat_readfile", stdout: stdout, time: humantime(true)});
                                     }
-                                    console.log(humantime(false) + " " + text.green + "unpublish test passed." + text.nocolor);
+                                    console.log(humantime(false) + " " + text.green + "unpublish all test passed." + text.nocolor);
                                     node.child(childcmd + "unpublish biddletesta all childtest", {
                                         cwd: data.abspath
-                                    }, function biddle_test_unpublish_child_stat_readfile_again(erx, stdoutx, stderx) {
+                                    }, function biddle_test_unpublishAll_child_stat_readfile_again(erx, stdoutx, stderx) {
                                         var unpubagain = "Attempted to unpublish " + text.cyan + "biddletesta" + text.nocolor + " which is " + text.bold + text.red + "absent" + text.none + " from the list of published applications. Try using the command " + text.green + "biddle list published" + text.nocolor + ".",
                                             stack      = [];
                                         if (erx !== null) {
@@ -4491,28 +4489,73 @@
                                                     .split(" at ");
                                             }
                                             if (stack.length < 1 || stack[1].indexOf("ChildProcess.exithandler (child_process.js:202:12)") < 0) {
-                                                return apps.errout({error: erx, name: "biddle_test_unpublish_child_stat_readfile_again", stdout: stdout, time: humantime(true)});
+                                                return apps.errout({error: erx, name: "biddle_test_unpublishAll_child_stat_readfile_again", stdout: stdout, time: humantime(true)});
                                             }
                                         }
                                         if (stderx !== null && stderx !== "") {
-                                            return apps.errout({error: stderx, name: "biddle_test_unpublish_child_stat_readfile_again", stdout: stdout, time: humantime(true)});
+                                            return apps.errout({error: stderx, name: "biddle_test_unpublishAll_child_stat_readfile_again", stdout: stdout, time: humantime(true)});
                                         }
                                         stdoutx = stdoutx.replace(/(\s+)$/, "");
                                         if (stdoutx !== unpubagain) {
-                                            return diffFiles("biddle_test_unpublish_child_stat_readfile_again", stdoutx, unpubagain);
+                                            return diffFiles("biddle_test_unpublishAll_child_stat_readfile_again", stdoutx, unpubagain);
                                         }
-                                        console.log(humantime(false) + " " + text.green + "Redundant unpublish test (error messaging) passed." + text.nocolor);
+                                        console.log(humantime(false) + " " + text.green + "Redundant unpublish all test (error messaging) passed." + text.nocolor);
                                         next();
                                     });
                                 });
                         } else {
                             return apps.errout({
                                 error : "directory publications" + node.path.sep + "biddletesta changed to something else and not deleted",
-                                name  : "biddle_test_unpublish_child_stat",
+                                name  : "biddle_test_unpublishAll_child_stat",
                                 stdout: stdout,
                                 time  : humantime(true)
                             });
                         }
+                    });
+            });
+        };
+        phases.unpublishLatest = function biddle_test_unpublishLatest() {
+            phasenumb += 1;
+            console.log(phasenumb + ". Unpublish Latest tests");
+            node.child(childcmd + "unpublish biddletesta latest childtest", {
+                cwd: data.abspath
+            }, function biddle_test_unpublishLatest_child(er, stdout, stder) {
+                var unpubtest = "Version " + text.bold + text.red + "99.99.xxxx" + text.none + " of app " + text.cyan + "biddletesta" + text.nocolor + " is unpublished.";
+                if (er !== null) {
+                    return apps.errout({error: er, name: "biddle_test_unpublishLatest_child", stdout: stdout, time: humantime(true)});
+                }
+                if (stder !== null && stder !== "") {
+                    return apps.errout({error: stder, name: "biddle_test_unpublishLatest_child", stdout: stdout, time: humantime(true)});
+                }
+                stdout = stdout.replace(/(\s+)$/, "");
+                stdout = stdout.replace(/99\.99\.\d\d\d\d/, "99.99.xxxx");
+                if (stdout !== unpubtest) {
+                    return diffFiles("biddle_test_unpublishLatest_child", stdout, unpubtest);
+                }
+                console.log(humantime(false) + " " + text.green + "biddletesta removed from published.json." + text.nocolor);
+                node
+                    .fs
+                    .stat(data.abspath + "publications" + node.path.sep + "biddletesta", function biddle_test_unpublishLatest_child_stat(err, stat) {
+                        if (err !== null) {
+                            return apps.errout({error: err, name: "biddle_test_unpublishLatest_child_stat", time: humantime(true)});
+                        }
+                        if (stat === undefined) {
+                            return apps.errout({error: "Error reading publications" + node.path.sep + "biddletesta", name: "biddle_test_unpublishLatest_child_stat", time: humantime(true)});
+                        }
+                        node
+                            .fs
+                            .readFile(data.abspath + "published.json", function biddle_test_unpublishLatest_child_stat_readfile(erf, filedata) {
+                                var jsondata = {};
+                                if (erf !== null && erf !== undefined) {
+                                    return apps.errout({error: erf, name: "biddle_test_unpublishLatest_child_stat_readfile", stdout: stdout, time: humantime(true)});
+                                }
+                                jsondata = JSON.parse(filedata);
+                                if (jsondata.biddletesta === undefined) {
+                                    return apps.errout({error: "biddletesta property prematurely deleted from published.json file", name: "biddle_test_unpublishLatest_child_stat_readfile", stdout: stdout, time: humantime(true)});
+                                }
+                                console.log(humantime(false) + " " + text.green + "unpublish latest test passed." + text.nocolor);
+                                next();
+                            });
                     });
             });
         };
