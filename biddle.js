@@ -4783,6 +4783,15 @@
                                         }
                                     } while (cc > 0);
                                     index = lex.join("");
+                                    if (latest === true) {
+                                        dd = index.indexOf("</a>");
+                                        cc = dd;
+                                        do {
+                                            cc -= 1;
+                                        } while (index.charAt(cc - 1) !== ">");
+                                        lex[0] = index.slice(cc, dd);
+                                        index = index.replace(data.input[2] + "_latest.zip", lex[0]);
+                                    }
                                     apps.writeFile(index, app.directory + "index.xhtml", function biddle_unpublish_readdir_destory_readFileData_writeFileData_readIndex_writeIndex() {
                                         apps.writeFile(JSON.stringify(data.published), data.abspath + "published.json", function biddle_unpublish_readdir_destory_readFileData_writeFileData_readIndex_writeIndex_writePublished() {
                                             if (fromTest === false) {
