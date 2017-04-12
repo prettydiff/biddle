@@ -411,7 +411,7 @@
                     console.log("");
                     console.log(stack);
                     console.log("");
-                    console.log(errData.time);
+                    console.log(errData.time + text.none);
                     process.exit(1);
                 });
             });
@@ -423,7 +423,7 @@
                     console.log("");
                     console.log(stack);
                     console.log("");
-                    console.log("Please report defects to https://github.com/prettydiff/biddle/issues");
+                    console.log("Please report defects to https://github.com/prettydiff/biddle/issues" + text.none);
                 }
                 process.exit(1);
             });
@@ -1137,11 +1137,49 @@
                 var lines  = [],
                     listly = [],
                     output = [],
+                    para   = false,
                     ind    = "",
                     listr  = "",
                     b      = 0,
                     len    = 0,
                     bullet = "",
+                    codeblock = function biddle_markdown_readfile_blockcode() {
+                        var blocks = "",
+                            spaces = "nospace",
+                            removespaces = function biddle_markdown_readfile_removespaces(x) {
+                                if (spaces === "nospace") {
+                                    spaces = x;
+                                }
+                                return x.slice(spaces.length);
+                            },
+                            blockstart = function biddle_markdown_readfile_blockstart() {
+                                var bs = lines[b].replace(/\s+/g, ""),
+                                    bsout = function biddle_markdown_readfile_blockstart_bsout(x) {
+                                        return x;
+                                    };
+                                return bs.replace(/((~+)|(`+))/, bsout);
+                            };
+                        lines[b].replace(/^(\s+)/, removespaces);
+                        blocks = blockstart();
+                        output.push("");
+                        b += 1;
+                        if (b < len) {
+                            if (lines[b].replace(/^(\s+)/, "").indexOf(blocks) === 0 && (/^(\s*((`{3,})|(~{3,}))+)/).test(lines[b]) === true) {
+                                output.push("");
+                            } else {
+                                lines[b] = text.green + lines[b].replace(/^(\s+)/, removespaces) + text.nocolor;
+                                do {
+                                    if (lines[b].indexOf(blocks) > -1 && (/(((`{3,})|(~{3,}))+\s*)$/).test(lines[b]) === true) {
+                                        lines[b] = "";
+                                        break;
+                                    }
+                                    output.push(ind + text.green + lines[b].replace(/^(\s+)/, removespaces) + text.nocolor);
+                                    b += 1;
+                                } while (b < len);
+                                spaces = "nospace";
+                            }
+                        }
+                    },
                     hr    = function biddle_markdown_readfile_hr(block) {
                         var item = lines[b].replace(/\s+/, "").charAt(0),
                             hr   = "",
@@ -1152,6 +1190,7 @@
                             hr = hr + item;
                         } while (inc < maxx);
                         lines[b] = block + hr;
+                        para = false;
                     },
                     parse  = function biddle_markdown_readfile_parse(item, listitem, cell) {
                         var block = false,
@@ -1203,7 +1242,7 @@
                                     }
                                 }
                             };
-                        if ((/\u0020{4}\S/).test(item) === true && listitem === false) {
+                        if (lines[b - 1] === "" && (/\u0020{4}\S/).test(item) === true && listitem === false) {
                             item = text.green + item + text.nocolor;
                             return item;
                         }
@@ -1458,6 +1497,7 @@
                             b += 1;
                         } while (c < lend);
                         b += 1;
+                        para = false;
                     },
                     headings = function biddle_markdown_readfile_headings(color, level) {
                         if (level === 1) {
@@ -1481,6 +1521,7 @@
                             lines[b] = lines[b].replace(/(\s*\#*\s*)$/, "");
                         }
                         lines[b] = ind.slice(2) + text.underline + text.bold + text[color] + lines[b] + text.none;
+                        para = false;
                     };
                 if (err !== null && err !== undefined) {
                     return apps.errout({error: err, name: "biddle_markdown_readfile"});
@@ -1547,33 +1588,15 @@
                 len    = lines.length;
                 output.push("");
                 for (b = 0; b < len; b += 1) {
-                    if ((/^((\*|-|_){3})$/).test(lines[b].replace(/\s+/g, "")) === true && (/^(\s{0,3})/).test(lines[b]) === true && (lines[b].indexOf("-") < 0 || lines[b - 1].length < 1)) {
+                    if ((/^(\s*)$/).test(lines[b]) === true) {
+                        lines[b] = "";
+                        para     = false;
+                    } else if ((/^((\*|-|_){3})$/).test(lines[b].replace(/\s+/g, "")) === true && (/^(\s{0,3})/).test(lines[b]) === true && (lines[b].indexOf("-") < 0 || lines[b - 1].length < 1)) {
                         hr("");
                     } else if (lines[b].slice(1).indexOf("|") > -1 && (/---+\|---+/).test(lines[b + 1]) === true) {
                         table();
-                    } else if ((/^(\s*```+\s*)$/).test(lines[b]) === true) {
-                        output.push("");
-                        b += 1;
-                        if (b < len) {
-                            if ((/^(\s*```+\s*)$/).test(lines[b]) === true) {
-                                output.push("");
-                            } else {
-                                lines[b] = text.green + lines[b];
-                                do {
-                                    if ((/^(\s*```+\s*)$/).test(lines[b + 1]) === true) {
-                                        lines[b] = ind + lines[b] + text.nocolor;
-                                        output.push(lines[b]);
-                                        b += 1;
-                                        break;
-                                    }
-                                    output.push(ind + lines[b]);
-                                    b += 1;
-                                } while (b < len);
-                                if ((/^(\s*```+\s*)$/).test(lines[b]) === true) {
-                                    lines[b] = "";
-                                }
-                            }
-                        }
+                    } else if ((/^(\s*((`{3,})|(~{3,}))+)/).test(lines[b]) === true) {
+                        codeblock();
                     } else if ((/^(\s{0,3}#{6,6}\s)/).test(lines[b]) === true) {
                         headings("purple", 6);
                     } else if ((/^(\s{0,3}#{5,5}\s)/).test(lines[b]) === true) {
@@ -1613,20 +1636,34 @@
                             bullet = "-";
                         }
                         lines[b] = parse(lines[b], true, false).replace(/\*|-/, text.bold + text.red + bullet + text.none);
+                        para = true;
                     } else if ((/^\s*>/).test(lines[b]) === true) {
                         listly   = [];
                         lines[b] = parse(lines[b], false, false);
                         if (b < len - 1 && (/^(\s*)$/).test(lines[b + 1]) === false) {
                             lines[b + 1] = ">" + lines[b + 1];
                         }
-                    } else {
+                        para = true;
+                    } else if (para === true) {
                         listly = [];
-                        if (lines[b].length > 0) {
-                            lines[b] = parse(lines[b], false, false);
-                        }
+                        len = len - 1;
+                        b = b - 1;
+                        output.pop();
+                        lines[b] = lines[b] + lines[b + 1];
+                        lines.splice(b + 1, 1);
+                        lines[b] = parse(lines[b].replace(/\s+/g, " ").replace(/^\s/, ""), false, false);
+                        para = true;
+                    } else {
+                        para = true;
+                        listly = [];
+                        lines[b] = parse(lines[b], false, false);
                     }
                     output.push(lines[b]);
                 }
+                if (output[output.length - 1] === undefined) {
+                    output.pop();
+                }
+                output[output.length - 1] = output[output.length - 1] + text.none;
                 if (data.platform === "win32") {
                     ind = output.join("\r\n");
                 } else {
@@ -3385,61 +3422,133 @@
             node.child(childcmd + "markdown " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "READMEa.md 60 childtest", {
                 cwd: data.abspath
             }, function biddle_test_markdown_60(er, stdout, stder) {
-                var markdowntest = "\n" + text.underline + text.bold + text.red + "test README" + text.none + "\nsome dummy subtext\n\n" + text.underline + text.bold + text.cyan + "First Secondary Heading" + text.none + "\n    | a big block quote lives here. This is where I\n    | am going to experie" +
-                            "nce with wrapping a block quote a bit\n    | differently from other content.  I " +
-                            "need enough text in\n    | this quote to wrap a couple of times, so I will conti" +
-                            "nue\n    | adding some nonsense and as long as it takes to ensure I\n    | have " +
-                            "a fully qualified test.\n    | New line in a block quote\n    | More block\n\n  " +
-                            "This is a regular paragraph that needs to be long\n  enough to wrap a couple tim" +
-                            "es.  This text will be unique\n  from the text in the block quote because unique" +
-                            "ness saves\n  time when debugging test failures.  I am now writing a\n  bunch of" +
-                            " wrapping paragraph gibberish, such as\n  f324fasdaowkefsdva.  That one isn't ev" +
-                            "en a word.  It isn't\n  cool if it doesn't contain a hyperlink,\n  (" + text.cyan + "http://tonowhwere.nothing" + text.nocolor + "), in some text.\n\n  " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like a\n    paragraph. So blah blah wrappin" +
-                            "g some madness into a\n    list item right gosh darn here and let's see what sha" +
-                            "kes\n    out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like a\n    paragraph. So blah blah wrappin" +
-                            "g some madness into a\n    list item right gosh darn here and let's see what sha" +
-                            "kes\n    out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to wrap like a\n      paragraph. So blah blah wr" +
-                            "apping some madness into a\n      list item right gosh darn here and let's see w" +
-                            "hat\n      shakes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to wrap like a\n      paragraph. So blah blah wr" +
-                            "apping some madness into a\n      list item right gosh darn here and let's see w" +
-                            "hat\n      shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need to wrap\n        like a paragraph. So blah bl" +
-                            "ah wrapping some madness\n        into a list item right gosh darn here and let'" +
-                            "s see\n        what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need to wrap\n        like a paragraph. So blah bl" +
-                            "ah wrapping some madness\n        into a list item right gosh darn here and let'" +
-                            "s see\n        what shakes out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like a\n    paragraph. So blah blah wrappin" +
-                            "g some madness into a\n    list item right gosh darn here and let's see what sha" +
-                            "kes\n    out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a paragraph.\n      So blah blah wrapping some" +
-                            " madness into a list item\n      right gosh darn here and let's see what shakes " +
-                            "out of\n      the coolness.\n\n  " + text.underline + text.bold + text.green + "First Tertiary Heading" + text.none + "\n    This text should be extra indented.\n\n    " + text.bold + text.red + "*" + text.none + " list item 1\n    " + text.bold + text.red + "*" + text.none + " list item 2\n      " + text.bold + text.red + "-" + text.none + " sublist item 1\n      " + text.bold + text.red + "-" + text.none + " sublist item 2\n        " + text.bold + text.red + "*" + text.none + " subsublist item 1\n        " + text.bold + text.red + "*" + text.none + " subsublist item 2\n    " + text.bold + text.red + "*" + text.none + " list item 3\n      " + text.bold + text.red + "-" + text.none + " boo\n\n    " + text.underline + text.bold + text.yellow + "Gettin Deep with the Headings" + text.none + "\n\n        | a big block quote lives here. This\n        | is where I am going " +
-                            "to experience with wrapping a\n        | block quote a bit differently from othe" +
-                            "r content.  I\n        | need enough text in this quote to wrap a couple of\n   " +
-                            "     | times, so I will continue adding some nonsense and\n        | as long as " +
-                            "it takes to ensure I have a fully\n        | qualified test.\n        | New line" +
-                            " in a block quote\n        | More block\n\n      Images get converted to their a" +
-                            "lt text\n      description.\n\n      This is a regular paragraph that needs to b" +
-                            "e\n      long enough to wrap a couple times.  This text will be\n      unique fr" +
-                            "om the text in the block quote because\n      uniqueness saves time when debuggi" +
-                            "ng test failures.  I\n      am now writing a bunch of wrapping paragraph\n      " +
-                            "gibberish, such as f324fasdaowkefsdva.  That one isn't\n      even a word.\n\n  " +
-                            "    " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like\n        a paragraph. So blah blah wra" +
-                            "pping some madness into\n        a list item right gosh darn here and let's see " +
-                            "what\n        shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like\n        a paragraph. So blah blah wra" +
-                            "pping some madness into\n        a list item right gosh darn here and let's see " +
-                            "what\n        shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to\n          wrap like a paragraph. So blah bla" +
-                            "h wrapping some\n          madness into a list item right gosh darn here and\n  " +
-                            "        let's see what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to\n          wrap like a paragraph. So blah bla" +
-                            "h wrapping some\n          madness into a list item right gosh darn here and\n  " +
-                            "        let's see what shakes out of the coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need\n            to wrap like a paragraph. So bla" +
-                            "h blah wrapping\n            some madness into a list item right gosh darn\n    " +
-                            "        here and let's see what shakes out of the\n            coolness.\n      " +
-                            "    " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need\n            to wrap like a paragraph. So bla" +
-                            "h blah wrapping\n            some madness into a list item right gosh darn\n    " +
-                            "        here and let's see what shakes out of the\n            coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like\n        a paragraph. So blah blah wra" +
-                            "pping some madness into\n        a list item right gosh darn here and let's see " +
-                            "what\n        shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a\n          paragraph. So blah blah wrapping " +
-                            "some madness into\n          a list item right gosh darn here and let's see\n   " +
-                            "       what shakes out of the coolness.\n\n      " + text.underline + "Command   " + text.normal + text.underline + " Local " + text.normal + text.underline + " Argument Type               " + text.normal + text.underline + " Second Argument " + text.normal + "\n      copy       " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n      get        " + text.bold + text.yellow + "?" + text.none + "      file path                    none           \n      global     " + text.bold + text.green + "✓" + text.none + "      none                         none           \n      hash       " + text.bold + text.green + "✓" + text.none + "      file path                    none           \n      help       " + text.bold + text.green + "✓" + text.none + "      number                       none           \n      install    " + text.bold + text.yellow + "?" + text.none + "      zip file                     directory path \n      list       " + text.bold + text.green + "✓" + text.none + "      \"" + text.yellow + "installed" + text.nocolor + "\" or \"" + text.yellow + "published" + text.nocolor + "\"   none           \n      markdown   " + text.bold + text.green + "✓" + text.none + "      path to markdown file        number         \n      publish    " + text.bold + text.green + "✓" + text.none + "      directory path               directory path \n      remove     " + text.bold + text.green + "✓" + text.none + "      file path or directory path  none           \n      status     " + text.bold + text.yellow + "?" + text.none + "      none or application name     none           \n      test       " + text.bold + text.red + "X" + text.none + "      none                         none           \n      uninstall  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unpublish  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unzip      " + text.bold + text.green + "✓" + text.none + "      path to zip file             directory path \n      zip        " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n\n" + text.underline + text.bold + text.cyan + "New big Heading" + text.none + "\n  paragraph here to see if indentation is largely reset\n  appropriate to the " +
-                            "current heading that is bigger than the\n  previous headings",
+                var markdowntest = "\n" + text.underline + text.bold + text.red + "test README" + text.none + "\ns" +
+                            "ome dummy subtext\n\n" + text.underline + text.bold + text.red + "heading by u" +
+                            "nderline equals" + text.none + "\n\n" + text.underline + text.bold + text.cyan +
+                            "heading by underline dashes" + text.none + "\n\n  ===\n\n" + text.underline +
+                            text.bold + text.cyan + "First Secondary Heading" + text.none + "\n    | a big " +
+                            "block quote lives here. This is where I am\n    | going to experience with wra" +
+                            "pping a block quote a bit\n    | differently from other content.  I need enoug" +
+                            "h text\n    | in this quote to wrap a couple of times, so I will\n    | contin" +
+                            "ue adding some nonsense and as long as it\n    | takes to ensure I have a full" +
+                            "y qualified test.\n    | New line in a block quote\n    | More block\n\n  This" +
+                            " is a regular paragraph that needs to be long\n  enough to wrap a couple times" +
+                            ".  This text will be unique\n  from the text in the block quote because unique" +
+                            "ness\n  saves time when debugging test failures.  I am now\n  writing a bunch " +
+                            "of wrapping paragraph gibberish, such as\n  f324fasdaowkefsdva.  That one isn'" +
+                            "t even a word.  It\n  isn't cool if it doesn't contain a hyperlink,\n  (" +
+                            text.cyan + "http://tonowhwere.nothing" + text.nocolor +
+                            "), in some text.\n\n  " + text.bold + text.red + "*" + text.none + " list item" +
+                            " 1 these also need to wrap like a\n    paragraph. So blah blah wrapping some m" +
+                            "adness into a\n    list item right gosh darn here and let's see what\n    shak" +
+                            "es out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list" +
+                            " item 2 these also need to wrap like a\n    paragraph. So blah blah wrapping s" +
+                            "ome madness into a\n    list item right gosh darn here and let's see what\n   " +
+                            " shakes out of the coolness.\n    " + text.bold + text.red + "-" + text.none +
+                            " sublist item 1 these also need to wrap like a\n      paragraph. So blah blah " +
+                            "wrapping some madness into a\n      list item right gosh darn here and let's s" +
+                            "ee\n      what shakes out of the coolness.\n    " + text.bold + text.red +
+                            "-" + text.none + " sublist item 2 these also need to wrap like a\n      paragr" +
+                            "aph. So blah blah wrapping some madness into a\n      list item right gosh dar" +
+                            "n here and let's see\n      what shakes out of the coolness.\n      " + text.bold +
+                            text.red + "*" + text.none + " subsublist item 1 these also need to wrap like a" +
+                            "\n        paragraph. So blah blah wrapping some madness\n        into a list i" +
+                            "tem right gosh darn here and let's\n        see what shakes out of the coolnes" +
+                            "s.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 2 the" +
+                            "se also need to wrap like a\n        paragraph. So blah blah wrapping some mad" +
+                            "ness\n        into a list item right gosh darn here and let's\n        see wha" +
+                            "t shakes out of the coolness.\n  " + text.bold + text.red + "*" + text.none +
+                            " list item 3 these also need to wrap like a\n    paragraph. So blah blah wrapp" +
+                            "ing some madness into a\n    list item right gosh darn here and let's see what" +
+                            "\n    shakes out of the coolness.\n    " + text.bold + text.red + "-" + text.none +
+                            " boo these also need to wrap like a paragraph. So\n      blah blah wrapping so" +
+                            "me madness into a list item\n      right gosh darn here and let's see what sha" +
+                            "kes\n      out of the coolness.\n\n  " + text.underline + text.bold + text.green +
+                            "First Tertiary Heading #####" + text.none + "\n    This text should be extra i" +
+                            "ndented.\n\n    " + text.bold + text.red + "*" + text.none + " list item 1\n  " +
+                            "  " + text.bold + text.red + "*" + text.none + " list item 2\n      " + text.bold +
+                            text.red + "-" + text.none + " sublist item 1\n      " + text.bold + text.red +
+                            "-" + text.none + " sublist item 2\n        " + text.bold + text.red + "*" +
+                            text.none + " subsublist item 1\n        " + text.bold + text.red + "*" +
+                            text.none + " subsublist item 2\n    " + text.bold + text.red + "*" + text.none +
+                            " list item 3\n      " + text.bold + text.red + "-" + text.none +
+                            " boo\n\n    " + text.underline + text.bold + text.yellow + "Gettin Deep with t" +
+                            "he Headings" + text.none + "\n\n        | a big block quote lives here. This i" +
+                            "s where I am\n        | going to experience with wrapping a block quote\n     " +
+                            "   | a bit differently from other content.  I need\n        | enough text in t" +
+                            "his quote to wrap a couple of\n        | times, so I will continue adding some" +
+                            " nonsense\n        | and a long a t takes to ensure I have a fully\n        | " +
+                            "qualified test.\n        | New line in a block quote\n        | More block and" +
+                            " not a heading\n        | --------------------------------------------------\n" +
+                            "\n        | a a a a a a a a a a a a a a a a a a a a a a a a a\n        | a a a" +
+                            " a a a a a a a a a a a a a a a a a a a a\n        | a a a a a a a a a a a a a " +
+                            "a a a a a a a a a a a\n\n        | aa a a a a a a a a a a a a a a a a a a a a " +
+                            "a a a\n        | a a a a a a a a a a a a a a a a a a a a a a a a\n        | a " +
+                            "a a a a a a a a a a a a a a a a a a a a a a a\n\n      Horizontal Rule with *" +
+                            "\n************************************************************\n\n      Horizo" +
+                            "ntal Rule with - (requires an empty line between\n      it and text)\n\n------" +
+                            "------------------------------------------------------\n\n      Horizontal Rul" +
+                            "e with _\n____________________________________________________________\n\n    " +
+                            "  Images get converted to their alt text description.\n\n      This is a regul" +
+                            "ar paragraph that needs to be long\n      enough to wrap a couple times.  This" +
+                            " text will be\n      unique from the text in the block quote because\n      un" +
+                            "iqueness saves time when debugging test failures.  I\n      am now writing a b" +
+                            "unch of wrapping paragraph\n      gibberish, such as f324fasdaowkefsdva.  That" +
+                            " one\n      isn't even a word.\n\n      " + text.bold + text.red + "*" +
+                            text.none + " list item 1 these also need to wrap like a\n        paragraph. So" +
+                            " blah blah wrapping some madness into\n        a list item right gosh darn her" +
+                            "e and let's see\n        what shakes out of the coolness.\n      " + text.bold +
+                            text.red + "*" + text.none + " list item 2 these also need to wrap like a\n    " +
+                            "    paragraph. So blah blah wrapping some madness into\n        a list item ri" +
+                            "ght gosh darn here and let's see\n        what shakes out of the coolness.\n  " +
+                            "      " + text.bold + text.red + "-" + text.none + " sublist item 1 these also" +
+                            " need to wrap like a\n          paragraph. So blah blah wrapping some madness" +
+                            "\n          into a list item right gosh darn here and let's\n          see wha" +
+                            "t shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none +
+                            " sublist item 2 these also need to wrap like a\n          paragraph. So blah b" +
+                            "lah wrapping some madness\n          into a list item right gosh darn here and" +
+                            " let's\n          see what shakes out of the coolness.\n          " + text.bold +
+                            text.red + "*" + text.none + " subsublist item 1 these also need to wrap like a" +
+                            "\n            paragraph. So blah blah wrapping some madness\n            into " +
+                            "a list item right gosh darn here and\n            let's see what shakes out of" +
+                            " the coolness.\n          " + text.bold + text.red + "*" + text.none + " subsu" +
+                            "blist item 2 these also need to wrap like a\n            paragraph. So blah bl" +
+                            "ah wrapping some madness\n            into a list item right gosh darn here an" +
+                            "d\n            let's see what shakes out of the coolness.\n      " + text.bold +
+                            text.red + "*" + text.none + " list item 3 these also need to wrap like a\n    " +
+                            "    paragraph. So blah blah wrapping some madness into\n        a list item ri" +
+                            "ght gosh darn here and let's see\n        what shakes out of the coolness.\n  " +
+                            "      " + text.bold + text.red + "-" + text.none + " boo these also need to wr" +
+                            "ap like a paragraph. So\n          blah blah wrapping some madness into a list" +
+                            "\n          item right gosh darn here and let's see what\n          shakes out" +
+                            " of the coolness.\n\n      " + text.underline + "Command   " + text.normal +
+                            text.underline + " Local " + text.normal + text.underline + " Argument Type    " +
+                            "           " + text.normal + text.underline + " Second Argument " + text.normal +
+                            "\n      copy       " + text.bold + text.green + "✓" + text.none + "      file " +
+                            "path or directory path  directory path \n      get        " + text.bold +
+                            text.yellow + "?" + text.none + "      file path                    none       " +
+                            "    \n      global     " + text.bold + text.green + "✓" + text.none + "      n" +
+                            "one                         none           \n      hash       " + text.bold +
+                            text.green + "✓" + text.none + "      file path                    none        " +
+                            "   \n      help       " + text.bold + text.green + "✓" + text.none + "      nu" +
+                            "mber                       none           \n      install    " + text.bold +
+                            text.yellow + "?" + text.none + "      zip file                     directory p" +
+                            "ath \n      list       " + text.bold + text.green + "✓" + text.none +
+                            "      \"" + text.yellow + "installed" + text.nocolor + "\" or \"" + text.yellow +
+                            "published" + text.nocolor + "\"   none           \n      markdown   " + text.bold +
+                            text.green + "✓" + text.none + "      path to markdown file        number      " +
+                            "   \n      publish    " + text.bold + text.green + "✓" + text.none + "      di" +
+                            "rectory path               directory path \n      remove     " + text.bold +
+                            text.green + "✓" + text.none + "      file path or directory path  none        " +
+                            "   \n      status     " + text.bold + text.yellow + "?" + text.none + "      n" +
+                            "one or application name     none           \n      test       " + text.bold +
+                            text.red + "X" + text.none + "      none                         none          " +
+                            " \n      uninstall  " + text.bold + text.green + "✓" + text.none + "      appl" +
+                            "ication name             none           \n      unpublish  " + text.bold +
+                            text.green + "✓" + text.none + "      application name             none        " +
+                            "   \n      unzip      " + text.bold + text.green + "✓" + text.none + "      pa" +
+                            "th to zip file             directory path \n      zip        " + text.bold +
+                            text.green + "✓" + text.none + "      file path or directory path  director",
                     name         = "biddle_test_markdown_60";
                 if (er !== null) {
                     return apps.errout({error: er, name: name, stdout: stdout, time: humantime(true)});
@@ -3464,59 +3573,134 @@
             node.child(childcmd + "markdown " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "READMEa.md 80 childtest", {
                 cwd: data.abspath
             }, function biddle_test_markdown_80(er, stdout, stder) {
-                var markdowntest = "\n" + text.underline + text.bold + text.red + "test README" + text.none + "\nsome dummy subtext\n\n" + text.underline + text.bold + text.cyan + "First Secondary Heading" + text.none + "\n    | a big block quote lives here. This is where I am going to\n    | experie" +
-                            "nce with wrapping a block quote a bit differently from other content.\n    | I n" +
-                            "eed enough text in this quote to wrap a couple of times, so I will\n    | contin" +
-                            "ue adding some nonsense and as long as it takes to ensure I have a\n    | fully " +
-                            "qualified test.\n    | New line in a block quote\n    | More block\n\n  This is " +
-                            "a regular paragraph that needs to be long enough to wrap a couple\n  times.  Thi" +
-                            "s text will be unique from the text in the block quote because\n  uniqueness sav" +
-                            "es time when debugging test failures.  I am now writing a bunch\n  of wrapping p" +
-                            "aragraph gibberish, such as f324fasdaowkefsdva.  That one isn't\n  even a word. " +
-                            " It isn't cool if it doesn't contain a hyperlink,\n  (" + text.cyan + "http://tonowhwere.nothing" + text.nocolor + "), in some text.\n\n  " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like a paragraph. So blah blah\n    wrappin" +
-                            "g some madness into a list item right gosh darn here and let's see\n    what sha" +
-                            "kes out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like a paragraph. So blah blah\n    wrappin" +
-                            "g some madness into a list item right gosh darn here and let's see\n    what sha" +
-                            "kes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to wrap like a paragraph. So blah\n      blah wr" +
-                            "apping some madness into a list item right gosh darn here and let's\n      see w" +
-                            "hat shakes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to wrap like a paragraph. So blah\n      blah wr" +
-                            "apping some madness into a list item right gosh darn here and let's\n      see w" +
-                            "hat shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need to wrap like a paragraph.\n        So blah bl" +
-                            "ah wrapping some madness into a list item right gosh darn here\n        and let'" +
-                            "s see what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need to wrap like a paragraph.\n        So blah bl" +
-                            "ah wrapping some madness into a list item right gosh darn here\n        and let'" +
-                            "s see what shakes out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like a paragraph. So blah blah\n    wrappin" +
-                            "g some madness into a list item right gosh darn here and let's see\n    what sha" +
-                            "kes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a paragraph. So blah blah\n      wrapping some" +
-                            " madness into a list item right gosh darn here and let's see\n      what shakes " +
-                            "out of the coolness.\n\n  " + text.underline + text.bold + text.green + "First Tertiary Heading" + text.none + "\n    This text should be extra indented.\n\n    " + text.bold + text.red + "*" + text.none + " list item 1\n    " + text.bold + text.red + "*" + text.none + " list item 2\n      " + text.bold + text.red + "-" + text.none + " sublist item 1\n      " + text.bold + text.red + "-" + text.none + " sublist item 2\n        " + text.bold + text.red + "*" + text.none + " subsublist item 1\n        " + text.bold + text.red + "*" + text.none + " subsublist item 2\n    " + text.bold + text.red + "*" + text.none + " list item 3\n      " + text.bold + text.red + "-" + text.none + " boo\n\n    " + text.underline + text.bold + text.yellow + "Gettin Deep with the Headings" + text.none + "\n\n        | a big block quote lives here. This is where I am going\n        | " +
-                            "to experience with wrapping a block quote a bit differently from other\n        " +
-                            "| content.  I need enough text in this quote to wrap a couple of times, so\n    " +
-                            "    | I will continue adding some nonsense and as long as it takes to ensure I\n" +
-                            "        | have a fully qualified test.\n        | New line in a block quote\n   " +
-                            "     | More block\n\n      Images get converted to their alt text description.\n" +
-                            "\n      This is a regular paragraph that needs to be long enough to wrap a\n    " +
-                            "  couple times.  This text will be unique from the text in the block quote\n    " +
-                            "  because uniqueness saves time when debugging test failures.  I am now\n      w" +
-                            "riting a bunch of wrapping paragraph gibberish, such as\n      f324fasdaowkefsdv" +
-                            "a.  That one isn't even a word.\n\n      " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like a paragraph. So blah\n        blah wra" +
-                            "pping some madness into a list item right gosh darn here and\n        let's see " +
-                            "what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like a paragraph. So blah\n        blah wra" +
-                            "pping some madness into a list item right gosh darn here and\n        let's see " +
-                            "what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to wrap like a paragraph.\n          So blah bla" +
-                            "h wrapping some madness into a list item right gosh darn\n          here and let" +
-                            "'s see what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to wrap like a paragraph.\n          So blah bla" +
-                            "h wrapping some madness into a list item right gosh darn\n          here and let" +
-                            "'s see what shakes out of the coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need to wrap like a\n            paragraph. So bla" +
-                            "h blah wrapping some madness into a list item right\n            gosh darn here " +
-                            "and let's see what shakes out of the coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need to wrap like a\n            paragraph. So bla" +
-                            "h blah wrapping some madness into a list item right\n            gosh darn here " +
-                            "and let's see what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like a paragraph. So blah\n        blah wra" +
-                            "pping some madness into a list item right gosh darn here and\n        let's see " +
-                            "what shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a paragraph. So blah\n          blah wrapping " +
-                            "some madness into a list item right gosh darn here and\n          let's see what" +
-                            " shakes out of the coolness.\n\n      " + text.underline + "Command   " + text.normal + text.underline + " Local " + text.normal + text.underline + " Argument Type               " + text.normal + text.underline + " Second Argument " + text.normal + "\n      copy       " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n      get        " + text.bold + text.yellow + "?" + text.none + "      file path                    none           \n      global     " + text.bold + text.green + "✓" + text.none + "      none                         none           \n      hash       " + text.bold + text.green + "✓" + text.none + "      file path                    none           \n      help       " + text.bold + text.green + "✓" + text.none + "      number                       none           \n      install    " + text.bold + text.yellow + "?" + text.none + "      zip file                     directory path \n      list       " + text.bold + text.green + "✓" + text.none + "      \"" + text.yellow + "installed" + text.nocolor + "\" or \"" + text.yellow + "published" + text.nocolor + "\"   none           \n      markdown   " + text.bold + text.green + "✓" + text.none + "      path to markdown file        number         \n      publish    " + text.bold + text.green + "✓" + text.none + "      directory path               directory path \n      remove     " + text.bold + text.green + "✓" + text.none + "      file path or directory path  none           \n      status     " + text.bold + text.yellow + "?" + text.none + "      none or application name     none           \n      test       " + text.bold + text.red + "X" + text.none + "      none                         none           \n      uninstall  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unpublish  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unzip      " + text.bold + text.green + "✓" + text.none + "      path to zip file             directory path \n      zip        " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n\n" + text.underline + text.bold + text.cyan + "New big Heading" + text.none + "\n  paragraph here to see if indentation is largely reset appropriate to the\n  " +
-                            "current heading that is bigger than the previous headings",
+                var markdowntest = "\n" + text.underline + text.bold + text.red + "test README" + text.none + "\ns" +
+                            "ome dummy subtext\n\n" + text.underline + text.bold + text.red + "heading by u" +
+                            "nderline equals" + text.none + "\n\n" + text.underline + text.bold + text.cyan +
+                            "heading by underline dashes" + text.none + "\n\n  ===\n\n" + text.underline +
+                            text.bold + text.cyan + "First Secondary Heading" + text.none + "\n    | a big " +
+                            "block quote lives here. This is where I am going to experience with\n    | wra" +
+                            "pping a block quote a bit differently from other content.  I need\n    | enoug" +
+                            "h text in this quote to wrap a couple of times, so I will continue\n    | addi" +
+                            "ng some nonsense and as long as it takes to ensure I have a fully\n    | quali" +
+                            "fied test.\n    | New line in a block quote\n    | More block\n\n  This is a r" +
+                            "egular paragraph that needs to be long enough to wrap a couple\n  times.  This" +
+                            " text will be unique from the text in the block quote because\n  uniqueness sa" +
+                            "ves time when debugging test failures.  I am now writing a\n  bunch of wrappin" +
+                            "g paragraph gibberish, such as f324fasdaowkefsdva.  That\n  one isn't even a w" +
+                            "ord.  It isn't cool if it doesn't contain a hyperlink,\n  (" + text.cyan + "ht" +
+                            "tp://tonowhwere.nothing" + text.nocolor + "), in some text.\n\n  " + text.bold +
+                            text.red + "*" + text.none + " list item 1 these also need to wrap like a parag" +
+                            "raph. So blah blah\n    wrapping some madness into a list item right gosh darn" +
+                            " here and let's\n    see what shakes out of the coolness.\n  " + text.bold +
+                            text.red + "*" + text.none + " list item 2 these also need to wrap like a parag" +
+                            "raph. So blah blah\n    wrapping some madness into a list item right gosh darn" +
+                            " here and let's\n    see what shakes out of the coolness.\n    " + text.bold +
+                            text.red + "-" + text.none + " sublist item 1 these also need to wrap like a pa" +
+                            "ragraph. So blah blah\n      wrapping some madness into a list item right gosh" +
+                            " darn here and\n      let's see what shakes out of the coolness.\n    " +
+                            text.bold + text.red + "-" + text.none + " sublist item 2 these also need to wr" +
+                            "ap like a paragraph. So blah blah\n      wrapping some madness into a list ite" +
+                            "m right gosh darn here and\n      let's see what shakes out of the coolness.\n" +
+                            "      " + text.bold + text.red + "*" + text.none + " subsublist item 1 these a" +
+                            "lso need to wrap like a paragraph. So blah\n        blah wrapping some madness" +
+                            " into a list item right gosh darn here and\n        let's see what shakes out " +
+                            "of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsubl" +
+                            "ist item 2 these also need to wrap like a paragraph. So blah\n        blah wra" +
+                            "pping some madness into a list item right gosh darn here and\n        let's se" +
+                            "e what shakes out of the coolness.\n  " + text.bold + text.red + "*" + text.none +
+                            " list item 3 these also need to wrap like a paragraph. So blah blah\n    wrapp" +
+                            "ing some madness into a list item right gosh darn here and let's\n    see what" +
+                            " shakes out of the coolness.\n    " + text.bold + text.red + "-" + text.none +
+                            " boo these also need to wrap like a paragraph. So blah blah wrapping\n      so" +
+                            "me madness into a list item right gosh darn here and let's see what\n      sha" +
+                            "kes out of the coolness.\n\n  " + text.underline + text.bold + text.green + "F" +
+                            "irst Tertiary Heading #####" + text.none + "\n    This text should be extra in" +
+                            "dented.\n\n    " + text.bold + text.red + "*" + text.none +
+                            " list item 1\n    " + text.bold + text.red + "*" + text.none + " list item 2\n" +
+                            "      " + text.bold + text.red + "-" + text.none + " sublist item 1\n      " +
+                            text.bold + text.red + "-" + text.none + " sublist item 2\n        " + text.bold +
+                            text.red + "*" + text.none + " subsublist item 1\n        " + text.bold +
+                            text.red + "*" + text.none + " subsublist item 2\n    " + text.bold + text.red +
+                            "*" + text.none + " list item 3\n      " + text.bold + text.red + "-" + text.none +
+                            " boo\n\n    " + text.underline + text.bold + text.yellow + "Gettin Deep with t" +
+                            "he Headings" + text.none + "\n\n        | a big block quote lives here. This i" +
+                            "s where I am going to experience\n        | with wrapping a block quote a bit " +
+                            "differently from other content.\n        | I need enough text in this quote to" +
+                            " wrap a couple of times, so I\n        | will continue adding some nonsense an" +
+                            "d a long a t takes to ensure I\n        | have a fully qualified test.\n      " +
+                            "  | New line in a block quote\n        | More block and not a heading\n       " +
+                            " | ----------------------------------------------------------------------\n\n " +
+                            "       | a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a" +
+                            "\n        | a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a" +
+                            "\n        | a a a a\n\n        | aa a a a a a a a a a a a a a a a a a a a a a " +
+                            "a a a a a a a a a a a a\n        | a a a a a a a a a a a a a a a a a a a a a a" +
+                            " a a a a a a a a a a a a\n        | a a a a\n\n      Horizontal Rule with *\n*" +
+                            "******************************************************************************" +
+                            "*\n\n      Horizontal Rule with - (requires an empty line between it and text)" +
+                            "\n\n--------------------------------------------------------------------------" +
+                            "------\n\n      Horizontal Rule with _\n______________________________________" +
+                            "__________________________________________\n\n      Images get converted to th" +
+                            "eir alt text description.\n\n      This is a regular paragraph that needs to b" +
+                            "e long enough to wrap a couple\n      times.  This text will be unique from th" +
+                            "e text in the block quote\n      because uniqueness saves time when debugging " +
+                            "test failures.  I am now\n      writing a bunch of wrapping paragraph gibberis" +
+                            "h, such as\n      f324fasdaowkefsdva.  That one isn't even a word.\n\n      " +
+                            text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap " +
+                            "like a paragraph. So blah blah\n        wrapping some madness into a list item" +
+                            " right gosh darn here and\n        let's see what shakes out of the coolness." +
+                            "\n      " + text.bold + text.red + "*" + text.none + " list item 2 these also " +
+                            "need to wrap like a paragraph. So blah blah\n        wrapping some madness int" +
+                            "o a list item right gosh darn here and\n        let's see what shakes out of t" +
+                            "he coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist i" +
+                            "tem 1 these also need to wrap like a paragraph. So blah blah\n          wrappi" +
+                            "ng some madness into a list item right gosh darn here and\n          let's see" +
+                            " what shakes out of the coolness.\n        " + text.bold + text.red + "-" +
+                            text.none + " sublist item 2 these also need to wrap like a paragraph. So blah " +
+                            "blah\n          wrapping some madness into a list item right gosh darn here an" +
+                            "d\n          let's see what shakes out of the coolness.\n          " + text.bold +
+                            text.red + "*" + text.none + " subsublist item 1 these also need to wrap like a" +
+                            " paragraph. So blah\n            blah wrapping some madness into a list item r" +
+                            "ight gosh darn here\n            and let's see what shakes out of the coolness" +
+                            ".\n          " + text.bold + text.red + "*" + text.none + " subsublist item 2 " +
+                            "these also need to wrap like a paragraph. So blah\n            blah wrapping s" +
+                            "ome madness into a list item right gosh darn here\n            and let's see w" +
+                            "hat shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none +
+                            " list item 3 these also need to wrap like a paragraph. So blah blah\n        w" +
+                            "rapping some madness into a list item right gosh darn here and\n        let's " +
+                            "see what shakes out of the coolness.\n        " + text.bold + text.red + "-" +
+                            text.none + " boo these also need to wrap like a paragraph. So blah blah wrappi" +
+                            "ng\n          some madness into a list item right gosh darn here and let's see" +
+                            "\n          what shakes out of the coolness.\n\n      " + text.underline + "Co" +
+                            "mmand   " + text.normal + text.underline + " Local " + text.normal + text.underline +
+                            " Argument Type               " + text.normal + text.underline + " Second Argum" +
+                            "ent " + text.normal + "\n      copy       " + text.bold + text.green + "✓" +
+                            text.none + "      file path or directory path  directory path \n      get     " +
+                            "   " + text.bold + text.yellow + "?" + text.none + "      file path           " +
+                            "         none           \n      global     " + text.bold + text.green + "✓" +
+                            text.none + "      none                         none           \n      hash    " +
+                            "   " + text.bold + text.green + "✓" + text.none + "      file path            " +
+                            "        none           \n      help       " + text.bold + text.green + "✓" +
+                            text.none + "      number                       none           \n      install " +
+                            "   " + text.bold + text.yellow + "?" + text.none + "      zip file            " +
+                            "         directory path \n      list       " + text.bold + text.green + "✓" +
+                            text.none + "      \"" + text.yellow + "installed" + text.nocolor +
+                            "\" or \"" + text.yellow + "published" + text.nocolor + "\"   none           \n" +
+                            "      markdown   " + text.bold + text.green + "✓" + text.none + "      path to" +
+                            " markdown file        number         \n      publish    " + text.bold + text.green +
+                            "✓" + text.none + "      directory path               directory path \n      re" +
+                            "move     " + text.bold + text.green + "✓" + text.none + "      file path or di" +
+                            "rectory path  none           \n      status     " + text.bold + text.yellow +
+                            "?" + text.none + "      none or application name     none           \n      te" +
+                            "st       " + text.bold + text.red + "X" + text.none + "      none             " +
+                            "            none           \n      uninstall  " + text.bold + text.green +
+                            "✓" + text.none + "      application name             none           \n      un" +
+                            "publish  " + text.bold + text.green + "✓" + text.none + "      application nam" +
+                            "e             none           \n      unzip      " + text.bold + text.green +
+                            "✓" + text.none + "      path to zip file             directory path \n      zi" +
+                            "p        " + text.bold + text.green + "✓" + text.none + "      file path or di" +
+                            "rectory path  directory path \n\n" + text.underline + text.bold + text.cyan +
+                            "New big Heading" + text.none + "\n  paragraph here to see if indentation is la" +
+                            "rg",
                     name         = "biddle_test_markdown_80";
                 if (er !== null) {
                     return apps.errout({error: er, name: name, stdout: stdout, time: humantime(true)});
@@ -3541,59 +3725,133 @@
             node.child(childcmd + "markdown " + data.abspath + "test" + node.path.sep + "biddletesta" + node.path.sep + "READMEa.md 120 childtest", {
                 cwd: data.abspath
             }, function biddle_test_markdown_120(er, stdout, stder) {
-                var markdowntest = "\n" + text.underline + text.bold + text.red + "test README" + text.none + "\nsome dummy subtext\n\n" + text.underline + text.bold + text.cyan + "First Secondary Heading" + text.none + "\n    | a big block quote lives here. This is where I am going to experience wit" +
-                            "h wrapping a block quote a bit\n    | differently from other content.  I need en" +
-                            "ough text in this quote to wrap a couple of times, so I will continue\n    | add" +
-                            "ing some nonsense and as long as it takes to ensure I have a fully qualified tes" +
-                            "t.\n    | New line in a block quote\n    | More block\n\n  This is a regular par" +
-                            "agraph that needs to be long enough to wrap a couple times.  This text will be u" +
-                            "nique from the\n  text in the block quote because uniqueness saves time when deb" +
-                            "ugging test failures.  I am now writing a bunch of\n  wrapping paragraph gibberi" +
-                            "sh, such as f324fasdaowkefsdva.  That one isn't even a word.  It isn't cool if i" +
-                            "t doesn't\n  contain a hyperlink, (" + text.cyan + "http://tonowhwere.nothing" + text.nocolor + "), in some text.\n\n  " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like a paragraph. So blah blah wrapping som" +
-                            "e madness into a list item\n    right gosh darn here and let's see what shakes o" +
-                            "ut of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like a paragraph. So blah blah wrapping som" +
-                            "e madness into a list item\n    right gosh darn here and let's see what shakes o" +
-                            "ut of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to wrap like a paragraph. So blah blah wrapping " +
-                            "some madness into a list\n      item right gosh darn here and let's see what sha" +
-                            "kes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to wrap like a paragraph. So blah blah wrapping " +
-                            "some madness into a list\n      item right gosh darn here and let's see what sha" +
-                            "kes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need to wrap like a paragraph. So blah blah wrappi" +
-                            "ng some madness into a\n        list item right gosh darn here and let's see wha" +
-                            "t shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need to wrap like a paragraph. So blah blah wrappi" +
-                            "ng some madness into a\n        list item right gosh darn here and let's see wha" +
-                            "t shakes out of the coolness.\n  " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like a paragraph. So blah blah wrapping som" +
-                            "e madness into a list item\n    right gosh darn here and let's see what shakes o" +
-                            "ut of the coolness.\n    " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a paragraph. So blah blah wrapping some madnes" +
-                            "s into a list item right\n      gosh darn here and let's see what shakes out of " +
-                            "the coolness.\n\n  " + text.underline + text.bold + text.green + "First Tertiary Heading" + text.none + "\n    This text should be extra indented.\n\n    " + text.bold + text.red + "*" + text.none + " list item 1\n    " + text.bold + text.red + "*" + text.none + " list item 2\n      " + text.bold + text.red + "-" + text.none + " sublist item 1\n      " + text.bold + text.red + "-" + text.none + " sublist item 2\n        " + text.bold + text.red + "*" + text.none + " subsublist item 1\n        " + text.bold + text.red + "*" + text.none + " subsublist item 2\n    " + text.bold + text.red + "*" + text.none + " list item 3\n      " + text.bold + text.red + "-" + text.none + " boo\n\n    " + text.underline + text.bold + text.yellow + "Gettin Deep with the Headings" + text.none + "\n\n        | a big block quote lives here. This is where I am going to experien" +
-                            "ce with wrapping a block\n        | quote a bit differently from other content. " +
-                            " I need enough text in this quote to wrap a couple of times, so I\n        | wil" +
-                            "l continue adding some nonsense and as long as it takes to ensure I have a fully" +
-                            " qualified test.\n        | New line in a block quote\n        | More block\n\n " +
-                            "     Images get converted to their alt text description.\n\n      This is a regu" +
-                            "lar paragraph that needs to be long enough to wrap a couple times.  This text wi" +
-                            "ll be unique\n      from the text in the block quote because uniqueness saves ti" +
-                            "me when debugging test failures.  I am now writing a\n      bunch of wrapping pa" +
-                            "ragraph gibberish, such as f324fasdaowkefsdva.  That one isn't even a word.\n\n " +
-                            "     " + text.bold + text.red + "*" + text.none + " list item 1 these also need to wrap like a paragraph. So blah blah wrapping som" +
-                            "e madness into a list\n        item right gosh darn here and let's see what shak" +
-                            "es out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 2 these also need to wrap like a paragraph. So blah blah wrapping som" +
-                            "e madness into a list\n        item right gosh darn here and let's see what shak" +
-                            "es out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 1 these also need to wrap like a paragraph. So blah blah wrapping " +
-                            "some madness into\n          a list item right gosh darn here and let's see what" +
-                            " shakes out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " sublist item 2 these also need to wrap like a paragraph. So blah blah wrapping " +
-                            "some madness into\n          a list item right gosh darn here and let's see what" +
-                            " shakes out of the coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 1 these also need to wrap like a paragraph. So blah blah wrappi" +
-                            "ng some\n            madness into a list item right gosh darn here and let's see" +
-                            " what shakes out of the coolness.\n          " + text.bold + text.red + "*" + text.none + " subsublist item 2 these also need to wrap like a paragraph. So blah blah wrappi" +
-                            "ng some\n            madness into a list item right gosh darn here and let's see" +
-                            " what shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap like a paragraph. So blah blah wrapping som" +
-                            "e madness into a list\n        item right gosh darn here and let's see what shak" +
-                            "es out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " boo these also need to wrap like a paragraph. So blah blah wrapping some madnes" +
-                            "s into a list item\n          right gosh darn here and let's see what shakes out" +
-                            " of the coolness.\n\n      " + text.underline + "Command   " + text.normal + text.underline + " Local " + text.normal + text.underline + " Argument Type               " + text.normal + text.underline + " Second Argument " + text.normal + "\n      copy       " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n      get        " + text.bold + text.yellow + "?" + text.none + "      file path                    none           \n      global     " + text.bold + text.green + "✓" + text.none + "      none                         none           \n      hash       " + text.bold + text.green + "✓" + text.none + "      file path                    none           \n      help       " + text.bold + text.green + "✓" + text.none + "      number                       none           \n      install    " + text.bold + text.yellow + "?" + text.none + "      zip file                     directory path \n      list       " + text.bold + text.green + "✓" + text.none + "      \"" + text.yellow + "installed" + text.nocolor + "\" or \"" + text.yellow + "published" + text.nocolor + "\"   none           \n      markdown   " + text.bold + text.green + "✓" + text.none + "      path to markdown file        number         \n      publish    " + text.bold + text.green + "✓" + text.none + "      directory path               directory path \n      remove     " + text.bold + text.green + "✓" + text.none + "      file path or directory path  none           \n      status     " + text.bold + text.yellow + "?" + text.none + "      none or application name     none           \n      test       " + text.bold + text.red + "X" + text.none + "      none                         none           \n      uninstall  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unpublish  " + text.bold + text.green + "✓" + text.none + "      application name             none           \n      unzip      " + text.bold + text.green + "✓" + text.none + "      path to zip file             directory path \n      zip        " + text.bold + text.green + "✓" + text.none + "      file path or directory path  directory path \n\n" + text.underline + text.bold + text.cyan + "New big Heading" + text.none + "\n  paragraph here to see if indentation is largely reset appropriate to the cur" +
-                            "rent heading that is bigger than the\n  previous headings",
+                var markdowntest = "\n" + text.underline + text.bold + text.red + "test README" + text.none + "\ns" +
+                            "ome dummy subtext\n\n" + text.underline + text.bold + text.red + "heading by u" +
+                            "nderline equals" + text.none + "\n\n" + text.underline + text.bold + text.cyan +
+                            "heading by underline dashes" + text.none + "\n\n  ===\n\n" + text.underline +
+                            text.bold + text.cyan + "First Secondary Heading" + text.none + "\n    | a big " +
+                            "block quote lives here. This is where I am going to experience with wrapping a" +
+                            " block quote a bit\n    | differently from other content.  I need enough text " +
+                            "in this quote to wrap a couple of times, so I will continue adding\n    | some" +
+                            " nonsense and as long as it takes to ensure I have a fully qualified test.\n  " +
+                            "  | New line in a block quote\n    | More block\n\n  This is a regular paragra" +
+                            "ph that needs to be long enough to wrap a couple times.  This text will be uni" +
+                            "que from the\n  text in the block quote because uniqueness saves time when deb" +
+                            "ugging test failures.  I am now writing a bunch of\n  wrapping paragraph gibbe" +
+                            "rish, such as f324fasdaowkefsdva.  That one isn't even a word.  It isn't cool " +
+                            "if it\n  doesn't contain a hyperlink, (" + text.cyan + "http://tonowhwere.noth" +
+                            "ing" + text.nocolor + "), in some text.\n\n  " + text.bold + text.red + "*" +
+                            text.none + " list item 1 these also need to wrap like a paragraph. So blah bla" +
+                            "h wrapping some madness into a list item\n    right gosh darn here and let's s" +
+                            "ee what shakes out of the coolness.\n  " + text.bold + text.red + "*" + text.none +
+                            " list item 2 these also need to wrap like a paragraph. So blah blah wrapping s" +
+                            "ome madness into a list item\n    right gosh darn here and let's see what shak" +
+                            "es out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " su" +
+                            "blist item 1 these also need to wrap like a paragraph. So blah blah wrapping s" +
+                            "ome madness into a list item\n      right gosh darn here and let's see what sh" +
+                            "akes out of the coolness.\n    " + text.bold + text.red + "-" + text.none + " " +
+                            "sublist item 2 these also need to wrap like a paragraph. So blah blah wrapping" +
+                            " some madness into a list item\n      right gosh darn here and let's see what " +
+                            "shakes out of the coolness.\n      " + text.bold + text.red + "*" + text.none +
+                            " subsublist item 1 these also need to wrap like a paragraph. So blah blah wrap" +
+                            "ping some madness into a list item\n        right gosh darn here and let's see" +
+                            " what shakes out of the coolness.\n      " + text.bold + text.red + "*" +
+                            text.none + " subsublist item 2 these also need to wrap like a paragraph. So bl" +
+                            "ah blah wrapping some madness into a list item\n        right gosh darn here a" +
+                            "nd let's see what shakes out of the coolness.\n  " + text.bold + text.red +
+                            "*" + text.none + " list item 3 these also need to wrap like a paragraph. So bl" +
+                            "ah blah wrapping some madness into a list item\n    right gosh darn here and l" +
+                            "et's see what shakes out of the coolness.\n    " + text.bold + text.red + "-" +
+                            text.none + " boo these also need to wrap like a paragraph. So blah blah wrappi" +
+                            "ng some madness into a list item right gosh\n      darn here and let's see wha" +
+                            "t shakes out of the coolness.\n\n  " + text.underline + text.bold + text.green +
+                            "First Tertiary Heading #####" + text.none + "\n    This text should be extra i" +
+                            "ndented.\n\n    " + text.bold + text.red + "*" + text.none + " list item 1\n  " +
+                            "  " + text.bold + text.red + "*" + text.none + " list item 2\n      " + text.bold +
+                            text.red + "-" + text.none + " sublist item 1\n      " + text.bold + text.red +
+                            "-" + text.none + " sublist item 2\n        " + text.bold + text.red + "*" +
+                            text.none + " subsublist item 1\n        " + text.bold + text.red + "*" +
+                            text.none + " subsublist item 2\n    " + text.bold + text.red + "*" + text.none +
+                            " list item 3\n      " + text.bold + text.red + "-" + text.none +
+                            " boo\n\n    " + text.underline + text.bold + text.yellow + "Gettin Deep with t" +
+                            "he Headings" + text.none + "\n\n        | a big block quote lives here. This i" +
+                            "s where I am going to experience with wrapping a block quote a bit\n        | " +
+                            "differently from other content.  I need enough text in this quote to wrap a co" +
+                            "uple of times, so I will continue\n        | adding some nonsense and a long a" +
+                            " t takes to ensure I have a fully qualified test.\n        | New line in a blo" +
+                            "ck quote\n        | More block and not a heading\n        | ------------------" +
+                            "------------------------------------------------------------------------------" +
+                            "--------------\n\n        | a a a a a a a a a a a a a a a a a a a a a a a a a " +
+                            "a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a\n        | a a a a" +
+                            " a a a a a a a a a a a a a\n\n        | aa a a a a a a a a a a a a a a a a a a" +
+                            " a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a\n      " +
+                            "  | a a a a a a a a a a a a a a a a a a\n\n      Horizontal Rule with *\n*****" +
+                            "******************************************************************************" +
+                            "*************************************\n\n      Horizontal Rule with - (require" +
+                            "s an empty line between it and text)\n\n--------------------------------------" +
+                            "------------------------------------------------------------------------------" +
+                            "----\n\n      Horizontal Rule with _\n________________________________________" +
+                            "______________________________________________________________________________" +
+                            "__\n\n      Images get converted to their alt text description.\n\n      This " +
+                            "is a regular paragraph that needs to be long enough to wrap a couple times.  T" +
+                            "his text will be unique from the\n      text in the block quote because unique" +
+                            "ness saves time when debugging test failures.  I am now writing a\n      bunch" +
+                            " of wrapping paragraph gibberish, such as f324fasdaowkefsdva.  That one isn't " +
+                            "even a word.\n\n      " + text.bold + text.red + "*" + text.none + " list item" +
+                            " 1 these also need to wrap like a paragraph. So blah blah wrapping some madnes" +
+                            "s into a list item\n        right gosh darn here and let's see what shakes out" +
+                            " of the coolness.\n      " + text.bold + text.red + "*" + text.none + " list i" +
+                            "tem 2 these also need to wrap like a paragraph. So blah blah wrapping some mad" +
+                            "ness into a list item\n        right gosh darn here and let's see what shakes " +
+                            "out of the coolness.\n        " + text.bold + text.red + "-" + text.none + " s" +
+                            "ublist item 1 these also need to wrap like a paragraph. So blah blah wrapping " +
+                            "some madness into a list item\n          right gosh darn here and let's see wh" +
+                            "at shakes out of the coolness.\n        " + text.bold + text.red + "-" +
+                            text.none + " sublist item 2 these also need to wrap like a paragraph. So blah " +
+                            "blah wrapping some madness into a list item\n          right gosh darn here an" +
+                            "d let's see what shakes out of the coolness.\n          " + text.bold + text.red +
+                            "*" + text.none + " subsublist item 1 these also need to wrap like a paragraph." +
+                            " So blah blah wrapping some madness into a list item\n            right gosh d" +
+                            "arn here and let's see what shakes out of the coolness.\n          " + text.bold +
+                            text.red + "*" + text.none + " subsublist item 2 these also need to wrap like a" +
+                            " paragraph. So blah blah wrapping some madness into a list item\n            r" +
+                            "ight gosh darn here and let's see what shakes out of the coolness.\n      " +
+                            text.bold + text.red + "*" + text.none + " list item 3 these also need to wrap " +
+                            "like a paragraph. So blah blah wrapping some madness into a list item\n       " +
+                            " right gosh darn here and let's see what shakes out of the coolness.\n        " +
+                            text.bold + text.red + "-" + text.none + " boo these also need to wrap like a p" +
+                            "aragraph. So blah blah wrapping some madness into a list item right gosh\n    " +
+                            "      darn here and let's see what shakes out of the coolness.\n\n      " +
+                            text.underline + "Command   " + text.normal + text.underline + " Local " +
+                            text.normal + text.underline + " Argument Type               " + text.normal +
+                            text.underline + " Second Argument " + text.normal + "\n      copy       " +
+                            text.bold + text.green + "✓" + text.none + "      file path or directory path  " +
+                            "directory path \n      get        " + text.bold + text.yellow + "?" + text.none +
+                            "      file path                    none           \n      global     " +
+                            text.bold + text.green + "✓" + text.none + "      none                         " +
+                            "none           \n      hash       " + text.bold + text.green + "✓" + text.none +
+                            "      file path                    none           \n      help       " +
+                            text.bold + text.green + "✓" + text.none + "      number                       " +
+                            "none           \n      install    " + text.bold + text.yellow + "?" + text.none +
+                            "      zip file                     directory path \n      list       " +
+                            text.bold + text.green + "✓" + text.none + "      \"" + text.yellow +
+                            "installed" + text.nocolor + "\" or \"" + text.yellow + "published" + text.nocolor +
+                            "\"   none           \n      markdown   " + text.bold + text.green + "✓" +
+                            text.none + "      path to markdown file        number         \n      publish " +
+                            "   " + text.bold + text.green + "✓" + text.none + "      directory path       " +
+                            "        directory path \n      remove     " + text.bold + text.green + "✓" +
+                            text.none + "      file path or directory path  none           \n      status  " +
+                            "   " + text.bold + text.yellow + "?" + text.none + "      none or application " +
+                            "name     none           \n      test       " + text.bold + text.red + "X" +
+                            text.none + "      none                         none           \n      uninstal" +
+                            "l  " + text.bold + text.green + "✓" + text.none + "      application name     " +
+                            "        none           \n      unpublish  " + text.bold + text.green + "✓" +
+                            text.none + "      application name             none           \n      unzip   " +
+                            "   " + text.bold + text.green + "✓" + text.none + "      path to zip file     " +
+                            "        directory path \n      zip        " + text.bold + text.green + "✓" +
+                            text.none + "      file path or directory path  directory path \n\n" + text.underline +
+                            text.bold + text.cyan + "New big Heading" + text.none + "\n  paragraph here to " +
+                            "see if indentation is largely reset appropriate to the cu",
                     name         = "biddle_test_markdown_120";
                 if (er !== null) {
                     return apps.errout({error: er, name: name, stdout: stdout, time: humantime(true)});

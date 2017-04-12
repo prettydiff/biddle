@@ -91,4 +91,22 @@ This is a regular paragraph that needs to be long enough to wrap a couple times.
  zip|✓|file path or directory path|directory path
 
 ## New big Heading
-paragraph here to see if indentation is largely reset appropriate to the current heading that is bigger than the previous headings
+paragraph here to see if indentation is largely reset appropriate to the current heading
+                           that is bigger than the previous headings
+
+````
+code block 1
+```
+````
+````
+code block 2
+~~~
+````
+   ~~~~
+      code block 3
+ ~~~
+~~~~
+~~~~
+code block 4
+```
+~~~~
