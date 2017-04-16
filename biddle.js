@@ -367,7 +367,7 @@
         target        = target.replace(/(\\|\/)/g, node.path.sep);
         destination   = destination.replace(/(\\|\/)/g, node.path.sep);
         dest          = apps.relToAbs(destination, data.cwd) + node.path.sep;
-        start         = data.abspath + target.replace(data.abspath, "");
+        start         = apps.relToAbs(target, data.cwd);
         util.stat(start, start);
     };
     apps.errout      = function biddle_errout(errData) {
@@ -397,6 +397,7 @@
                     location: data.abspath + "applications" + node.path.sep + "biddletesta"
                 };
                 data.input[2]              = "biddletesta";
+                data.input[3]              = "all";
                 apps.unpublish(true);
                 apps.uninstall(true);
             }
@@ -525,9 +526,9 @@
     apps.getpjson    = function biddle_getpjson(callback) {
         var file = (data.input[2] === undefined)
             ? data.abspath + "package.json"
-            : data
+            : apps.relToAbs(data
                 .input[2]
-                .replace(/(\/|\\)$/, "") + node.path.sep + "package.json";
+                .replace(/(\/|\\)$/, "") + node.path.sep + "package.json", data.cwd);
         node
             .fs
             .readFile(file, "utf8", function biddle_getpjson_readfile(err, fileData) {
@@ -1182,14 +1183,14 @@
                     },
                     hr    = function biddle_markdown_readfile_hr(block) {
                         var item = lines[b].replace(/\s+/, "").charAt(0),
-                            hr   = "",
+                            out  = "",
                             maxx = size - block.length,
                             inc  = 0;
                         do {
                             inc = inc + 1;
-                            hr = hr + item;
+                            out = out + item;
                         } while (inc < maxx);
-                        lines[b] = block + hr;
+                        lines[b] = block + out;
                         para = false;
                     },
                     parse  = function biddle_markdown_readfile_parse(item, listitem, cell) {
@@ -1202,7 +1203,6 @@
                             start = 0,
                             index = 0,
                             math  = 0,
-                            endln = 0,
                             quote = "",
                             wrap  = function biddle_markdown_readfile_parse_wrap(tick) {
                                 var z      = x,
@@ -1285,9 +1285,6 @@
                             }
                             start = y - 1;
                         }
-                        endln = (isNaN(size) === false && size !== "")
-                            ? Number(size) - y
-                            : 100 - y;
                         y = ind.length + 4;
                         if (listitem === true) {
                             math = y + 8;
@@ -1518,7 +1515,7 @@
                         if ((/(\\#)/).test(lines[b]) === true) {
                             lines[b] = lines[b].replace(/\\#/g, "#");
                         } else {
-                            lines[b] = lines[b].replace(/(\s*\#*\s*)$/, "");
+                            lines[b] = lines[b].replace(/(\s*#*\s*)$/, "");
                         }
                         lines[b] = ind.slice(2) + text.underline + text.bold + text[color] + lines[b] + text.none;
                         para = false;
@@ -1700,7 +1697,6 @@
     apps.publish     = function biddle_publish() {
         var filedata    = [],
             varlen      = 0,
-            varcount    = 0,
             publoc      = "",
             primaryzip  = "",
             varnames    = {},
@@ -1740,7 +1736,7 @@
                             "=\"true\" id=\"aria-arrow\" style=\"display:none;\"></p><script src=\"biddlesort" +
                             ".js\" type=\"application/javascript\"></script></body></html>",
                     script = "(function(){var abspath=location.href.replace(/^(file:\/\/)/,\"\").replace(/(i" +
-                            "ndex\.xhtml)$/,\"\"),headings=document.getElementsByTagName(\"thead\")[0].getE" +
+                            "ndex\\.xhtml)$/,\"\"),headings=document.getElementsByTagName(\"thead\")[0].getE" +
                             "lementsByTagName(\"th\"),hlen=headings.length,a=0,start=1,sorter=function(head" +
                             "ing){var b=0,ind=0,len=headings.length,span=\"\",rows=[],rowlist=[],tbody=docu" +
                             "ment.getElementsByTagName(\"tbody\")[0],ascend=false,rowsort=function(a,b){var" +
@@ -2602,7 +2598,7 @@
         var startTime = Date.now(),
             order     = [
                 "moduleInstall",
-                //"lint",
+                "lint",
                 "hashString",
                 "hashFile",
                 "copy",
@@ -2671,10 +2667,9 @@
                 }
             },
             keys      = Object.keys(modules),
+            //Windows child shell does not see a user modified path variable
             childcmd  = (data.platform === "win32")
-                ? (data.abspath === process.cwd().toLowerCase() + node.path.sep)
-                    ? "node " + data.abspath + "biddle "
-                    : "biddle "
+                ? "node " + data.abspath + "biddle "
                 : (data.abspath === process.cwd() + node.path.sep)
                     ? "node " + data.abspath + "biddle "
                     : "biddle ",
@@ -2823,16 +2818,32 @@
                 options.lang    = "text";
                 report          = modules
                     .prettydiff
-                    .app(options)[0];
-                pdlen           = report[0].length;
+                    .app(options);
+                pdlen           = report.length;
+                if (report.length < 1) {
+                    console.log("");
+                    if (sampleSource.length < 1) {
+                        console.log(text.red + "An empty source value passed into test diff operation." + text.nocolor);
+                    }
+                    if (sampleDiff.length < 1) {
+                        console.log(text.red + "An empty diff value passed into test diff operation." + text.nocolor);
+                    }
+                    return apps.errout({
+                        error : text.red + "bad diff, output is 0 characters long" + text.nocolor,
+                        name  : sampleName,
+                        stdout: "",
+                        time  : humantime(true)
+                    });
+                }
                 if (report.length < 3) {
                     console.log("");
                     console.log(text.red + "Test diff operation provided a bad code sample:" + text.nocolor);
-                    console.log(report[0]);
+                    console.log(report);
                     return apps.errout({
-                        error: text.red + "bad test" + text.nocolor,
-                        name : sampleName,
-                        time : humantime(true)
+                        error : text.red + "bad test" + text.nocolor,
+                        name  : sampleName,
+                        stdout: "",
+                        time  : humantime(true)
                     });
                 }
                 console.log(text.red + "Test Failure with Comparison" + text.nocolor);
@@ -2900,9 +2911,10 @@
                 console.log("");
                 console.log(diffs + text.cyan + " differences counted." + text.nocolor);
                 apps.errout({
-                    error: "Pretty Diff " + text.red + "failed" + text.nocolor + " in function: " + text.cyan + sampleName + text.nocolor,
-                    name : sampleName,
-                    time : humantime(true)
+                    error : "Pretty Diff " + text.red + "failed" + text.nocolor + " in function: " + text.cyan + sampleName + text.nocolor,
+                    name  : sampleName,
+                    stdout: "",
+                    time  : humantime(true)
                 });
             },
             phases    = {},
@@ -5016,8 +5028,10 @@
         }
         if (data.input[3] === undefined) {
             return apps.errout({
-                error: "Please specify a version or \"all\" for all versions.",
-                name : "biddle_unpublish"
+                error : "Please specify a version or \"all\" for all versions.",
+                name  : "biddle_unpublish",
+                stdout: "",
+                time  : ""
             });
         }
         ver = apps.sanitizef(data.input[3]);
@@ -5070,17 +5084,18 @@
                         ? app.versions[app.versions.length - 1]
                         : app.latest,
                     destroy = function biddle_unpublish_readdir_destroy() {
-                        var aa = files.length;
+                        var aa = files.length,
+                            rem = function biddle_unpublish_readdir_destroy_rem() {
+                                apps.remove(app.directory + files[aa], function biddle_unpublish_readdir_destory_remove() {
+                                    return true;
+                                });
+                            };
                         do {
                             aa -= 1;
                             if (files[aa].indexOf("_" + ver + ".zip") === files[aa].length - (ver.length + 5) || files[aa].indexOf("_" + ver + ".hash") === files[aa].length - (ver.length + 6)) {
-                                apps.remove(app.directory + files[aa], function biddle_unpublish_readdir_destory_removeNormal() {
-                                    return true;
-                                });
+                                rem();
                             } else if (latest === true && files[aa].length > 11 && (files[aa].indexOf("_latest.zip") === files[aa].length - 11 || files[aa].indexOf("_latest.hash") === files[aa].length - 12)) {
-                                apps.remove(app.directory + files[aa], function biddle_unpublish_readdir_destory_removeLatest() {
-                                    return true;
-                                });
+                                rem();
                             }
                         } while (aa > 0);
                         node.fs.readFile(app.directory + "filedata.json", "utf8", function biddle_unpublish_readdir_destory_readFileData(err, filedata) {
