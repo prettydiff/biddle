@@ -1739,38 +1739,41 @@
                             "/biddle\">biddle</a> install !!install!!</td></tr></tfoot></table><p aria-hidden" +
                             "=\"true\" id=\"aria-arrow\" style=\"display:none;\"></p><script src=\"biddlesort" +
                             ".js\" type=\"application/javascript\"></script></body></html>",
-                    script = "(function(){var abspath=location.href.replace(/^(file:\\/\\/)/,\"\").replace(/(i" +
-                            "ndex\\.xhtml)$/,\"\"),headings=document.getElementsByTagName(\"thead\")[0].getEl" +
-                            "ementsByTagName(\"th\"),hlen=headings.length,a=0,start=1,sorter=function(heading" +
-                            "){var b=0,ind=0,len=headings.length,span=\"\",rows=[],rowlist=[],tbody=document." +
-                            "getElementsByTagName(\"tbody\")[0],ascend=false,rowsort=function(a,b){var vala=" +
-                            "\"\",valb=\"\";if(ind===1){vala=Number(a.getElementsByTagName(\"td\")[1].getAttr" +
-                            "ibute(\"data-date\"));valb=Number(b.getElementsByTagName(\"td\")[1].getAttribute" +
-                            "(\"data-date\"))}else if(ind===2){vala=Number(a.getElementsByTagName(\"td\")[2]." +
-                            "getAttribute(\"data-size\"));valb=Number(b.getElementsByTagName(\"td\")[2].getAt" +
-                            "tribute(\"data-size\"))}else{vala=a.getElementsByTagName(\"td\")[ind].innerHTML." +
-                            "toLowerCase();valb=b.getElementsByTagName(\"td\")[ind].innerHTML.toLowerCase()}i" +
-                            "f(ascend===true){if(vala>valb){return 1}else{return -1}}else{if(vala>valb){retur" +
-                            "n -1}else{return 1}}};do{span=headings[b].getElementsByTagName(\"span\")[0];if(h" +
-                            "eading===headings[b]){ind=b;if(span.style.visibility===\"visible\"){if(span.inne" +
-                            "rHTML===\"▲\"){span.innerHTML=\"▼\"}else{span.innerHTML=\"▲\"}}else{span.style.v" +
-                            "isibility=\"visible\"}if(span.innerHTML===\"▲\"){ascend=true;document.getElement" +
-                            "ById(\"aria-arrow\").innerHTML=\"Sorting by \"+headings[b].lastChild.textContent" +
-                            "+\" ascending\"}else{ascend=false;document.getElementById(\"aria-arrow\").innerH" +
-                            "TML=\"Sorting by \"+headings[b].lastChild.textContent+\" descending\"}}else{span" +
-                            ".style.visibility=\"hidden\"}b+=1}while(b<len);rowlist=[];rows=tbody.getElements" +
-                            "ByTagName(\"tr\");len=rows.length;b=0;do{rowlist.push(rows[b]);b+=1}while(b<len)" +
-                            ";rowlist.sort(rowsort);b=0;do{if(b%2===0){rowlist[b].setAttribute(\"class\",\"ev" +
-                            "en\")}else{rowlist[b].setAttribute(\"class\",\"odd\")}tbody.removeChild(rowlist[" +
-                            "b]);tbody.appendChild(rowlist[b]);b+=1}while(b<len)};if(abspath.charAt(abspath.l" +
-                            "ength-1)!==\"/\"){abspath=abspath+\"/\"}document.getElementById(\"address\").inn" +
-                            "erHTML=abspath;do{headings[a].onclick=function(e){sorter(this);e.preventDefault(" +
-                            ");return false};a+=1}while(a<hlen);document.getElementsByTagName(\"thead\")[0].g" +
-                            "etElementsByTagName(\"th\")[start].getElementsByTagName(\"span\")[0].innerHTML=" +
-                            "\"▲\";document.getElementsByTagName(\"thead\")[0].getElementsByTagName(\"th\")[s" +
-                            "tart].getElementsByTagName(\"span\")[0].style.visibility=\"visible\";sorter(docu" +
-                            "ment.getElementsByTagName(\"thead\")[0].getElementsByTagName(\"th\")[start])}())" +
-                            ";";
+                    script = "(function(){var abspath=location.href.replace(/^(file:\/\/)/,\"\").replace(/(i" +
+                            "ndex\.xhtml)$/,\"\"),headings=document.getElementsByTagName(\"thead\")[0].getE" +
+                            "lementsByTagName(\"th\"),hlen=headings.length,a=0,start=1,sorter=function(head" +
+                            "ing){var b=0,ind=0,len=headings.length,span=\"\",rows=[],rowlist=[],tbody=docu" +
+                            "ment.getElementsByTagName(\"tbody\")[0],ascend=false,rowsort=function(a,b){var" +
+                            " vala=\"\",valb=\"\";if(ind===1){vala=Number(a.getElementsByTagName(\"td\")[1]" +
+                            ".getAttribute(\"data-date\"));valb=Number(b.getElementsByTagName(\"td\")[1].ge" +
+                            "tAttribute(\"data-date\"))}else if(ind===2){vala=Number(a.getElementsByTagName" +
+                            "(\"td\")[2].getAttribute(\"data-size\"));valb=Number(b.getElementsByTagName(\"" +
+                            "td\")[2].getAttribute(\"data-size\"))}else if(ind===5){vala=a.getElementsByTag" +
+                            "Name(\"td\")[ind].getElementsByTagName(\"a\")[0].innerHTML.toLowerCase();valb=" +
+                            "b.getElementsByTagName(\"td\")[ind].getElementsByTagName(\"a\")[0].innerHTML.t" +
+                            "oLowerCase()}else{vala=a.getElementsByTagName(\"td\")[ind].innerHTML.toLowerCa" +
+                            "se();valb=b.getElementsByTagName(\"td\")[ind].innerHTML.toLowerCase()}if(ascen" +
+                            "d===true){if(vala>valb){return 1}else{return -1}}else{if(vala>valb){return -1}" +
+                            "else{return 1}}};do{span=headings[b].getElementsByTagName(\"span\")[0];if(head" +
+                            "ing===headings[b]){ind=b;if(span.style.visibility===\"visible\"){if(span.inner" +
+                            "HTML===\"▲\"){span.innerHTML=\"▼\"}else{span.innerHTML=\"▲\"}}else{span.style." +
+                            "visibility=\"visible\"}if(span.innerHTML===\"▲\"){ascend=true;document.getElem" +
+                            "entById(\"aria-arrow\").innerHTML=\"Sorting by \"+headings[b].lastChild.textCo" +
+                            "ntent+\" ascending\"}else{ascend=false;document.getElementById(\"aria-arrow\")" +
+                            ".innerHTML=\"Sorting by \"+headings[b].lastChild.textContent+\" descending\"}}" +
+                            "else{span.style.visibility=\"hidden\"}b=b+1}while(b<len);rowlist=[];rows=tbody" +
+                            ".getElementsByTagName(\"tr\");len=rows.length;b=0;do{rowlist.push(rows[b]);b=b" +
+                            "+1}while(b<len);rowlist.sort(rowsort);b=0;do{if(b%2===0){rowlist[b].setAttribu" +
+                            "te(\"class\",\"even\")}else{rowlist[b].setAttribute(\"class\",\"odd\")}tbody.r" +
+                            "emoveChild(rowlist[b]);tbody.appendChild(rowlist[b]);b=b+1}while(b<len)};if(ab" +
+                            "spath.charAt(abspath.length-1)!==\"/\"){abspath=abspath+\"/\"}document.getElem" +
+                            "entById(\"address\").innerHTML=abspath;do{headings[a].onclick=function(e){sort" +
+                            "er(this);e.preventDefault();return false};a=a+1}while(a<hlen);document.getElem" +
+                            "entsByTagName(\"thead\")[0].getElementsByTagName(\"th\")[start].getElementsByT" +
+                            "agName(\"span\")[0].innerHTML=\"▲\";document.getElementsByTagName(\"thead\")[0" +
+                            "].getElementsByTagName(\"th\")[start].getElementsByTagName(\"span\")[0].style." +
+                            "visibility=\"visible\";sorter(document.getElementsByTagName(\"thead\")[0].getE" +
+                            "lementsByTagName(\"th\")[start])}());";
                 file = file.replace(/\!\!app\u0020name\!\!/g, data.packjson.name);
                 file = file.replace(/\!\!install\!\!/, "<span id=\"address\"></span>" + primaryzip);
                 if (typeof data.packjson.author === "string") {
@@ -2337,8 +2340,8 @@
             }
             callback();
         };
-        util.delete   = function biddle_remove_delete(item, dir) {
-            node.fs.unlink(item, function biddle_remove_delete_callback(er) {
+        util.destroy  = function biddle_remove_destroy(item, dir) {
+            node.fs.unlink(item, function biddle_remove_destroy_callback(er) {
                 if (verbose === true && er !== null && er.toString("no such file or directory") < 0) {
                     return apps.errout({error:er, name:"biddle_remove_delete_callback"});
                 }
@@ -2410,7 +2413,7 @@
                         } else {
                             numb.othr += 1;
                         }
-                        util.delete(item, dir);
+                        util.destroy(item, dir);
                     }
                 } else if (item === dir) {
                     if (data.command === "remove") {
@@ -5415,7 +5418,7 @@
                         apps.list();
                     } else if (data.command === "markdown") {
                         apps.markdown();
-                    } else if (data.command === "publish") {
+                    } else if (data.command === "publish") {return;
                         apps.publish();
                     } else if (data.command === "remove") {
                         apps.remove(data.input[2], function biddle_init_stat_remove() {
