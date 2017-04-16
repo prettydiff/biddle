@@ -5418,7 +5418,7 @@
                         apps.list();
                     } else if (data.command === "markdown") {
                         apps.markdown();
-                    } else if (data.command === "publish") {return;
+                    } else if (data.command === "publish") {
                         apps.publish();
                     } else if (data.command === "remove") {
                         apps.remove(data.input[2], function biddle_init_stat_remove() {
