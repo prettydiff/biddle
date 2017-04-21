@@ -924,7 +924,7 @@
                                 saved    = {},
                                 complete = function biddle_install_compareHash_hash_complete() {
                                     if (internal === true) {
-                                        return console.log("Application " + text.cyan + data.packjson.name + text.nocolor + " is installed " + text.red + "internally to biddle" + text.nocolor + " at version: " + text.bold + text.red + data.packjson.version + text.none);
+                                        return console.log("Application " + text.cyan + data.packjson.name + text.nocolor + " is installed " + text.bold + text.yellow + "internally to biddle" + text.none + " at version: " + text.bold + text.red + data.packjson.version + text.none);
                                     }
                                     console.log("Application " + text.cyan + data.packjson.name + text.nocolor + " is installed to version: " + text.bold + text.red + data.packjson.version + text.none);
                                 };
@@ -5039,6 +5039,14 @@
                     apps.global(loc + node.path.sep);
                 }
                 if (fromTest === false) {
+                    if (data.internal === true) {
+                        if (data.installed.internal === undefined || Object.keys(data.installed.internal).length < 1) {
+                            apps.remove(__dirname + node.path.sep + "internal", function biddle_uninstall_remove_writeFile_removeInternal() {
+                                return;
+                            });
+                        }
+                        return console.log(text.bold + text.red + "Internal" + text.none + " app " + text.cyan + data.input[2] + text.nocolor + " is uninstalled.");
+                    }
                     console.log("App " + text.cyan + data.input[2] + text.nocolor + " is uninstalled.");
                 }
             });
@@ -5402,7 +5410,7 @@
                 (function biddle_init_start_target() {
                     var dir = [],
                         app = "";
-                    if (typeof data.input[3] === "string") {
+                    if (typeof data.input[3] === "string" && (data.command !== "install" || data.internal === false)) {
                         data.address.target = apps.relToAbs(data.input[3].replace(/((\\|\/)+)$/, ""), data.cwd) + node.path.sep;
                     } else if (data.command === "publish") {
                         data.address.target = data.address.publications;
@@ -5415,7 +5423,11 @@
                                 .input[2]
                                 .split(node.path.sep);
                         app                 = dir[dir.length - 1];
-                        data.address.target = data.address.applications + apps.sanitizef(app.slice(0, app.indexOf("_"))) + node.path.sep;
+                        if (data.internal === true) {
+                            data.address.target = __dirname + node.path.sep + "internal" + node.path.sep + apps.sanitizef(app.slice(0, app.indexOf("_"))) + node.path.sep;
+                        } else {
+                            data.address.target = data.address.applications + apps.sanitizef(app.slice(0, app.indexOf("_"))) + node.path.sep;
+                        }
                     } else {
                         data.address.target = data.address.downloads;
                     }
@@ -5596,7 +5608,7 @@
                     parsed = JSON.parse(fileData);
                 }
                 data.installed   = parsed;
-                if ((data.installed.internal !== undefined || data.command === "list") && data.input.indexOf("--internal") > 1) {
+                if ((data.installed.internal !== undefined || data.command === "list" || data.command === "install") && data.input.indexOf("--internal") > 1) {
                     data.internal = true;
                     if (data.installed.internal === undefined) {
                         data.installed = {};
