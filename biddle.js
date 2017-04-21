@@ -1035,7 +1035,11 @@
                 if (listtype[type].length === 0) {
                     console.log(text.underline + text.cyan + proper + " applications:" + text.none);
                     console.log("");
-                    console.log("No applications are " + type + " by biddle.");
+                    if (data.internal === true) {
+                        console.log("No " + text.bold + text.red + "internal" + text.none + " applications are " + type + " by biddle.");
+                    } else {
+                        console.log("No applications are " + type + " by biddle.");
+                    }
                     console.log("");
                 } else {
                     console.log(text.underline + text.cyan + proper + " applications:" + text.none);
@@ -5592,9 +5596,13 @@
                     parsed = JSON.parse(fileData);
                 }
                 data.installed   = parsed;
-                if (data.installed.internal !== undefined && data.input.indexOf("--internal") > 1) {
+                if ((data.installed.internal !== undefined || data.command === "list") && data.input.indexOf("--internal") > 1) {
                     data.internal = true;
-                    data.installed = data.installed.internal;
+                    if (data.installed.internal === undefined) {
+                        data.installed = {};
+                    } else {
+                        data.installed = data.installed.internal;
+                    }
                 } else if (data.command !== "install" && (data.command !== "test" || (data.command === "test" && data.input[2] !== undefined && data.input[2] !== "biddle"))) {
                     delete data.installed.internal;
                 }
