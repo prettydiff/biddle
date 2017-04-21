@@ -63,10 +63,12 @@
             ignore       : [], // List of relative locations to ignore from the .biddlerc file's exclusions object.
             input        : [], // Normalized process.argv list.
             installed    : {}, // Parsed data of the installed.json file.  Data about applications installed with biddle.
+            internal     : false, // Used for biddle's internal enhancements
             latestVersion: false, // Used in the publish command to determine if the application is the latest version
             packjson     : {}, // Parsed data of a directory's package.json file.  Used with the publish command.
             parallel     : false, // Whether variants should be published in parallel (faster but not stable) or in sequence.  Set from .biddlerc
             platform     : "", // Lowercase of Node's process.platform
+            protocoltest : (/^(((ht)|f)tps?:\/\/)/i), // To determine if input requires use of HTTP get
             publications : "publications", // default location to store published applications
             published    : {}, // Parsed data of the published.json file.  Data about applications published by biddle.
             sudo         : false // If biddle is executed with administrative rights in POSIX.
@@ -453,10 +455,16 @@
                         }
                     } else if ((data.command !== "install" && (/[\u0002-\u0008]|[\u000e-\u001f]/).test(file[0]) === true) || zippy === true) {
                         apps.makedir(addy, function biddle_get_getcall_end_complete() {
-                            apps.writeFile(Buffer.concat(file), addy + data.fileName, function biddle_get_getcall_end_complete_writeFile(data) {
-                                callback(data);
+                            apps.writeFile(Buffer.concat(file), addy + data.fileName, function biddle_get_getcall_end_complete_writeFile(filedata) {
+                                if (data.command === "status") {
+                                    callback(filedata, url);
+                                } else {
+                                    callback(filedata);
+                                }
                             });
                         });
+                    } else if (data.command === "status") {
+                        callback(file.join(""), url);
                     } else {
                         callback(file.join(""));
                     }
@@ -465,15 +473,15 @@
                     return apps.errout({error: error, name: "biddle_get_getcall_error"});
                 });
             };
-        if ((/^(https?:\/\/)/).test(url) === false) {
+        if (data.protocoltest.test(url) === false) {
             if ((/(\.zip)$/).test(url) === true) {
                 console.log("Address " + url + " is missing the " + text.cyan + "http(s)" + text.nocolor + " scheme, treating as a local path...");
                 apps.makedir(addy, function biddle_get_localZip() {
                     apps.copy(data.input[2], "downloads", [], callback);
                 });
             } else if (data.command === "status") {
-                apps.readBinary(url, function biddle_get_readLocal(filedata, filepath) {
-                    callback(filedata, filepath);
+                apps.readBinary(url, function biddle_get_readLocal(filedata) {
+                    callback(filedata, url);
                 });
             } else {
                 apps.readBinary(url, function biddle_get_readLocal(filedata) {
@@ -496,10 +504,10 @@
         if (data.input[2] === undefined) {
             return "download.xxx";
         }
-        if ((/^(https?:\/\/)/).test(data.input[2]) === true) {
+        if (data.protocoltest.test(data.input[2]) === true) {
             output = data
                 .input[2]
-                .replace(/^(https?:\/\/)/, "");
+                .replace(data.protocoltest, "");
             if (output.indexOf("?") > 0) {
                 output = output.slice(0, output.indexOf("?"));
             }
@@ -878,7 +886,7 @@
                 zip : false
             },
             late        = (function biddle_install_late() {
-                var sep  = ((/^(https?:\/\/)/).test(data.input[2]) === true)
+                var sep  = (data.protocoltest.test(data.input[2]) === true)
                         ? "/"
                         : node.path.sep,
                     dirs = data
@@ -893,7 +901,7 @@
                         var location = "",
                             puba     = [],
                             pubs     = "";
-                        if ((/^(https?:\/\/)/i).test(data.input[2]) === true) {
+                        if (data.protocoltest.test(data.input[2]) === true) {
                             location = data.address.downloads + data
                                 .input[2]
                                 .split("/")
@@ -996,14 +1004,13 @@
         });
     };
     apps.list        = function biddle_list() {
-        var internal = (data.installed.internal !== undefined && ((data.input[2] !== undefined && data.input[2].toLowerCase() === "--internal") || (data.input[3] !== undefined && data.input[3].toLowerCase() === "--internal"))),
-            listtype = {},
+        var listtype = {},
             dolist   = function biddle_list_dolist(type) {
                 var len    = 0,
                     a      = 0,
                     proper = (type === "published")
                         ? "Published"
-                        : (internal === true)
+                        : (data.internal === true)
                             ? text.bold + text.red + "Internally" + text.none + text.cyan + " installed"
                             : "Installed",
                     vert   = (type === "published")
@@ -1054,14 +1061,10 @@
                     console.log("");
                 }
             };
-        if (internal === true) {
+        if (data.internal === true) {
             data.input[2] = "installed";
-            data.installed = data.installed.internal;
-        } else {
-            if (data.input[2] !== "installed" && data.input[2] !== "published" && data.input[2] !== undefined) {
-                data.input[2] = "both";
-            }
-            delete data.installed.internal;
+        } else if (data.input[2] !== "installed" && data.input[2] !== "published" && data.input[2] !== undefined) {
+            data.input[2] = "both";
         }
         listtype = {
             installed: Object.keys(data.installed),
@@ -2458,17 +2461,7 @@
             b          = 0,
             len        = 0,
             single     = false,
-            name       = function biddle_status_name(pub) {
-                var dirs = [];
-                if ((/^(https?:\/\/)/i).test(pub) === true) {
-                    dirs = pub.split("/");
-                    dirs.pop();
-                    return dirs.pop();
-                }
-                dirs = pub.split(node.path.sep);
-                dirs.pop();
-                return dirs.pop();
-            },
+            addy       = "",
             compare    = function biddle_status_compare() {
                 var keys     = Object.keys(versions),
                     klen     = keys.length,
@@ -2520,31 +2513,50 @@
                 }
             },
             getversion = function biddle_status_get(filedata, filepath) {
+                var name       = function biddle_status_name(pub) {
+                    var dirs = [];
+                    if (data.protocoltest.test(pub) === true) {
+                        dirs = pub.split("/");
+                        dirs.pop();
+                        return dirs.pop();
+                    }
+                    dirs = pub.split(node.path.sep);
+                    dirs.pop();
+                    return dirs.pop();
+                };
                 versions[name(filepath)] = filedata;
                 b                        += 1;
                 if (b === len) {
                     compare();
                 }
             };
-        if (data.input[2] !== undefined) {
-            if (data.installed[data.input[2]] !== undefined) {
-                list   = [data.input[2]];
-                single = true;
-            } else {
-                return apps.errout({
-                    error: data.input[2] + " is not a biddle installed application.",
-                    name : "biddle_status"
-                });
-            }
-        } else {
-            list = Object.keys(data.installed);
-            if (list.length < 1) {
-                return apps.errout({error: "No applications installed by biddle.", name: "biddle_status"});
-            }
+        if (data.input[2] === undefined) {
+            return apps.errout({
+                error: "The status command requires the name of an installed application.",
+                name : "biddle_status"
+            });
+        }
+        list = Object.keys(data.installed);
+        if (list.length < 1) {
+            return apps.errout({error: "No applications installed by biddle.", name: "biddle_status"});
+        }
+        if (data.installed[data.input[2]] !== undefined) {
+            list   = [data.input[2]];
+            single = true;
+        } else if (data.internal === false || data.input[2] !== "--internal") {
+            return apps.errout({
+                error: data.input[2] + " is not a biddle installed application.",
+                name : "biddle_status"
+            });
         }
         len = list.length;
         do {
-            apps.get(data.installed[list[a]].published + "latest.txt", getversion);
+            addy = data.installed[list[a]].published;
+            if (data.protocoltest.test(addy) === true) {
+                apps.get(addy + "/latest.txt", getversion);
+            } else {
+                apps.get(addy + node.path.sep + "latest.txt", getversion);
+            }
             a += 1;
         } while (a < len);
     };
@@ -5358,7 +5370,7 @@
         if (data.command === "install" || data.command === "unzip") {
             if (data.command === "install") {
                 var fileName = (function biddle_zip_fileName() {
-                    var sep = ((/^(https?:\/\/)/).test(data.input[2]) === true)
+                    var sep = (data.protocoltest.test(data.input[2]) === true)
                         ? "/"
                         : node.path.sep;
                     return data
@@ -5391,7 +5403,7 @@
                     } else if (data.command === "publish") {
                         data.address.target = data.address.publications;
                     } else if (data.command === "install") {
-                        dir                 = ((/^(https?:\/\/)/i).test(data.input[2]) === true)
+                        dir                 = (data.protocoltest.test(data.input[2]) === true)
                             ? data
                                 .input[2]
                                 .split("/")
@@ -5580,6 +5592,12 @@
                     parsed = JSON.parse(fileData);
                 }
                 data.installed   = parsed;
+                if (data.installed.internal !== undefined && data.input.indexOf("--internal") > 1) {
+                    data.internal = true;
+                    data.installed = data.installed.internal;
+                } else if (data.command !== "install" && (data.command !== "test" || (data.command === "test" && data.input[2] !== undefined && data.input[2] !== "biddle"))) {
+                    delete data.installed.internal;
+                }
                 status.installed = true;
                 if (status.published === true && status.biddlerc === true) {
                     start();
