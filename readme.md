@@ -233,6 +233,6 @@ Zip to a specified location.
 ## Dependencies
 
 * This application is written in JavaScript and requires [Node.js](https://nodejs.org/en/) to run.
-* This application makes use of zip and hash utilities provided by operating systems.
-* This application requires use of Windows's PowerShell to operate most native Windows commands.
+* This application makes use of zip utilities provided by operating systems.
+* This application requires use of Windows's PowerShell to execute the *global* coammand in Windows.
 * The *test* command requires [Pretty Diff](https://github.com/prettydiff/prettydiff.git) and [JSLint](https://github.com/douglascrockford/JSLint.git) as git submodules from Github.

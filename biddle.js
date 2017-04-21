@@ -912,19 +912,28 @@
                                     packjson: false,
                                     remove  : false
                                 },
+                                internal = (typeof data.input[3] === "string" && data.input[3].toLowerCase() === "--internal"),
+                                saved    = {},
                                 complete = function biddle_install_compareHash_hash_complete() {
+                                    if (internal === true) {
+                                        return console.log("Application " + text.cyan + data.packjson.name + text.nocolor + " is installed " + text.red + "internally to biddle" + text.nocolor + " at version: " + text.bold + text.red + data.packjson.version + text.none);
+                                    }
                                     console.log("Application " + text.cyan + data.packjson.name + text.nocolor + " is installed to version: " + text.bold + text.red + data.packjson.version + text.none);
                                 };
-                            data.installed[data.packjson.name] = {};
-                            data
-                                .installed[data.packjson.name]
-                                .location                      = data.address.target;
-                            data
-                                .installed[data.packjson.name]
-                                .version                       = data.packjson.version;
-                            data
-                                .installed[data.packjson.name]
-                                .published                     = pubs;
+                            if (internal === true) {
+                                // internal applications are used only to enhance biddle.
+                                if (data.installed.internal === undefined) {
+                                    data.installed.internal = {};
+                                }
+                                data.installed.internal[data.packjson.name] = {};
+                                saved = data.installed.internal[data.packjson.name];
+                            } else {
+                                data.installed[data.packjson.name] = {};
+                                saved = data.installed[data.packjson.name];
+                            }
+                            saved.location  = data.address.target;
+                            saved.version   = data.packjson.version;
+                            saved.published = pubs;
                             apps.writeFile(JSON.stringify(data.installed), data.abspath + "installed.json", function biddle_install_compareHash_hash_installedJSON() {
                                 status.packjson = true;
                                 if (status.remove === true) {
@@ -987,16 +996,16 @@
         });
     };
     apps.list        = function biddle_list() {
-        var listtype = {
-                installed: Object.keys(data.installed),
-                published: Object.keys(data.published)
-            },
+        var internal = (data.installed.internal !== undefined && ((data.input[2] !== undefined && data.input[2].toLowerCase() === "--internal") || (data.input[3] !== undefined && data.input[3].toLowerCase() === "--internal"))),
+            listtype = {},
             dolist   = function biddle_list_dolist(type) {
                 var len    = 0,
                     a      = 0,
                     proper = (type === "published")
                         ? "Published"
-                        : "Installed",
+                        : (internal === true)
+                            ? text.bold + text.red + "Internally" + text.none + text.cyan + " installed"
+                            : "Installed",
                     vert   = (type === "published")
                         ? "latest"
                         : "version",
@@ -1045,9 +1054,20 @@
                     console.log("");
                 }
             };
-        if (data.input[2] !== "installed" && data.input[2] !== "published" && data.input[2] !== undefined) {
-            data.input[2] = "both";
+        if (internal === true) {
+            data.input[2] = "installed";
+            data.installed = data.installed.internal;
+        } else {
+            if (data.input[2] !== "installed" && data.input[2] !== "published" && data.input[2] !== undefined) {
+                data.input[2] = "both";
+            }
+            delete data.installed.internal;
         }
+        listtype = {
+            installed: Object.keys(data.installed),
+            published: Object.keys(data.published)
+        };
+        console.log("");
         if (data.input[2] === "installed" || data.input[2] === "both" || data.input[2] === undefined) {
             dolist("installed");
         }
@@ -1735,7 +1755,7 @@
                             "/biddle\">biddle</a> install !!install!!</td></tr></tfoot></table><p aria-hidden" +
                             "=\"true\" id=\"aria-arrow\" style=\"display:none;\"></p><script src=\"biddlesort" +
                             ".js\" type=\"application/javascript\"></script></body></html>",
-                    script = "(function(){var abspath=location.href.replace(/^(file:\/\/)/,\"\").replace(/(i" +
+                    script = "(function(){var abspath=location.href.replace(/^(file:\\/\\/)/,\"\").replace(/(i" +
                             "ndex\\.xhtml)$/,\"\"),headings=document.getElementsByTagName(\"thead\")[0].getE" +
                             "lementsByTagName(\"th\"),hlen=headings.length,a=0,start=1,sorter=function(head" +
                             "ing){var b=0,ind=0,len=headings.length,span=\"\",rows=[],rowlist=[],tbody=docu" +
@@ -2078,13 +2098,17 @@
                     .published[data.packjson.name]
                     .latest
                     .split(".");
+                if (sem.length === 1 && cur.length === 1 && sem.indexOf("-") > 0) {
+                    sem = sem[0].split("-");
+                    cur = cur[0].split("-");
+                }
                 len = (Math.max(sem, cur));
                 do {
                     if (isNaN(sem[a]) === false && isNaN(cur[a]) === false) {
-                        if (sem[a] > cur[a]) {
+                        if (Number(sem[a]) > Number(cur[a])) {
                             return true;
                         }
-                        if (cur[a] < sem[a]) {
+                        if (Number(cur[a]) < Number(sem[a])) {
                             return false;
                         }
                     }
@@ -2094,7 +2118,7 @@
                     if (cur[a] === undefined) {
                         return false;
                     }
-                    if (isNaN(cur[a]) === true) {
+                    if (isNaN(cur[a]) === true && isNaN(sem[a]) === false) {
                         return false;
                     }
                     a += 1;
@@ -2648,22 +2672,17 @@
             modules   = {
                 jslint    : {
                     dir    : data.abspath + "JSLint",
-                    edition: function biddle_test_lint_modules_jslint(obj) {
-                        console.log("* " + namepad(obj.name) + " - " + obj.app().edition);
-                    },
+                    edition: "",
                     file   : "jslint.js",
                     name   : "JSLint",
-                    repo   : "https://github.com/douglascrockford/JSLint.git"
+                    repo   : "http://prettydiff.com/downloads/jslint/jslint_latest.zip"
                 },
                 prettydiff: {
                     dir    : data.abspath + "prettydiff",
-                    edition: function biddle_test_lint_modules_prettydiff(obj) {
-                        var str = String(global.prettydiff.edition.latest);
-                        console.log("* " + namepad(obj.name) + " - 20" + str.slice(0, 2) + "-" + str.slice(2, 4) + "-" + str.slice(4) + ", version " + global.prettydiff.edition.version);
-                    },
+                    edition: "",
                     file   : "prettydiff.js",
                     name   : "Pretty Diff",
-                    repo   : "https://github.com/prettydiff/prettydiff.git"
+                    repo   : "http://prettydiff.com/downloads/prettydiff/prettydiff_cli_latest.zip"
                 }
             },
             keys      = Object.keys(modules),
@@ -3899,6 +3918,16 @@
                     : "0" + (dateobj.getMonth() + 1),
                 date     = Number("" + dateobj.getFullYear() + month + day),
                 ind      = 0,
+                today    = require(data.abspath + "today.js");
+            /*var dateobj  = new Date(),
+                day      = (dateobj.getDate() > 9)
+                    ? "" + dateobj.getDate()
+                    : "0" + dateobj.getDate(),
+                month    = (dateobj.getMonth() > 8)
+                    ? "" + (dateobj.getMonth() + 1)
+                    : "0" + (dateobj.getMonth() + 1),
+                date     = Number("" + dateobj.getFullYear() + month + day),
+                ind      = 0,
                 flag     = {
                     apps  : false,
                     jslint: false,
@@ -4135,7 +4164,7 @@
                 apps.makedir(testpath, function biddle_test_moduleInstall_remove_makedir() {
                     handler(0);
                 });
-            });
+            });*/
         };
         phases.publishA      = function biddle_test_publishA() {
             phasenumb += 1;
@@ -5116,7 +5145,7 @@
                                 } else if (latest === true && (parsed[bb].filename.indexOf("_latest.zip") === parsed[bb].filename.length - 11 || parsed[bb].filename.indexOf("_latest.hash") === parsed[bb].filename.length - 12)) {
                                     parsed.splice(bb, 1);
                                 }
-                            } while (bb > 0);
+                            } while (bb > 0);console.log();
                             apps.writeFile(JSON.stringify({filedata: parsed}), app.directory + "filedata.json", function biddle_unpublish_readdir_destory_readFileData_writeFileData() {
                                 node.fs.readFile(app.directory + "index.xhtml", "utf8", function biddle_unpublish_readdir_destory_readFileData_writeFileData_readIndex(errr, index) {
                                     var lex = [],
@@ -5376,6 +5405,11 @@
                     }
                 }());
                 if (data.command === "help" || data.command === "" || data.command === undefined || data.command === "?") {
+                    if (data.command === "") {
+                        data.command  = "help";
+                        data.input[1] = "help";
+                        data.input[2] = "80";
+                    }
                     apps.markdown();
                 } else if (isNaN(data.command) === false) {
                     data.input[1] = "markdown";
