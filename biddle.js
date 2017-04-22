@@ -85,12 +85,12 @@
                 return "powershell.exe -nologo -noprofile -command \"$PATH=[Environment]::GetEnvironment" +
                         "Variable('PATH');[Environment]::SetEnvironmentVariable('PATH',$PATH + ';" + appspath + "cmd','Machine');\"";
             },
-            unzip     : function biddle_cmds_unzip(filename) { // Unzips a zip archive into a collection
+            unzip     : function biddle_cmds_unzip(filename, outputDirectory) { // Unzips a zip archive into a collection
                 if (data.platform === "win32") {
                     return "powershell.exe -nologo -noprofile -command \"& { Add-Type -A 'System.IO.Compress" +
-                            "ion.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('" + filename + "', '" + data.address.target + "'); }\"";
+                            "ion.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('" + filename + "', '" + outputDirectory + "'); }\"";
                 }
-                return "unzip -oq " + filename + " -d " + data.address.target;
+                return "unzip -oq " + filename + " -d " + outputDirectory;
             },
             zip       : function biddle_cmds_zip(filename, file) { // Stores all items of the given directory into a zip archive directly without creating a new directory. Locations resolved by a symlink are stored, but the actual symlink is not stored.
                 if (data.platform === "win32") {
@@ -413,8 +413,12 @@
                     console.log(error);
                     console.log("");
                     console.log(stack);
-                    console.log("");
-                    console.log(errData.time + text.none);
+                    if (errData.time === undefined) {
+                        console.log(text.none);
+                    } else {
+                        console.log("");
+                        console.log(errData.time + text.none);
+                    }
                     process.exit(1);
                 });
             });
@@ -432,7 +436,7 @@
             });
         }
     };
-    apps.get         = function biddle_get(url, callback) {
+    apps.get         = function biddle_get(url, fileName, callback) {
         var a       = (typeof url === "string")
                 ? url.indexOf("s://")
                 : 0,
@@ -449,13 +453,12 @@
                     if (res.statusCode !== 200) {
                         console.log(res.statusCode + " " + node.http.STATUS_CODES[res.statusCode] + ", for request " + url);
                         if ((res.statusCode === 301 || res.statusCode === 302 || res.statusCode === 303 || res.statusCode === 307 || res.statusCode === 308) && res.headers.location !== undefined) {
-                            data.input[2] = res.headers.location;
-                            data.fileName = apps.getFileName();
-                            biddle_get(res.headers.location, callback);
+                            url = res.headers.location;
+                            biddle_get(url, callback);
                         }
                     } else if ((data.command !== "install" && (/[\u0002-\u0008]|[\u000e-\u001f]/).test(file[0]) === true) || zippy === true) {
                         apps.makedir(addy, function biddle_get_getcall_end_complete() {
-                            apps.writeFile(Buffer.concat(file), addy + data.fileName, function biddle_get_getcall_end_complete_writeFile(filedata) {
+                            apps.writeFile(Buffer.concat(file), addy + fileName, function biddle_get_getcall_end_complete_writeFile(filedata) {
                                 if (data.command === "status") {
                                     callback(filedata, url);
                                 } else {
@@ -498,23 +501,20 @@
                 .get(url, getcall);
         }
     };
-    apps.getFileName = function biddle_getFileName() {
+    apps.getFileName = function biddle_getFileName(filepath) {
         var paths  = [],
             output = "";
-        if (data.input[2] === undefined) {
+        if (filepath === undefined) {
             return "download.xxx";
         }
-        if (data.protocoltest.test(data.input[2]) === true) {
-            output = data
-                .input[2]
-                .replace(data.protocoltest, "");
+        if (data.protocoltest.test(filepath) === true) {
+            output = filepath.replace(data.protocoltest, "");
             if (output.indexOf("?") > 0) {
                 output = output.slice(0, output.indexOf("?"));
             }
             paths = output.split("/");
         } else {
-            paths = data
-                .input[2]
+            paths = filepath
                 .replace(/^(\/|\\)+/, "")
                 .split(node.path.sep);
         }
@@ -879,29 +879,29 @@
                 });
         }
     };
-    apps.install     = function biddle_install() {
+    apps.install     = function biddle_install(zippath, callback) {
         var flag        = {
                 hash: false,
                 late: false,
                 zip : false
             },
+            hashFile    = "",
+            fileName    = "",
             late        = (function biddle_install_late() {
-                var sep  = (data.protocoltest.test(data.input[2]) === true)
+                var sep  = (data.protocoltest.test(zippath) === true)
                         ? "/"
                         : node.path.sep,
-                    dirs = data
-                        .input[2]
-                        .split(sep);
-                data.fileName = dirs.pop();
+                    dirs = zippath.split(sep);
+                fileName = dirs.pop();
                 return dirs.join(sep) + sep + "latest.txt";
             }()),
             compareHash = function biddle_install_compareHash() {
-                apps.hash(data.address.downloads + data.fileName, "hashZip", function biddle_install_compareHash_hash() {
-                    if (data.hashFile === data.hashZip) {
+                apps.hash(data.address.downloads + fileName, "hashZip", function biddle_install_compareHash_hash(hashZip) {
+                    if (hashFile === hashZip) {
                         var location = "",
                             puba     = [],
                             pubs     = "";
-                        if (data.protocoltest.test(data.input[2]) === true) {
+                        if (data.protocoltest.test(zippath) === true) {
                             location = data.address.downloads + data
                                 .input[2]
                                 .split("/")
@@ -912,76 +912,79 @@
                             puba.pop();
                             pubs = puba.join("/");
                         } else {
-                            location = apps.relToAbs(data.input[2], data.cwd);
-                            pubs     = apps.relToAbs(data.input[2].slice(0, data.input[2].lastIndexOf(node.path.sep) + 1), data.cwd);
+                            location = apps.relToAbs(zippath, data.cwd);
+                            pubs     = apps.relToAbs(zippath.slice(0, zippath.lastIndexOf(node.path.sep) + 1), data.cwd);
                         }
                         apps.zip(function biddle_install_callback(zipfilename) {
-                            var status   = {
-                                    packjson: false,
-                                    remove  : false
-                                },
-                                internal = (typeof data.input[3] === "string" && data.input[3].toLowerCase() === "--internal"),
-                                saved    = {},
-                                complete = function biddle_install_compareHash_hash_complete() {
-                                    if (internal === true) {
-                                        return console.log("Application " + text.cyan + data.packjson.name + text.nocolor + " is installed " + text.bold + text.yellow + "internally to biddle" + text.none + " at version: " + text.bold + text.red + data.packjson.version + text.none);
+                            node
+                                .fs
+                                .readFile(data.address.target + "package.json", function biddle_zip_childfunc_child_install(erf, filedata) {
+                                    var status   = {
+                                            packjson: false,
+                                            remove  : false
+                                        },
+                                        saved    = {},
+                                        packjson = {};
+                                    if (erf !== null && erf !== undefined) {
+                                        return apps.errout({error: erf, name: "biddle_zip_childfunc_child_install"});
                                     }
-                                    console.log("Application " + text.cyan + data.packjson.name + text.nocolor + " is installed to version: " + text.bold + text.red + data.packjson.version + text.none);
-                                };
-                            if (internal === true) {
-                                // internal applications are used only to enhance biddle.
-                                if (data.installed.internal === undefined) {
-                                    data.installed.internal = {};
-                                }
-                                data.installed.internal[data.packjson.name] = {};
-                                saved = data.installed.internal[data.packjson.name];
-                            } else {
-                                data.installed[data.packjson.name] = {};
-                                saved = data.installed[data.packjson.name];
-                            }
-                            saved.location  = data.address.target;
-                            saved.version   = data.packjson.version;
-                            saved.published = pubs;
-                            apps.writeFile(JSON.stringify(data.installed), data.abspath + "installed.json", function biddle_install_compareHash_hash_installedJSON() {
-                                status.packjson = true;
-                                if (status.remove === true) {
-                                    complete();
-                                }
-                            });
-                            apps.remove(data.abspath + "downloads" + node.path.sep + data.fileName, function biddle_install_compareHash_hash_remove() {
-                                status.remove = true;
-                                if (status.packjson === true) {
-                                    complete();
-                                }
-                            });
-                            return [zipfilename];
+                                    packjson = JSON.parse(filedata);
+                                    data.packjson = packjson;
+                                    if (data.internal === true) {
+                                        // internal applications are used only to enhance biddle.
+                                        if (data.installed.internal === undefined) {
+                                            data.installed.internal = {};
+                                        }
+                                        data.installed.internal[data.packjson.name] = {};
+                                        saved = data.installed.internal[data.packjson.name];
+                                    } else {
+                                        data.installed[data.packjson.name] = {};
+                                        saved = data.installed[data.packjson.name];
+                                    }
+                                    saved.location  = data.address.target;
+                                    saved.version   = data.packjson.version;
+                                    saved.published = pubs;
+                                    apps.writeFile(JSON.stringify(data.installed), data.abspath + "installed.json", function biddle_install_compareHash_hash_installedJSON() {
+                                        status.packjson = true;
+                                        if (status.remove === true) {
+                                            callback(packjson);
+                                        }
+                                    });
+                                    apps.remove(data.abspath + "downloads" + node.path.sep + data.fileName, function biddle_install_compareHash_hash_remove() {
+                                        status.remove = true;
+                                        if (status.packjson === true) {
+                                            callback(packjson);
+                                        }
+                                    });
+                                });
                         }, {
+                            fileName: fileName,
                             location: location,
                             name    : ""
                         });
                     } else {
                         return apps.errout({
-                            error: text.red + "Hashes don't match" + text.nocolor + " for " + data.input[2] + ". File is saved in the downloads directory and will not be installed.\r\nGenerat" +
+                            error: text.red + "Hashes don't match" + text.nocolor + " for " + zippath + ". File is saved in the downloads directory and will not be installed.\r\nGenerat" +
                                     "ed hash - " + data.hashZip + "\r\nRequested hash - " + data.hashFile,
                             name : "biddle_install_compareHash"
                         });
                     }
                 });
             };
-        apps.get(data.input[2], function biddle_install_getzip() {
+        apps.get(zippath, fileName, function biddle_install_getzip() {
             flag.zip = true;
             if (flag.hash === true && flag.late === true) {
                 compareHash();
             }
         });
-        apps.get(data.input[2].replace(".zip", ".hash"), function biddle_install_gethash(fileData) {
-            flag.hash     = true;
-            data.hashFile = fileData;
+        apps.get(zippath.replace(".zip", ".hash"), fileName, function biddle_install_gethash(fileData) {
+            flag.hash = true;
+            hashFile  = fileData;
             if (flag.zip === true && flag.late === true) {
                 compareHash();
             }
         });
-        apps.get(late, function biddle_install_getlate(fileData) {
+        apps.get(late, fileName, function biddle_install_getlate(fileData) {
             var dirs = data
                     .address
                     .target
@@ -2557,9 +2560,9 @@
         do {
             addy = data.installed[list[a]].published;
             if (data.protocoltest.test(addy) === true) {
-                apps.get(addy + "/latest.txt", getversion);
+                apps.get(addy + "/latest.txt", "latest.txt", getversion);
             } else {
-                apps.get(addy + node.path.sep + "latest.txt", getversion);
+                apps.get(addy + node.path.sep + "latest.txt", "latest.txt", getversion);
             }
             a += 1;
         } while (a < len);
@@ -2673,35 +2676,6 @@
                 styleguide  : "jslint",
                 wrap        : 80
             },
-            longname  = 0,
-            namepad   = function biddle_test_namepad(name) {
-                var a = name.length;
-                if (name.length === longname) {
-                    return name;
-                }
-                do {
-                    a    += 1;
-                    name = name + " ";
-                } while (a < longname);
-                return name;
-            },
-            modules   = {
-                jslint    : {
-                    dir    : data.abspath + "JSLint",
-                    edition: "",
-                    file   : "jslint.js",
-                    name   : "JSLint",
-                    repo   : "http://prettydiff.com/downloads/jslint/jslint_latest.zip"
-                },
-                prettydiff: {
-                    dir    : data.abspath + "prettydiff",
-                    edition: "",
-                    file   : "prettydiff.js",
-                    name   : "Pretty Diff",
-                    repo   : "http://prettydiff.com/downloads/prettydiff/prettydiff_cli_latest.zip"
-                }
-            },
-            keys      = Object.keys(modules),
             //Windows child shell does not see a user modified path variable
             childcmd  = (data.platform === "win32")
                 ? "node " + data.abspath + "biddle "
@@ -2961,6 +2935,11 @@
                         console.log(humantime(true));
                         process.exit(0);
                     });
+                }
+                if (order[0] === "moduleInstall") {
+                    data.internal = true;
+                } else {
+                    data.internal = false;
                 }
                 phases[order[0]]();
                 order.splice(0, 1);
@@ -3934,7 +3913,94 @@
                     : "0" + (dateobj.getMonth() + 1),
                 date     = Number("" + dateobj.getFullYear() + month + day),
                 ind      = 0,
-                today    = require(data.abspath + "today.js");
+                today    = require(data.abspath + "today.js"),
+                longname = 0,
+                namepad  = function biddle_test_namepad(name) {
+                    var a = name.length;
+                    if (name.length === longname) {
+                        return name;
+                    }
+                    do {
+                        a    += 1;
+                        name = name + " ";
+                    } while (a < longname);
+                    return name;
+                },
+                newinstall = false,
+                intpath  = __dirname + node.path.sep + "internal" + node.path.sep,
+                modules  = {
+                    jslint    : "http://prettydiff.com/downloads/jslint/jslint_latest.zip",
+                    prettydiff: "http://prettydiff.com/downloads/prettydiff/prettydiff_cli_latest.zip"
+                },
+                inst     = 0,
+                keys     = Object.keys(modules),
+                modupdate = function biddle_test_moduleInstall_modupdate() {
+                    node.child(childcmd + "status --internal", function biddle_test_moduleInstall_status(stater, statout, statouter) {
+                        var noapp    = (stater.toString().indexOf("No applications installed by biddle.") < 0),
+                            outdated = (statout.indexOf("but published version is") > 0);
+                        if (stater !== null && noapp === false) {
+                            return apps.errout({error: stater, name: "biddle_test_moduleInstall_status", stdout: statout, time: humantime(true)});
+                        }
+                        if (statouter !== null && statouter !== "") {
+                            return apps.errout({error: statouter, name: "biddle_test_moduleInstall_status", stdout: statout, time: humantime(true)});
+                        }
+                        /*if (noapp === true || outdated === true) {
+
+                        }*/
+                    });
+                },
+                modData = function biddle_test_moduleInstall_modData(mod) {
+                    node.fs.readFile(mod.dir + node.path.sep + "package.json", "utf8", function biddle_test_moduleInstall_modData_package(packer, packout) {
+                        var json = {};
+                        if (packer !== null) {
+                            return apps.errout({error: packer, name:"biddle_test_moduleInstall_modData_package", stdout:packout, time: humantime(true)});
+                        }
+                        json = JSON.parse(packout);
+                    });
+                },
+                todaystat = function biddle_test_moduleInstall_todaystat(mod) {
+                    node.fs.stat(intpath + mod + node.path.sep + "package.json", function biddle_test_moduleInstall_todaystat_stat(erstat, stats) {
+                        if (erstat === null && stats.isFile() === true) {
+                            inst = inst + 1;
+                            if (inst === keys.length) {
+                                if (newinstall === true) {
+                                    console.log("All require dependencies are installed.");
+                                } else {
+                                    console.log("All require dependencies are installed, but not updated.");
+                                }
+                                next();
+                            }
+                        } else {
+                            apps.install(modules[mod], function biddle_test_moduleInstall_todaystat_stat_install(packjson) {
+                                newinstall = true;
+                                inst = inst + 1;
+                                console.log("biddle internally installed " + packjson.name + " to version " + text.bold + text.green + packjson.version + text.none);
+                                if (inst === keys.length) {
+                                    console.log("All require dependencies are installed.");
+                                    next();
+                                }
+                            });
+                        }
+                    });
+                };
+            if (date > today) {
+                modupdate();
+            } else {
+                do {
+                    todaystat(keys[ind]);
+                    ind = ind + 1;
+                } while (ind < keys.length);
+                /*if (install < keys.length) {
+                    modupdate();
+                } else {
+                    console.log("Using installed modules.");
+                    ind = 0;
+                    do {
+                        modules[keys[ind]].app = require(modules[keys[ind]].dir + node.path.sep + modules[keys[ind]].main);
+                        modData(modules[keys[ind]]);
+                    } while (ind < keys.length);
+                }*/
+            }
             /*var dateobj  = new Date(),
                 day      = (dateobj.getDate() > 9)
                     ? "" + dateobj.getDate()
@@ -5318,19 +5384,10 @@
                     if (stderr !== null && stderr.replace(/\s+/, "") !== "" && stderr.indexOf("No such file or directory") < 0) {
                         return apps.errout({error: stderr, name: "biddle_zip_childfunc_child"});
                     }
-                    if (data.command === "install") {
-                        node
-                            .fs
-                            .readFile(data.address.target + "package.json", function biddle_zip_childfunc_child_install(erf, filedata) {
-                                if (erf !== null && erf !== undefined) {
-                                    return apps.errout({error: erf, name: "biddle_zip_childfunc_child_install"});
-                                }
-                                data.packjson = JSON.parse(filedata);
-                                callback(zipfilename);
-                            });
-                    } else {
-                        callback(zipfilename);
+                    if (data.command === "test" && data.internal === true) {
+                        data.address.target = zipdir + node.path.sep;
                     }
+                    callback(zipfilename);
                     return stdout;
                 });
             };
@@ -5379,24 +5436,28 @@
                     });
             }
         }
-        if (data.command === "install" || data.command === "unzip") {
-            if (data.command === "install") {
-                var fileName = (function biddle_zip_fileName() {
-                    var sep = (data.protocoltest.test(data.input[2]) === true)
-                        ? "/"
-                        : node.path.sep;
-                    return data
-                        .input[2]
-                        .split(sep)
-                        .pop();
-                }());
-                cmd = cmds.unzip(data.address.downloads + fileName);
+        if (data.command === "install" || data.command === "test" || data.command === "unzip") {
+            if (data.command === "test" && data.internal === true) {
+                zipdir = zippack.fileName;
+                zipdir = zipdir.replace(/((_latest)?\.zip)$/i, "");
+                if (zipdir.indexOf("_") > 0) {
+                    zipdir = zipdir.slice(0, zipdir.indexOf("_"));
+                }
+                zipdir = __dirname + node.path.sep + "internal" + node.path.sep + zipdir;
+                cmd = cmds.unzip(data.address.downloads + zippack.fileName, zipdir);
+                apps.makedir(zipdir, function biddle_zip_unzip() {
+                    childfunc(data.address.downloads + zippack.fileName, cmd);
+                });
             } else {
-                cmd = cmds.unzip(data.input[2]);
+                if (data.command === "unzip") {
+                    cmd = cmds.unzip(data.input[2], data.address.target);
+                } else {
+                    cmd = cmds.unzip(data.address.downloads + zippack.fileName, data.address.target);
+                }
+                apps.makedir(data.address.target, function biddle_zip_unzip() {
+                    childfunc(data.input[2], cmd);
+                });
             }
-            apps.makedir(data.address.target, function biddle_zip_unzip() {
-                childfunc(data.input[2], cmd);
-            });
         }
     };
     (function biddle_init() {
@@ -5478,7 +5539,7 @@
                             return true;
                         });
                     } else if (data.command === "get") {
-                        apps.get(data.input[2], function biddle_init_start_getback(filedata) {
+                        apps.get(data.input[2], apps.getFileName(data.input[2]), function biddle_init_start_getback(filedata) {
                             apps.writeFile(filedata, data.address.target + data.fileName, function biddle_init_start_getback_callback() {
                                 return filedata;
                             });
@@ -5490,7 +5551,12 @@
                             console.log(data.hashFile);
                         });
                     } else if (data.command === "install") {
-                        apps.install();
+                        apps.install(data.input[2], function biddle_init_start_installCallback() {
+                            if (internal === true) {
+                                return console.log("Application " + text.cyan + data.packjson.name + text.nocolor + " is installed " + text.bold + text.yellow + "internally to biddle" + text.none + " at version: " + text.bold + text.red + data.packjson.version + text.none);
+                            }
+                            console.log("Application " + text.cyan + data.packjson.name + text.nocolor + " is installed to version: " + text.bold + text.red + data.packjson.version + text.none);
+                        });
                     } else if (data.command === "list") {
                         apps.list();
                     } else if (data.command === "markdown") {
@@ -5589,7 +5655,6 @@
             }
             return absarr.join(node.path.sep) + node.path.sep;
         }());
-        data.fileName             = apps.getFileName();
         data.platform             = process
             .platform
             .replace(/\s+/g, "")
