@@ -391,18 +391,6 @@
             .toString()
             .replace(/(\s+)$/, "");
         if (data.command === "test" && (data.input[2] === "biddle" || data.input[2] === "biddletesta" || data.input[2] === "biddletestb")) {
-            if (errData.name.indexOf("biddle_test") === 0) {
-                data.published.biddletesta = {
-                    directory: data.abspath + "publications" + node.path.sep + "biddletesta"
-                };
-                data.installed.biddletesta = {
-                    location: data.abspath + "applications" + node.path.sep + "biddletesta"
-                };
-                data.input[2]              = "biddletesta";
-                data.input[3]              = "all";
-                apps.unpublish(true);
-                apps.uninstall(true);
-            }
             apps.remove(data.abspath + "unittest", function biddle_errout_dataClean() {
                 apps.remove(data.abspath + "temp", function biddle_errout_dataClean_tempTestClean() {
                     console.log(text.red + "Unit test failure." + text.nocolor);
@@ -419,7 +407,23 @@
                         console.log("");
                         console.log(errData.time + text.none);
                     }
-                    process.exit(1);
+                    if (errData.name.indexOf("biddle_test") === 0) {
+                        data.published.biddletesta = {
+                            directory: data.abspath + "publications" + node.path.sep + "biddletesta"
+                        };
+                        data.installed.biddletesta = {
+                            location: data.abspath + "applications" + node.path.sep + "biddletesta"
+                        };
+                        data.input[2]              = "biddletesta";
+                        data.input[3]              = "all";
+                        setTimeout(function biddle_errout_delayPrimary() {
+                            apps.uninstall(true);
+                            apps.unpublish(true);
+                            setTimeout(function biddle_errout_delaySecondary() {
+                                process.exit(1);
+                            }, 500);
+                        }, 1000);
+                    }
                 });
             });
         } else {
@@ -531,12 +535,7 @@
         }
         return apps.sanitizef(output);
     };
-    apps.getpjson    = function biddle_getpjson(callback) {
-        var file = (data.input[2] === undefined)
-            ? data.abspath + "package.json"
-            : apps.relToAbs(data
-                .input[2]
-                .replace(/(\/|\\)$/, "") + node.path.sep + "package.json", data.cwd);
+    apps.getpjson    = function biddle_getpjson(file, callback) {
         node
             .fs
             .readFile(file, "utf8", function biddle_getpjson_readfile(err, fileData) {
@@ -902,20 +901,17 @@
                             puba     = [],
                             pubs     = "";
                         if (data.protocoltest.test(zippath) === true) {
-                            location = data.address.downloads + data
-                                .input[2]
+                            location = zippath
                                 .split("/")
                                 .pop();
-                            puba     = data
-                                .input[2]
-                                .split("/");
+                            puba     = zippath.split("/");
                             puba.pop();
                             pubs = puba.join("/");
                         } else {
                             location = apps.relToAbs(zippath, data.cwd);
                             pubs     = apps.relToAbs(zippath.slice(0, zippath.lastIndexOf(node.path.sep) + 1), data.cwd);
                         }
-                        apps.zip(function biddle_install_callback(zipfilename) {
+                        apps.zip(function biddle_install_callback() {
                             node
                                 .fs
                                 .readFile(data.address.target + "package.json", function biddle_zip_childfunc_child_install(erf, filedata) {
@@ -923,7 +919,6 @@
                                             packjson: false,
                                             remove  : false
                                         },
-                                        saved    = {},
                                         packjson = {};
                                     if (erf !== null && erf !== undefined) {
                                         return apps.errout({error: erf, name: "biddle_zip_childfunc_child_install"});
@@ -935,22 +930,23 @@
                                         if (data.installed.internal === undefined) {
                                             data.installed.internal = {};
                                         }
-                                        data.installed.internal[data.packjson.name] = {};
-                                        saved = data.installed.internal[data.packjson.name];
+                                        data.installed.internal[packjson.name] = {};
+                                        data.installed.internal[packjson.name].location  = data.address.target;
+                                        data.installed.internal[packjson.name].version   = packjson.version;
+                                        data.installed.internal[packjson.name].published = pubs;
                                     } else {
-                                        data.installed[data.packjson.name] = {};
-                                        saved = data.installed[data.packjson.name];
+                                        data.installed[packjson.name] = {};
+                                        data.installed[packjson.name].location  = data.address.target;
+                                        data.installed[packjson.name].version   = packjson.version;
+                                        data.installed[packjson.name].published = pubs;
                                     }
-                                    saved.location  = data.address.target;
-                                    saved.version   = data.packjson.version;
-                                    saved.published = pubs;
                                     apps.writeFile(JSON.stringify(data.installed), data.abspath + "installed.json", function biddle_install_compareHash_hash_installedJSON() {
                                         status.packjson = true;
                                         if (status.remove === true) {
                                             callback(packjson);
                                         }
                                     });
-                                    apps.remove(data.abspath + "downloads" + node.path.sep + data.fileName, function biddle_install_compareHash_hash_remove() {
+                                    apps.remove(data.abspath + "downloads" + node.path.sep + fileName, function biddle_install_compareHash_hash_remove() {
                                         status.remove = true;
                                         if (status.packjson === true) {
                                             callback(packjson);
@@ -1054,7 +1050,7 @@
                     do {
                         if (listtype[type][a].length > pads.name) {
                             pads.name = listtype[type][a].length;
-                        }
+                        }//if(data[type][listtype[type][a]]===undefined){console.log(data.installed);}
                         if (data[type][listtype[type][a]][vert].length > pads.version) {
                             pads.version = data[type][listtype[type][a]][vert].length;
                         }
@@ -1729,6 +1725,11 @@
             varlen      = 0,
             publoc      = "",
             primaryzip  = "",
+            pjsonname   = (data.input[2] === undefined)
+                ? data.abspath + "package.json"
+                : apps.relToAbs(data
+                    .input[2]
+                    .replace(/(\/|\\)$/, "") + node.path.sep + "package.json", data.cwd),
             varnames    = {},
             variants    = [],
             indexfile   = function biddle_publish_indexfile() {
@@ -2060,7 +2061,7 @@
                     });
             }, vardata);
         };
-        apps.getpjson(function biddle_publish_callback() {
+        apps.getpjson(pjsonname, function biddle_publish_callback() {
             if (data.published[data.packjson.name] !== undefined && data.published[data.packjson.name].versions.indexOf(data.packjson.version) > -1) {
                 return apps.errout({
                     error: "Attempted to publish " + data.packjson.name + " over existing version " + text.bold + text.red + data.packjson.version + text.none,
@@ -2461,7 +2462,7 @@
         paths.push(fileName.replace(/\+|<|>|:|"|\||\?|\*|%|\s/g, ""));
         return paths.join("");
     };
-    apps.status      = function biddle_status() {
+    apps.status      = function biddle_status(app) {
         var list       = [],
             versions   = {},
             a          = 0,
@@ -2537,22 +2538,22 @@
                     compare();
                 }
             };
-        if (data.input[2] === undefined) {
+        /*if (app === undefined) {
             return apps.errout({
                 error: "The status command requires the name of an installed application.",
                 name : "biddle_status"
             });
-        }
+        }*/
         list = Object.keys(data.installed);
         if (list.length < 1) {
             return apps.errout({error: "No applications installed by biddle.", name: "biddle_status"});
         }
-        if (data.installed[data.input[2]] !== undefined) {
-            list   = [data.input[2]];
+        if (data.installed[app] !== undefined) {
+            list   = [app];
             single = true;
-        } else if (data.internal === false || data.input[2] !== "--internal") {
+        } else if (app !== undefined) {
             return apps.errout({
-                error: data.input[2] + " is not a biddle installed application.",
+                error: app + " is not a biddle installed application.",
                 name : "biddle_status"
             });
         }
@@ -2570,6 +2571,11 @@
     apps.test        = function biddle_test() {
         var loc     = "",
             test    = "",
+            file    = (data.input[2] === undefined)
+                ? data.abspath + "package.json"
+                : apps.relToAbs(data
+                    .input[2]
+                    .replace(/(\/|\\)$/, "") + node.path.sep + "package.json", data.cwd),
             name    = data.input[2],
             spawn   = function biddle_test_spawn() {
                 var spwn = require("child_process").spawn,
@@ -2634,7 +2640,7 @@
                 .test;
             spawn();
         } else {
-            apps.getpjson(foreign);
+            apps.getpjson(file, foreign);
         }
     };
     apps.testBiddle  = function biddle_testBiddle() {
@@ -2682,6 +2688,7 @@
                 : (data.abspath === process.cwd() + node.path.sep)
                     ? "node " + data.abspath + "biddle "
                     : "biddle ",
+            mods      = {},
             testpath  = data.abspath + "unittest",
             humantime = function biddle_test_humantime(finished) {
                 var minuteString = "",
@@ -2813,23 +2820,20 @@
             },
             diffFiles = function biddle_test_diffFiles(sampleName, sampleSource, sampleDiff) {
                 var aa     = 0,
-                    line   = 0,
                     pdlen  = 0,
-                    count  = 0,
-                    diffs  = 0,
-                    lcount = 0,
-                    report = [];
+                    report = [],
+                    plural = "s";
                 options.mode    = "diff";
                 options.source  = sampleSource.replace(/\u001b/g, "\\u001b");
                 options.diff    = sampleDiff.replace(/\u001b/g, "\\u001b");
                 options.diffcli = true;
                 options.context = 2;
                 options.lang    = "text";
-                report          = modules
-                    .prettydiff
-                    .app(options);
+                report          = mods.prettydiff(options);
                 pdlen           = report.length;
-                if (report.length < 1) {
+                if (pdlen === 1) {
+                    plural = "";
+                } else if (pdlen < 1) {
                     console.log("");
                     if (sampleSource.length < 1) {
                         console.log(text.red + "An empty source value passed into test diff operation." + text.nocolor);
@@ -2839,17 +2843,6 @@
                     }
                     return apps.errout({
                         error : text.red + "bad diff, output is 0 characters long" + text.nocolor,
-                        name  : sampleName,
-                        stdout: "",
-                        time  : humantime(true)
-                    });
-                }
-                if (report.length < 3) {
-                    console.log("");
-                    console.log(text.red + "Test diff operation provided a bad code sample:" + text.nocolor);
-                    console.log(report);
-                    return apps.errout({
-                        error : text.red + "bad test" + text.nocolor,
                         name  : sampleName,
                         stdout: "",
                         time  : humantime(true)
@@ -2870,55 +2863,12 @@
                 // 3. diff code line
                 // 4. change
                 // 5. index of options.context (not parallel) 6 - total count of differences
-                if (sampleName !== "phases.simulations" && report[0][0] < 2) {
-                    diffs += 1;
-                    console.log("");
-                    console.log(text.cyan + sampleName + text.nocolor);
-                    console.log(text.cyan + "Line: 1" + text.nocolor);
-                }
                 for (aa = 0; aa < pdlen; aa += 1) {
-                    if (report[4][aa] === "equal" && report[4][aa + 1] === "equal" && report[4][aa + 2] !== undefined && report[4][aa + 2] !== "equal") {
-                        count += 1;
-                        if (count === 51) {
-                            break;
-                        }
-                        line   = report[0][aa] + 2;
-                        lcount = 0;
-                        diffs  += 1;
-                        console.log("");
-                        console.log(text.cyan + sampleName + text.nocolor);
-                        console.log(text.cyan + "Line: " + line + text.nocolor);
-                        if (aa === 0) {
-                            console.log(report[3][aa]);
-                            console.log(report[3][aa + 1]);
-                        }
-                    }
-                    if (lcount < 7) {
-                        lcount += 1;
-                        if (report[4][aa] === "delete" && report[0][aa] !== report[0][aa + 1]) {
-                            if (report[1][aa] === "") {
-                                report[1][aa] = "(empty line)";
-                            } else if (report[1][aa].replace(/\u0020+/g, "") === "") {
-                                report[1][aa] = "(indentation)";
-                            }
-                            console.log(text.red + report[1][aa].replace(/<p(d)>/g, text.bold).replace(/<\/pd>/g, text.normal) + text.nocolor);
-                        } else if (report[4][aa] === "insert" && report[2][aa] !== report[2][aa + 1]) {
-                            if (report[3][aa] === "") {
-                                report[3][aa] = "(empty line)";
-                            } else if (report[3][aa].replace(/\u0020+/g, "") === "") {
-                                report[3][aa] = "(indentation)";
-                            }
-                            console.log(text.green + report[3][aa].replace(/<p(d)>/g, text.bold).replace(/<\/pd>/g, text.normal) + text.nocolor);
-                        } else if (report[4][aa] === "equal" && aa > 1) {
-                            console.log(report[3][aa]);
-                        } else if (report[4][aa] === "replace") {
-                            console.log(text.red + report[1][aa].replace(/<p(d)>/g, text.bold).replace(/<\/pd>/g, text.normal) + text.nocolor);
-                            console.log(text.green + report[3][aa].replace(/<p(d)>/g, text.bold).replace(/<\/pd>/g, text.normal) + text.nocolor);
-                        }
-                    }
+                    console.log(report[aa]);
                 }
                 console.log("");
-                console.log(diffs + text.cyan + " differences counted." + text.nocolor);
+                console.log(global.prettydiff.meta.difftotal + text.cyan + " difference" + plural + " counted." + text.nocolor);
+                console.log("");
                 apps.errout({
                     error : "Pretty Diff " + text.red + "failed" + text.nocolor + " in function: " + text.cyan + sampleName + text.nocolor,
                     name  : sampleName,
@@ -2990,12 +2940,12 @@
             };
             phasenumb += 1;
             console.log(phasenumb + ". Get tests");
-            node.child(childcmd + "get https://s0.2mdn.net/879366/express_html_inpage_rendering_lib_200_150.js " + data.abspath + "unittest childtest", {
+            node.child(childcmd + "get https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png " + data.abspath + "unittest childtest", {
                 cwd: data.abspath
             }, function biddle_test_get_childText(er, stdout, stder) {
                 var size     = "",
                     sizenumb = "",
-                    sizetest = " \u001b[1m\u001b[32m111,805\u001b[39m\u001b[0m";
+                    sizetest = " \u001b[1m\u001b[32m13,504\u001b[39m\u001b[0m";
                 if (er !== null) {
                     return apps.errout({error: er, name: "biddle_test_get_childText", stdout: stdout, time: humantime(true)});
                 }
@@ -3107,7 +3057,7 @@
             });
         };
         phases.install       = function biddle_test_install() {
-            phasenumb += 1;
+            phasenumb = phasenumb + 1;
             console.log(phasenumb + ". Install tests");
             node.child(childcmd + "install " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "biddletesta_latest.zip childtest", {
                 cwd: data.abspath
@@ -3144,7 +3094,7 @@
                         console.log(humantime(false) + " " + text.green + "File from install is present:" + text.nocolor + " " + instfile);
                         node
                             .fs
-                            .readFile(data.abspath + "installed.json", function biddle_test_install_child_stat_readJSON(era, filedata) {
+                            .readFile(data.abspath + "installed.json", "utf8", function biddle_test_install_child_stat_readJSON(era, filedata) {
                                 var inst = {};
                                 if (era !== null && era !== undefined) {
                                     return apps.errout({
@@ -3174,67 +3124,64 @@
                     "applications",
                     "bin",
                     "downloads",
+                    "internal",
                     "publications",
                     "unittest"
                 ],
                 files           = [],
                 lintrun         = function biddle_test_lint_lintrun() {
-                    var lintit = function biddle_test_lint_lintrun_lintit(val, ind, arr) {
-                        var result = {},
-                            failed = false,
-                            ecount = 0,
-                            report = function biddle_test_lint_lintrun_lintit_lintOn_report(warning) {
-                                //start with an exclusion list.  There are some warnings that I don't care about
-                                if (warning === null) {
-                                    return;
-                                }
-                                if (warning.message.indexOf("Unexpected dangling '_'") === 0) {
-                                    return;
-                                }
-                                if ((/Bad\u0020property\u0020name\u0020'\w+_'\./).test(warning.message) === true) {
-                                    return;
-                                }
-                                if (warning.message.indexOf("/*global*/ requires") === 0) {
-                                    return;
-                                }
-                                failed = true;
-                                if (ecount === 0) {
-                                    console.log(text.red + "JSLint errors on" + text.nocolor + " " + val[0]);
+                    var len    = files.length,
+                        a      = 0,
+                        failed = false,
+                        lintit = function biddle_test_lint_lintrun_lintit() {
+                            var result = {},
+                                ecount = 0,
+                                good   = function biddle_tst_lint_lintrun_lintit_good() {
+                                    console.log(humantime(false) + text.green + "Lint is good for file " + (a + 1) + ":" + text.nocolor + " " + files[a][0]);
+                                    if (a === len - 1) {
+                                        console.log(text.green + "Lint operation complete!" + text.nocolor);
+                                        next();
+                                    }
+                                },
+                                report = function biddle_test_lint_lintrun_lintit_report(warning) {
+                                    //start with an exclusion list.  There are some warnings that I don't care about
+                                    if (warning === null) {
+                                        return good();
+                                    }
+                                    if (warning.message.indexOf("Unexpected dangling '_'") === 0) {
+                                        return good();
+                                    }
+                                    if ((/Bad\u0020property\u0020name\u0020'\w+_'\./).test(warning.message) === true) {
+                                        return good();
+                                    }
+                                    if (warning.message.indexOf("/*global*/ requires") === 0) {
+                                        return good();
+                                    }
+                                    failed = true;
+                                    if (ecount === 0) {
+                                        console.log(text.red + "JSLint errors on" + text.nocolor + " " + files[a][0]);
+                                        console.log("");
+                                    }
+                                    ecount = ecount + 1;
+                                    console.log("On line " + warning.line + " at column: " + warning.column);
+                                    console.log(warning.message);
                                     console.log("");
-                                }
-                                ecount += 1;
-                                console.log("On line " + warning.line + " at column: " + warning.column);
-                                console.log(warning.message);
-                                console.log("");
-                            };
-                        options.source = val[1];
-                        result         = modules
-                            .jslint
-                            .app(modules.prettydiff.app(options), {"for": true});
-                        if (result.ok === true) {
-                            console.log(humantime(false) + text.green + "Lint is good for file " + (ind + 1) + ":" + text.nocolor + " " + val[0]);
-                            if (ind === arr.length - 1) {
-                                console.log(text.green + "Lint operation complete!" + text.nocolor);
-                                return next();
+                                    return apps.errout({
+                                        error: text.red + "Lint fail" + text.nocolor + " :(",
+                                        name : "biddle_test_lint_lintrun_lintit",
+                                        time : humantime(true)
+                                    });
+                                };
+                            options.source = files[a][1];
+                            result         = mods.jslint(mods.prettydiff(options), {"for": true});
+                            if (result.ok === true) {
+                                good();
+                            } else {
+                                result
+                                    .warnings
+                                    .forEach(report);
                             }
-                        } else {
-                            result
-                                .warnings
-                                .forEach(report);
-                            if (failed === true) {
-                                return apps.errout({
-                                    error: text.red + "Lint fail" + text.nocolor + " :(",
-                                    name : "biddle_test_lint_lintrun_lintit",
-                                    time : humantime(true)
-                                });
-                            }
-                            console.log(humantime(false) + text.green + "Lint is good for file " + (ind + 1) + ":" + text.nocolor + " " + val[0]);
-                            if (ind === arr.length - 1) {
-                                console.log(text.green + "Lint operation complete!" + text.nocolor);
-                                next();
-                            }
-                        }
-                    };
+                        };
                     options = {
                         correct     : false,
                         crlf        : false,
@@ -3250,16 +3197,19 @@
                         styleguide  : "jslint",
                         wrap        : 80
                     };
-                    files.forEach(lintit);
+                    do {
+                        lintit();
+                        if (failed === true) {
+                            break;
+                        }
+                        a = a + 1;
+                    } while (a < len);
                 };
             phasenumb += 1;
             console.log(phasenumb + ". Lint tests");
             console.log("** Note that line numbers of error messaging reflects beautified code line.");
             ignoreDirectory.forEach(function biddle_test_lint_absignore(value, index, array) {
                 array[index] = data.abspath + value;
-            });
-            keys.forEach(function biddle_test_lint_updateIgnores(mod) {
-                ignoreDirectory.push(modules[mod].dir);
             });
             (function biddle_test_lint_getFiles() {
                 var enddirs    = 0,
@@ -3352,9 +3302,9 @@
                     node.child(childcmd + listcmds[0] + " childtest", {
                         cwd: data.abspath
                     }, function biddle_test_listStatus_childWrapper_child(er, stdout, stder) {
-                        var listout = text.underline + text.cyan + "installed applications:" + text.none + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep + "\n\n" + text.underline + text.cyan + "published applications:" + text.none + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "unittest" + node.path.sep + "publications" + node.path.sep + "biddletestb" + node.path.sep,
-                            listpub = text.underline + text.cyan + "published applications:" + text.none + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "unittest" + node.path.sep + "publications" + node.path.sep + "biddletestb" + node.path.sep,
-                            listist = text.underline + text.cyan + "installed applications:" + text.none + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep,
+                        var listout = "\n" + text.underline + text.cyan + "installed applications:" + text.none + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep + "\n\n" + text.underline + text.cyan + "published applications:" + text.none + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "unittest" + node.path.sep + "publications" + node.path.sep + "biddletestb" + node.path.sep,
+                            listpub = "\n" + text.underline + text.cyan + "published applications:" + text.none + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "publications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "unittest" + node.path.sep + "publications" + node.path.sep + "biddletestb" + node.path.sep,
+                            listist = "\n" + text.underline + text.cyan + "installed applications:" + text.none + "\n\n* " + text.cyan + "biddletesta" + text.nocolor + " - 99.99.xxxx - " + data.abspath + "applications" + node.path.sep + "biddletesta" + node.path.sep + "\n* " + text.cyan + "biddletestb" + text.nocolor + " - 98.98.1234 - " + data.abspath + "applications" + node.path.sep + "biddletestb" + node.path.sep,
                             statout = "\n" + text.underline + text.green + "all applications are current:" + text.none + "\n\n* biddletesta matches published version " + text.cyan + "99.99.xxxx" + text.nocolor + "\n* biddletestb matches published version " + text.cyan + "98.98.1234" + text.nocolor,
                             statpba = "\n* biddletesta matches published version " + text.cyan + "99.99.xxxx" + text.nocolor,
                             statpbb = "\n" + text.underline + "outdated applications:" + text.normal + "\n\n* biddletesta is installed at version " + text.bold + text.red + "99.99.xxxx" + text.none + " but published version is " + text.cyan + "11.22.6789" + text.nocolor + "\n\n" + text.underline + "current applications:" + text.normal + "\n\n* biddletestb matches published version " + text.cyan + "98.98.1234" + text.nocolor,
@@ -3914,339 +3864,127 @@
                 date     = Number("" + dateobj.getFullYear() + month + day),
                 ind      = 0,
                 today    = require(data.abspath + "today.js"),
-                longname = 0,
-                namepad  = function biddle_test_namepad(name) {
-                    var a = name.length;
-                    if (name.length === longname) {
-                        return name;
-                    }
-                    do {
-                        a    += 1;
-                        name = name + " ";
-                    } while (a < longname);
-                    return name;
-                },
-                newinstall = false,
                 intpath  = __dirname + node.path.sep + "internal" + node.path.sep,
                 modules  = {
                     jslint    : "http://prettydiff.com/downloads/jslint/jslint_latest.zip",
                     prettydiff: "http://prettydiff.com/downloads/prettydiff/prettydiff_cli_latest.zip"
                 },
+                versions = {},
                 inst     = 0,
+                newinstall = false,
                 keys     = Object.keys(modules),
-                modupdate = function biddle_test_moduleInstall_modupdate() {
-                    node.child(childcmd + "status --internal", function biddle_test_moduleInstall_status(stater, statout, statouter) {
-                        var noapp    = (stater.toString().indexOf("No applications installed by biddle.") < 0),
-                            outdated = (statout.indexOf("but published version is") > 0);
-                        if (stater !== null && noapp === false) {
-                            return apps.errout({error: stater, name: "biddle_test_moduleInstall_status", stdout: statout, time: humantime(true)});
-                        }
-                        if (statouter !== null && statouter !== "") {
-                            return apps.errout({error: statouter, name: "biddle_test_moduleInstall_status", stdout: statout, time: humantime(true)});
-                        }
-                        /*if (noapp === true || outdated === true) {
-
-                        }*/
-                    });
+                complete = function biddle_test_moduleInstall_complete() {
+                    var verkeys  = Object.keys(versions),
+                        len      = verkeys.length,
+                        a        = 0,
+                        longname = (function biddle_test_moduleInstall_complete_longname() {
+                            var aa   = 0,
+                                long = 0;
+                            do {
+                                if (verkeys[aa].length > long) {
+                                    long = verkeys[aa].length;
+                                }
+                                aa = aa + 1;
+                            } while (aa < len);
+                            return long;
+                        }()),
+                        namepad  = function biddle_test_namepad(name) {
+                            var aa = name.length;
+                            if (name.length === longname) {
+                                return name;
+                            }
+                            do {
+                                aa   = aa + 1;
+                                name = name + " ";
+                            } while (aa < longname);
+                            return name;
+                        };
+                    verkeys.sort();
+                    console.log("Installed module versions");
+                    console.log("-------------------------");
+                    do {
+                        console.log("* " + text.bold + text.cyan + namepad(verkeys[a]) + text.none + " - " + text.bold + text.green + versions[verkeys[a]] + text.none);
+                        a = a + 1;
+                    } while (a < len);
+                    next();
                 },
-                modData = function biddle_test_moduleInstall_modData(mod) {
-                    node.fs.readFile(mod.dir + node.path.sep + "package.json", "utf8", function biddle_test_moduleInstall_modData_package(packer, packout) {
-                        var json = {};
-                        if (packer !== null) {
-                            return apps.errout({error: packer, name:"biddle_test_moduleInstall_modData_package", stdout:packout, time: humantime(true)});
-                        }
-                        json = JSON.parse(packout);
-                    });
+                writeToday = function biddle_test_moduleInstall_writeToday() {
+                    node
+                        .fs
+                        .writeFile(data.abspath + "today.js", "/\u002aglobal module\u002a/(function () {\"use strict\";var today=" + date + ";module.exports=today;}());", function biddle_test_moduleInstall_writeToday_writeFile(werr) {
+                            if (werr !== null && werr !== undefined) {
+                                return apps.errout({error: werr, name: "biddle_test_moduleInstall_writeToday_writeFile", time: humantime(true)});
+                            }
+                            complete();
+                        });
                 },
-                todaystat = function biddle_test_moduleInstall_todaystat(mod) {
-                    node.fs.stat(intpath + mod + node.path.sep + "package.json", function biddle_test_moduleInstall_todaystat_stat(erstat, stats) {
-                        if (erstat === null && stats.isFile() === true) {
+                modcheck = function biddle_test_moduleInstall_modcheck(mod) {
+                    var modinstall = function biddle_test_moduleInstall_modcheck_modinstall() {
+                            apps.install(modules[mod], function biddle_test_moduleInstall_modcheck_modinstall_install(packjson) {
+                                newinstall = true;
+                                mods[mod] = require(intpath + mod + node.path.sep + packjson.main);
+                                versions[mod] = packjson.version;
+                                inst = inst + 1;
+                                if (inst === keys.length) {
+                                    writeToday();
+                                }
+                            });
+                        },
+                        modrequire = function biddle_test_moduleInstall_modcheck_modrequire(packer, packjson) {
+                            var json = {};
+                            if (packer !== null) {
+                                return apps.errout({error: packer, name:"biddle_test_moduleInstall_modData_package", stdout:packjson, time: humantime(true)});
+                            }
+                            json          = JSON.parse(packjson);
+                            versions[mod] = json.version;
+                            mods[mod]     = require(intpath + mod + node.path.sep + json.main);
                             inst = inst + 1;
                             if (inst === keys.length) {
                                 if (newinstall === true) {
-                                    console.log("All require dependencies are installed.");
+                                    writeToday();
                                 } else {
-                                    console.log("All require dependencies are installed, but not updated.");
+                                    complete();
                                 }
-                                next();
                             }
-                        } else {
-                            apps.install(modules[mod], function biddle_test_moduleInstall_todaystat_stat_install(packjson) {
-                                newinstall = true;
-                                inst = inst + 1;
-                                console.log("biddle internally installed " + packjson.name + " to version " + text.bold + text.green + packjson.version + text.none);
-                                if (inst === keys.length) {
-                                    console.log("All require dependencies are installed.");
-                                    next();
+                        },
+                        modstatus = function biddle_test_moduleInstall_modcheck_modstatus() {
+                            node.child(childcmd + "status " + mod + " --internal", function biddle_test_moduleInstall_status(statuser, statusout, statusouter) {
+                                if (statuser !== null) {
+                                    return apps.errout({error: statuser, name: "biddle_test_moduleInstall_status", stdout:statusout, time: humantime(true)});
+                                }
+                                if (statusouter !== null && statusouter !== "") {
+                                    return apps.errout({error: statusouter, name: "biddle_test_moduleInstall_status", stdout:statusout, time: humantime(true)});
+                                }
+                                if (statusout.indexOf(mod + " matches published version") > 0) {
+                                    node.fs.readFile(intpath + mod + node.path.sep + "package.json", "utf8", function biddle_test_moduleInstall_modcheck_stat_readFile(packer, packjson) {
+                                        modrequire(packer, packjson);
+                                    });
+                                } else {
+                                    modinstall();
                                 }
                             });
+                        };
+                    node.fs.stat(intpath + mod + node.path.sep + "package.json", function biddle_test_moduleInstall_modcheck_stat(erstat, stats) {
+                        if (erstat === null && stats.isFile() === true && data.installed.internal !== undefined && data.installed.internal[mod] !== undefined) {
+                            if (date > today) {
+                                modstatus();
+                            } else {
+                                node.fs.readFile(intpath + mod + node.path.sep + "package.json", "utf8", function biddle_test_moduleInstall_modcheck_stat_readFile(packer, packjson) {
+                                    modrequire(packer, packjson);
+                                });
+                            }
+                        } else {
+                            modinstall();
                         }
                     });
                 };
             if (date > today) {
-                modupdate();
-            } else {
-                do {
-                    todaystat(keys[ind]);
-                    ind = ind + 1;
-                } while (ind < keys.length);
-                /*if (install < keys.length) {
-                    modupdate();
-                } else {
-                    console.log("Using installed modules.");
-                    ind = 0;
-                    do {
-                        modules[keys[ind]].app = require(modules[keys[ind]].dir + node.path.sep + modules[keys[ind]].main);
-                        modData(modules[keys[ind]]);
-                    } while (ind < keys.length);
-                }*/
+                newinstall = true;
             }
-            /*var dateobj  = new Date(),
-                day      = (dateobj.getDate() > 9)
-                    ? "" + dateobj.getDate()
-                    : "0" + dateobj.getDate(),
-                month    = (dateobj.getMonth() > 8)
-                    ? "" + (dateobj.getMonth() + 1)
-                    : "0" + (dateobj.getMonth() + 1),
-                date     = Number("" + dateobj.getFullYear() + month + day),
-                ind      = 0,
-                flag     = {
-                    apps  : false,
-                    jslint: false,
-                    modout: false,
-                    today : false
-                },
-                today    = require(data.abspath + "today.js"),
-                editions = function biddle_test_moduleInstall_editionsInit() {
-                    return;
-                },
-                handler  = function biddle_test_moduleInstall_handler() {
-                    var mod = keys[ind];
-                    modules[mod].name = text.green + modules[mod].name + text.nocolor;
-                    if (modules[mod].name.length > longname) {
-                        longname = modules[mod].name.length;
-                    }
-                    node
-                        .fs
-                        .stat(modules[mod].dir, function biddle_test_moduleInstall_handler_stat(erstat, stats) {
-                            var add = function biddle_test_moduleInstall_handler_stat_add() {
-                                console.log("Adding " + modules[mod].name);
-                                node.child("git submodule add " + modules[mod].repo, {
-                                    cwd: data.abspath
-                                }, function biddle_test_moduleInstall_handler_stat_add_submodule(era, stdouta, stdoutera) {
-                                    if (era !== null && era.toString().indexOf("already exists in the index") < 0) {
-                                        return apps.errout({error: era, name: "biddle_test_moduleInstall_handler_stat_add_submodule", stdout: stdouta, time: humantime(true)});
-                                    }
-                                    if (stdoutera !== null && stdoutera !== "" && stdoutera.indexOf("Cloning into '") < 0 && stdoutera.indexOf("already exists in the index") < 0) {
-                                        return apps.errout({error: stdoutera, name: "biddle_test_moduleInstall_handler_stat_add_submodule", stdout: stdouta, time: humantime(true)});
-                                    }
-                                    node.child("git clone " + modules[mod].repo, {
-                                        cwd: data.abspath
-                                    }, function biddle_test_moduleInstall_handler_stat_add_submodule_clone(erb, stdoutb, stdouterb) {
-                                        if (erb !== null) {
-                                            return apps.errout({error: erb, name: "biddle_test_moduleInstall_handler_stat_add_submodule_clone", stdout: stdoutb, time: humantime(true)});
-                                        }
-                                        if (stdouterb !== null && stdouterb !== "" && stdouterb.indexOf("Cloning into '") < 0) {
-                                            return apps.errout({error: stdouterb, name: "biddle_test_moduleInstall_handler_stat_add_submodule_clone", stdout: stdoutb, time: humantime(true)});
-                                        }
-                                        ind += 1;
-                                        editions(mod, true, ind);
-                                        return stdoutb;
-                                    });
-                                    return stdouta;
-                                });
-                            };
-                            if (erstat !== null && erstat !== undefined) {
-                                if (erstat.toString().indexOf("Error: ENOENT: no such file or directory, stat '") === 0) {
-                                    return add();
-                                }
-                                return apps.errout({error: erstat, name: "biddle_test_moduleInstall_handler_stat", time: humantime(true)});
-                            }
-                            if (stats.isDirectory() === true) {
-                                return node
-                                    .fs
-                                    .readdir(modules[mod].dir, function biddle_test_moduleInstall_handler_stat_readdir(direrr, files) {
-                                        if (typeof direrr === "string") {
-                                            return apps.errout({error: direrr, name: "biddle_test_moduleInstall_handler_stat_readdir", time: humantime(true)});
-                                        }
-                                        ind += 1;
-                                        if (files.length < 1) {
-                                            apps.remove(modules[mod].dir, add);
-                                        } else {
-                                            editions(mod, false);
-                                        }
-                                    });
-                            }
-                            add();
-                        });
-                };
-            editions = function biddle_test_moduleInstall_editions(appName, cloned) {
-                var modout = function biddle_test_moduleInstall_editions_modout() {
-                        var x   = 0,
-                            len = keys.length;
-                        console.log("Installed submodule versions");
-                        console.log("----------------------------");
-                        for (x = 0; x < len; x += 1) {
-                            modules[keys[x]].edition(modules[keys[x]]);
-                        }
-                        next();
-                    },
-                    submod = function biddle_test_moduleInstall_editions_submod(output) {
-                        var appFile        = modules[appName].dir + node.path.sep + modules[appName].file,
-                            jslintcomplete = function biddle_test_moduleInstall_editions_submod_jslintcomplete() {
-                                modules.jslint.app = require(appFile);
-                                flag.jslint        = true;
-                                if (ind === keys.length) {
-                                    if (flag.today === true && flag.modout === false) {
-                                        modout();
-                                    } else {
-                                        if (output === true) {
-                                            console.log("All submodules configured.");
-                                        }
-                                        flag.apps = true;
-                                    }
-                                }
-                            };
-                        if (appName === "jslint") {
-                            node
-                                .fs
-                                .readFile(appFile, "utf8", function biddle_test_moduleInstall_editions_submod_lintread(erread, data) {
-                                    if (erread !== null && erread !== undefined) {
-                                        apps.errout({error: erread, name: "biddle_test_moduleInstall_editions_lintread", time: humantime(true)});
-                                    }
-                                    if (data.slice(data.length - 30).indexOf("\nmodule.exports = jslint;") < 0) {
-                                        data = data + "\nmodule.exports = jslint;";
-                                        node
-                                            .fs
-                                            .writeFile(appFile, data, "utf8", function biddle_test_moduleInstall_editions_submod_lintread_lintwrite(erwrite) {
-                                                if (erwrite !== null && erwrite !== undefined) {
-                                                    apps.errout({error: erwrite, name: "biddle_test_moduleInstall_editions_lintread_lintwrite", time: humantime(true)});
-                                                }
-                                                jslintcomplete();
-                                            });
-                                    } else {
-                                        jslintcomplete();
-                                    }
-                                });
-                        } else {
-                            modules[appName].app = require(appFile);
-                            if (ind === keys.length && flag.jslint === true) {
-                                if (flag.today === true) {
-                                    flag.modout = true;
-                                    modout();
-                                } else {
-                                    if (output === true) {
-                                        console.log("All submodules configured.");
-                                    }
-                                    flag.apps = true;
-                                }
-                            }
-                        }
-                    },
-                    each   = function biddle_test_moduleInstall_editions_each(val, idx) {
-                        appName = val;
-                        ind     = idx + 1;
-                        submod(false);
-                    },
-                    update = function biddle_test_moduleInstall_editions_update() {
-                        node.child("git submodule update", {
-                            cwd: data.abspath
-                        }, function biddle_test_moduleInstall_editions_update_child(erd, stdoutd, stdouterd) {
-                            if (erd !== null) {
-                                apps.errout({error: erd, name: "biddle_test_moduleInstall_editions_update_child", stdout: stdoutd, time: humantime(true)});
-                            }
-                            if (stdouterd !== null && stdouterd !== "" && stdouterd.indexOf("Cloning into '") < 0 && stdouterd.indexOf("From ") !== 0) {
-                                apps.errout({error: stdouterd, name: "biddle_test_moduleInstall_editions_update_child", stdout: stdoutd, time: humantime(true)});
-                            }
-                            if (flag.today === false) {
-                                console.log("Submodules downloaded.");
-                            }
-                            keys.forEach(each);
-                        });
-                    },
-                    pull   = function biddle_test_moduleInstall_editions_pull() {
-                        node.child("git submodule foreach git pull origin master", {
-                            cwd: data.abspath
-                        }, function biddle_test_moduleInstall_editions_pull_child(errpull, stdoutpull, stdouterpull) {
-                            if (errpull !== null) {
-                                console.log(errpull);
-                                if (errpull.toString().indexOf("fatal: no submodule mapping found in .gitmodules for path ") > 0) {
-                                    console.log("No access to GitHub or .gitmodules is corrupt. Proceeding assuming submodules we" +
-                                            "re previously installed.");
-                                    flag.apps = true;
-                                    return keys.forEach(each);
-                                }
-                                apps.errout({error: errpull, name: "biddle_test_moduleInstall_editions_pull_child", stdout: stdoutpull, time: humantime(true)});
-                            }
-                            if (stdouterpull !== null && stdouterpull !== "" && stdouterpull.indexOf("Cloning into '") < 0 && stdouterpull.indexOf("From ") < 0 && stdouterpull.indexOf("fatal: no submodule mapping found in .gitmodules for path ") < 0) {
-                                apps.errout({error: stdouterpull, name: "biddle_test_moduleInstall_editions_pull_child", stdout: stdoutpull, time: humantime(true)});
-                            }
-                            if (flag.today === false) {
-                                console.log("Submodules checked for updates.");
-                            }
-                            keys.forEach(each);
-                        });
-                    };
-                if (ind === keys.length) {
-                    if (today !== date) {
-                        node.child("git checkout jslint.js", {
-                            cwd: data.abspath + "JSLint"
-                        }, function biddle_test_moduleInstall_editions_checkoutJSLint(erjsl, stdoutjsl, stdouterjsl) {
-                            if (erjsl !== null) {
-                                apps.errout({error: erjsl, name: "biddle_test_moduleInstall_editions_checkoutJSLint", stdout: stdoutjsl, time: humantime(true)});
-                            }
-                            if (stdouterjsl !== null && stdouterjsl !== "") {
-                                apps.errout({error: stdouterjsl, name: "biddle_test_moduleInstall_editions_checkoutJSLint", stdout: stdoutjsl, time: humantime(true)});
-                            }
-                            ind = 0;
-                            node
-                                .fs
-                                .writeFile("today.js", "/\u002aglobal module\u002a/(function () {\"use strict\";var today=" + date + ";module.exports=today;}());", function biddle_test_moduleInstall_editions_checkoutJSLint_writeToday(werr) {
-                                    if (werr !== null && werr !== undefined) {
-                                        apps.errout({error: werr, name: "biddle_test_moduleInstall_editions_checkoutJSLint_writeToday", time: humantime(true)});
-                                    }
-                                    if (cloned === true) {
-                                        console.log("Submodules downloaded.");
-                                    } else {
-                                        console.log("Submodules checked for updates.");
-                                    }
-                                    if (flag.apps === true) {
-                                        modout();
-                                    } else {
-                                        console.log("Checked for new versions of submodules.");
-                                        flag.today = true;
-                                    }
-                                });
-                            if (cloned === true) {
-                                node.child("git submodule init", {
-                                    cwd: data.abspath
-                                }, function biddle_test_moduleInstall_editions_checkoutJSLint_init(erc, stdoutc, stdouterc) {
-                                    if (erc !== null) {
-                                        apps.errout({error: erc, name: "biddle_test_moduleInstall_editions_checkoutJSLint_init", stdout: stdoutc, time: humantime(true)});
-                                    }
-                                    if (stdouterc !== null && stdouterc !== "" && stdouterc.indexOf("Cloning into '") < 0 && stdouterc.indexOf("From ") < 0 && stdouterc.indexOf(" registered for path ") < 0) {
-                                        apps.errout({error: stdouterc, name: "biddle_test_moduleInstall_editions_checkoutJSLint_init", stdout: stdoutc, time: humantime(true)});
-                                    }
-                                    update();
-                                });
-                            } else {
-                                pull();
-                            }
-                        });
-                    } else {
-                        flag.today = true;
-                        console.log("Running prior installed modules.");
-                        keys.forEach(each);
-                    }
-                } else {
-                    handler(ind);
-                }
-            };
-            apps.remove(testpath, function biddle_test_moduleInstall_remove() {
-                apps.makedir(testpath, function biddle_test_moduleInstall_remove_makedir() {
-                    handler(0);
-                });
-            });*/
+            do {
+                modcheck(keys[ind]);
+                ind = ind + 1;
+            } while (ind < keys.length);
         };
         phases.publishA      = function biddle_test_publishA() {
             phasenumb += 1;
@@ -5093,16 +4831,14 @@
             apps.remove(data.abspath + "applications" + node.path.sep + "biddletestb", function biddle_uninstall_removeTest() {
                 return true;
             });
+        } else {
+            delete data.installed[data.input[2]];
         }
         apps.remove(app.location, function biddle_uninstall_remove() {
-            var str = "",
-                loc = app.location;
-            delete data.installed[data.input[2]];
-            str = JSON.stringify(data.installed);
-            apps.writeFile(str, data.abspath + "installed.json", function biddle_uninstall_remove_writeFile() {
+            apps.writeFile(JSON.stringify(data.installed), data.abspath + "installed.json", function biddle_uninstall_remove_writeFile() {
                 data.input[3] = "remove";
                 if (data.platform !== "win32") {
-                    apps.global(loc + node.path.sep);
+                    apps.global(app.location + node.path.sep);
                 }
                 if (fromTest === false) {
                     if (data.internal === true) {
@@ -5320,7 +5056,7 @@
                 }
                 callback(fileData);
             },
-            encoding   = ((data.command !== "install" && (/[\u0002-\u0008]|[\u000e-\u001f]/).test(fileData) === true) || (/(\.zip)$/).test(fileName) === true)
+            encoding   = (typeof fileData !== "string" && ((data.command !== "install" && (/[\u0002-\u0008]|[\u000e-\u001f]/).test(fileData) === true) || (/(\.zip)$/).test(fileName) === true))
                 ? "binary"
                 : "utf8";
         node
@@ -5393,7 +5129,7 @@
             };
         if (data.command === "publish" || data.command === "zip") {
             if (data.command === "zip") {
-                zipfile = data.address.target + data.fileName + ".zip";
+                zipfile = data.address.target + zippack.fileName + ".zip";
             } else {
                 zipfile = data.address.target + data.packjson.name + variantName + "_" + apps.sanitizef(data.packjson.version) + ".zip";
             }
@@ -5552,7 +5288,7 @@
                         });
                     } else if (data.command === "install") {
                         apps.install(data.input[2], function biddle_init_start_installCallback() {
-                            if (internal === true) {
+                            if (data.internal === true) {
                                 return console.log("Application " + text.cyan + data.packjson.name + text.nocolor + " is installed " + text.bold + text.yellow + "internally to biddle" + text.none + " at version: " + text.bold + text.red + data.packjson.version + text.none);
                             }
                             console.log("Application " + text.cyan + data.packjson.name + text.nocolor + " is installed to version: " + text.bold + text.red + data.packjson.version + text.none);
@@ -5568,7 +5304,7 @@
                             return true;
                         });
                     } else if (data.command === "status") {
-                        apps.status();
+                        apps.status(data.input[2]);
                     } else if (data.command === "test") {
                         apps.test();
                     } else if (data.command === "uninstall") {
@@ -5590,6 +5326,13 @@
                             console.log("Zip file written: " + zipfilename);
                             return [zipfilename];
                         }, {
+                            fileName: (function biddle_install_late() {
+                                var sep  = (data.protocoltest.test(data.input[2]) === true)
+                                        ? "/"
+                                        : node.path.sep,
+                                    dirs = data.input[2].split(sep);
+                                return dirs.pop();
+                            }()),
                             location: apps.relToAbs(data.input[2], data.cwd),
                             name    : ""
                         });
@@ -5600,6 +5343,7 @@
             var a     = [],
                 b     = 0,
                 c     = process.argv.length,
+                int   = -1,
                 paths = [];
             if (process.argv[0] === "sudo") {
                 process
@@ -5624,6 +5368,11 @@
             if (a[a.length - 1] === "childtest") {
                 a.pop();
                 data.childtest = true;
+            }
+            int = a.indexOf("--internal");
+            if (int > -1) {
+                data.internal = true;
+                a.splice(int, 1);
             }
             return a;
         }());
@@ -5673,14 +5422,13 @@
                     parsed = JSON.parse(fileData);
                 }
                 data.installed   = parsed;
-                if ((data.installed.internal !== undefined || data.command === "list" || data.command === "install") && data.input.indexOf("--internal") > 1) {
-                    data.internal = true;
+                if (data.internal === true && (data.command === "list" || data.command === "install" || data.command === "status")) {
                     if (data.installed.internal === undefined) {
                         data.installed = {};
                     } else {
                         data.installed = data.installed.internal;
                     }
-                } else if (data.command !== "install" && (data.command !== "test" || (data.command === "test" && data.input[2] !== undefined && data.input[2] !== "biddle"))) {
+                } else if (data.command !== "install" && data.command !== "uninstall" && (data.command !== "test" || (data.command === "test" && data.input[2] !== undefined && data.input[2] !== "biddle"))) {
                     delete data.installed.internal;
                 }
                 status.installed = true;
