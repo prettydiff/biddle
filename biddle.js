@@ -1050,7 +1050,7 @@
                     do {
                         if (listtype[type][a].length > pads.name) {
                             pads.name = listtype[type][a].length;
-                        }//if(data[type][listtype[type][a]]===undefined){console.log(data.installed);}
+                        }
                         if (data[type][listtype[type][a]][vert].length > pads.version) {
                             pads.version = data[type][listtype[type][a]][vert].length;
                         }
@@ -2530,6 +2530,9 @@
                     }
                     dirs = pub.split(node.path.sep);
                     dirs.pop();
+                    if (dirs[dirs.length - 1] === "") {
+                        dirs.pop();
+                    }
                     return dirs.pop();
                 };
                 versions[name(filepath)] = filedata;
@@ -2538,12 +2541,6 @@
                     compare();
                 }
             };
-        /*if (app === undefined) {
-            return apps.errout({
-                error: "The status command requires the name of an installed application.",
-                name : "biddle_status"
-            });
-        }*/
         list = Object.keys(data.installed);
         if (list.length < 1) {
             return apps.errout({error: "No applications installed by biddle.", name: "biddle_status"});
@@ -4692,7 +4689,7 @@
             node.child(childcmd + "unpublish biddletesta latest childtest", {
                 cwd: data.abspath
             }, function biddle_test_unpublishLatest_child(er, stdout, stder) {
-                var unpubtest = "Version " + text.bold + text.red + "99.99.xxxx" + text.none + " of app " + text.cyan + "biddletesta" + text.nocolor + " is unpublished.";
+                var unpubtest = "\nVersion " + text.bold + text.red + "99.99.xxxx" + text.none + " of app " + text.cyan + "biddletesta" + text.nocolor + " is unpublished.";
                 if (er !== null) {
                     return apps.errout({error: er, name: "biddle_test_unpublishLatest_child", stdout: stdout, time: humantime(true)});
                 }
@@ -4700,6 +4697,7 @@
                     return apps.errout({error: stder, name: "biddle_test_unpublishLatest_child", stdout: stdout, time: humantime(true)});
                 }
                 stdout = stdout.replace(/(\s+)$/, "");
+                stdout = stdout.replace(/\r\n/g, "\n");
                 stdout = stdout.replace(/99\.99\.\d\d\d\d/, "99.99.xxxx");
                 if (stdout !== unpubtest) {
                     return diffFiles("biddle_test_unpublishLatest_child", stdout, unpubtest);
@@ -4828,6 +4826,7 @@
         }
         if (fromTest === true) {
             delete data.installed.biddletestb;
+            delete data.installed.biddletesta;
             apps.remove(data.abspath + "applications" + node.path.sep + "biddletestb", function biddle_uninstall_removeTest() {
                 return true;
             });
