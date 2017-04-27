@@ -9,6 +9,7 @@
         "._DC_Store",
         ".git",
         ".gitmodules",
+        "internal",
         "node_modules"
     ]
 }
