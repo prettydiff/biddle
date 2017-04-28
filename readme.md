@@ -5,7 +5,7 @@
 [MIT](https://opensource.org/licenses/MIT)
 
 ## Version
-0.1.19 [![Build Status Image](https://semaphoreci.com/api/v1/prettydiff/biddle/branches/master/badge.svg)](https://semaphoreci.com/prettydiff/biddle) [![AppVeyor Build](https://ci.appveyor.com/api/projects/status/github/prettydiff/biddle?branch=master&svg=true)](https://ci.appveyor.com/project/prettydiff/biddle)
+1.0.0 [![Build Status Image](https://semaphoreci.com/api/v1/prettydiff/biddle/branches/master/badge.svg)](https://semaphoreci.com/prettydiff/biddle) [![AppVeyor Build](https://ci.appveyor.com/api/projects/status/github/prettydiff/biddle?branch=master&svg=true)](https://ci.appveyor.com/project/prettydiff/biddle)
 [![NSP Status](https://nodesecurity.io/orgs/prettydiff/projects/dd20fc59-e9b4-4ff0-818e-e322a68811bf/badge)](https://nodesecurity.io/orgs/prettydiff/projects/dd20fc59-e9b4-4ff0-818e-e322a68811bf)
 
 ## About
@@ -18,9 +18,6 @@ biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but
 * *privacy* - Put biddle behind your firewall or an isolated environment to prevent public access to your applications and data.
 * *management* - There is no dependency hell here.  Dependency management will not be automated, but a means to manage and review the status of all installed/published packages is provided.
 * *freedom* - biddle will work everywhere Node.js runs.  It can be used with any application written in any language whether binary or text.
-
-## Beta Status
-Project is in **beta** status.  This project is stable and ready for examination, but not ready for production or commercial use.  As of version 0.1.13 biddle is used in production for [Pretty Diff](https://github.com/prettydiff/prettydiff/issues/291#issuecomment-259951141).
 
 ## Documentation
 * [Getting Started](documentation/gettingstarted.md)
