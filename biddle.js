@@ -42,6 +42,7 @@
             uninstall: "Uninstall an application installed by biddle.",
             unpublish: "Unpublish an application, or a version, published by biddle.",
             unzip    : "Unzip a zip file.",
+            update   : "Issues a status command and automatically installs the latest version if the installed version is outdated.",
             version  : "Output an installed application's version number.",
             zip      : "Zip a file or directory."
         },
@@ -455,10 +456,14 @@
                 });
                 res.on("end", function biddle_get_getcall_end() {
                     if (res.statusCode !== 200) {
-                        console.log(res.statusCode + " " + node.http.STATUS_CODES[res.statusCode] + ", for request " + url);
                         if ((res.statusCode === 301 || res.statusCode === 302 || res.statusCode === 303 || res.statusCode === 307 || res.statusCode === 308) && res.headers.location !== undefined) {
+                            console.log(res.statusCode + " " + node.http.STATUS_CODES[res.statusCode] + ", for request " + url);
                             url = res.headers.location;
                             biddle_get(url, callback);
+                        } else if (data.command !== "install" && data.command !== "update") {
+                            console.log(res.statusCode + " " + text.bold + text.red + node.http.STATUS_CODES[res.statusCode] + text.none + ", for request " + url);
+                        } else {
+                            return apps.errout({error:data.command + " failed due to " + res.statusCode + " " + text.bold + text.red + node.http.STATUS_CODES[res.statusCode] + text.none + " on request " + url, name: "biddle_get_getcall_end"});
                         }
                     } else if ((data.command !== "install" && (/[\u0002-\u0008]|[\u000e-\u001f]/).test(file[0]) === true) || zippy === true) {
                         apps.makedir(addy, function biddle_get_getcall_end_complete() {
@@ -2068,6 +2073,13 @@
                     name : "biddle_publish_execution"
                 });
             }
+            data.packjson.name  = apps.sanitizef(data.packjson.name);
+            if (data.input[3] === undefined || data.address.target !== apps.relToAbs(data.input[3], data.cwd) + node.path.sep) {
+                publoc              = data.address.publications + data.packjson.name + node.path.sep;
+                data.address.target = publoc;
+            } else {
+                publoc = data.address.target;
+            }
             if (data.published[data.packjson.name] !== undefined && data.input[3] !== undefined) {
                 data.input = data
                     .input
@@ -2084,9 +2096,6 @@
                     .published[data.packjson.name]
                     .directory                     = data.address.target + apps.sanitizef(data.packjson.name) + node.path.sep;
             }
-            data.packjson.name  = apps.sanitizef(data.packjson.name);
-            publoc              = data.address.publications + data.packjson.name + node.path.sep;
-            data.address.target = publoc;
             data
                 .published[data.packjson.name]
                 .versions
@@ -2462,7 +2471,7 @@
         paths.push(fileName.replace(/\+|<|>|:|"|\||\?|\*|%|\s/g, ""));
         return paths.join("");
     };
-    apps.status      = function biddle_status(app) {
+    apps.status      = function biddle_status(app, callback) {
         var list       = [],
             versions   = {},
             a          = 0,
@@ -2487,35 +2496,39 @@
                 } while (k < klen);
                 klen = outs.length;
                 if (klen > 0) {
-                    if (single === false) {
-                        console.log("");
-                        if (currents.length < 1) {
-                            console.log(text.underline + text.red + "All Applications Outdated:" + text.none);
-                        } else {
-                            console.log(text.underline + "Outdated Applications:" + text.normal);
+                    if (data.command === "status") {
+                        if (single === false) {
+                            console.log("");
+                            if (currents.length < 1) {
+                                console.log(text.underline + text.red + "All Applications Outdated:" + text.none);
+                            } else {
+                                console.log(text.underline + "Outdated Applications:" + text.normal);
+                            }
                         }
+                        console.log("");
                     }
-                    console.log("");
                     k = 0;
                     do {
-                        console.log(outs[k]);
+                        callback(outs[k]);
                         k += 1;
                     } while (k < klen);
                 }
                 klen = currents.length;
                 if (klen > 0) {
-                    if (single === false) {
-                        console.log("");
-                        if (outs.length < 1) {
-                            console.log(text.underline + text.green + "All Applications Are Current:" + text.none);
-                        } else {
-                            console.log(text.underline + "Current Applications:" + text.normal);
+                    if (data.command === "status") {
+                        if (single === false) {
+                            console.log("");
+                            if (outs.length < 1) {
+                                console.log(text.underline + text.green + "All Applications Are Current:" + text.none);
+                            } else {
+                                console.log(text.underline + "Current Applications:" + text.normal);
+                            }
                         }
+                        console.log("");
                     }
-                    console.log("");
                     k = 0;
                     do {
-                        console.log(currents[k]);
+                        callback(currents[k]);
                         k += 1;
                     } while (k < klen);
                 }
@@ -2541,11 +2554,11 @@
                     compare();
                 }
             };
-        list = Object.keys(data.installed);
-        if (list.length < 1) {
-            return apps.errout({error: "No applications installed by biddle.", name: "biddle_status"});
-        }
-        if (data.installed[app] !== undefined) {
+        if (app === undefined || app === "") {
+            list = Object.keys(data.installed);
+            list.push("biddle");
+            list.sort();
+        } else if (data.installed[app] !== undefined) {
             list   = [app];
             single = true;
         } else if (app !== undefined) {
@@ -2556,11 +2569,15 @@
         }
         len = list.length;
         do {
-            addy = data.installed[list[a]].published;
-            if (data.protocoltest.test(addy) === true) {
-                apps.get(addy + "/latest.txt", "latest.txt", getversion);
+            if (list[a] === "biddle") {
+                apps.get("http://prettydiff.com/downloads/biddle/latest.txt", "latest.txt", getversion);
             } else {
-                apps.get(addy + node.path.sep + "latest.txt", "latest.txt", getversion);
+                addy = data.installed[list[a]].published;
+                if (data.protocoltest.test(addy) === true) {
+                    apps.get(addy + "/latest.txt", "latest.txt", getversion);
+                } else {
+                    apps.get(addy + node.path.sep + "latest.txt", "latest.txt", getversion);
+                }
             }
             a += 1;
         } while (a < len);
@@ -2658,7 +2675,6 @@
                 "install",
                 "listStatus",
                 "republish",
-                //"update",
                 "uninstall",
                 "unpublishLatest",
                 "unpublishAll"
@@ -4598,9 +4614,6 @@
                     });
             });
         };
-        phases.update        = function biddle_test_update() {
-            return;
-        };
         phases.unpublishAll  = function biddle_test_unpublishAll() {
             phasenumb += 1;
             console.log(phasenumb + ". Unpublish All tests");
@@ -4818,6 +4831,20 @@
             });
         };
         next();
+    };
+    apps.update      = function biddle_update(app, callback) {
+        if (data.installed[app] === undefined && app !== undefined) {
+            return apps.errout({error: "Update failed, " + text.cyan + app + text.nocolor + " is not installed by biddle.", name: "biddle_update"});
+        }
+        apps.status(app, function biddle_update_statusResponse(status) {
+            if (status === undefined) {
+                return;
+            }
+            if (status.indexOf("matches published version") > 0) {
+                return console.log(status);
+            }
+            apps.install(data.installed[app]);
+        });
     };
     apps.uninstall   = function biddle_uninstall(fromTest) {
         var app = data.installed[data.input[2]];
@@ -5248,7 +5275,7 @@
                         name : "biddle_init_start"
                     });
                 } else {
-                    if (data.input[2] === undefined && data.command !== "command" && data.command !== "global" && data.command !== "list" && data.command !== "status" && data.command !== "test" && data.command !== "version") {
+                    if (data.input[2] === undefined && data.command !== "command" && data.command !== "global" && data.command !== "list" && data.command !== "status" && data.command !== "update" && data.command !== "test" && data.command !== "version") {
                         if (data.command === "copy" || data.command === "hash" || data.command === "markdown" || data.command === "remove" || data.command === "unzip" || data.command === "zip") {
                             valuetype = "path to a local file or directory";
                         } else if (data.command === "get" || data.command === "install" || data.command === "publish") {
@@ -5299,13 +5326,19 @@
                     } else if (data.command === "publish") {
                         apps.publish();
                     } else if (data.command === "remove") {
-                        apps.remove(data.input[2], function biddle_init_stat_remove() {
+                        apps.remove(data.input[2], function biddle_init_start_remove() {
                             return true;
                         });
                     } else if (data.command === "status") {
-                        apps.status(data.input[2]);
+                        apps.status(data.input[2], function biddle_init_start_status(status) {
+                            console.log(status);
+                        });
                     } else if (data.command === "test") {
                         apps.test();
+                    } else if (data.command === "update") {
+                        apps.update(data.input[2], function biddle_init_start_update() {
+                            return true;
+                        });
                     } else if (data.command === "uninstall") {
                         apps.uninstall(false);
                     } else if (data.command === "unpublish") {
