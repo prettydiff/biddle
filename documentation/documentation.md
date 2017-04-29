@@ -75,7 +75,7 @@ Since applications are stored by name an application of a given name may only ex
 The default publication point is the *publications* directory in biddle.  An application may be published to any location permitted by the operating system.  The published location is stored as the *directory* property in the published.json file.
 
 ### Versions
-Versions in biddle are completely free form.  [SemVer](http://semver.org/) is strongly encourage, but any string is accepted.
+Versions in biddle are completely free form.  [SemVer](http://semver.org/) is strongly encouraged, but any string is accepted.
 
 ### Latest Version
 In addition to publishing a specified version of an application biddle will also create a *latest* version in the following criteria is met:
@@ -90,11 +90,12 @@ The published.json file stores data on applications published by biddle with the
         "applicationName": {
             "location" : "path/to/application",
             "published": "address/of/publication",
+            "variant"  : "",
             "version"  : "currentVersion"
         }
     }
 
-The data is similar to the data stored in published.json, but more simple.  This data only associates a single version to an application and provides an address to retrieved zip file's directory in the *published* property.  The published property is always an absolute path whether a web address or path on the local file system.
+The data is similar to the data stored in published.json, but more simple.  This data only associates a single version to an application and provides an address to retrieved zip file's directory in the *published* property.  The published property is always an absolute path whether a web address or path on the local file system.  The variant property determines the name of the installed application's variant so that the application can be updated according to this variant instead of the default flavor.  The variant property is empty if the application's main version is installed.
 
 ### Naming Conflicts
 Naming conflicts may occur in exactly the same way as described for publications for the same reasons.
