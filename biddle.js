@@ -6777,13 +6777,13 @@
                         parsed = JSON.parse(fileData);
                     }
                     data.installed = parsed;
-                    if (data.internal === true && (data.command === "list" || data.command === "install" || data.command === "status")) {
+                    if (data.internal === true && (data.command === "list" || data.command === "install" || data.command === "status" || data.command === "update")) {
                         if (data.installed.internal === undefined) {
                             data.installed = {};
                         } else {
                             data.installed = data.installed.internal;
                         }
-                    } else if (data.command !== "install" && data.command !== "uninstall" && (data.command !== "test" || (data.command === "test" && data.input[2] !== undefined && data.input[2] !== "biddle"))) {
+                    } else if (data.command !== "install" && data.command !== "update" && data.command !== "uninstall" && (data.command !== "test" || (data.command === "test" && data.input[2] !== undefined && data.input[2] !== "biddle"))) {
                         delete data.installed.internal;
                     }
                     status.installed = true;
