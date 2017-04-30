@@ -6388,7 +6388,7 @@
     };
     apps.version     = function biddle_version() {
         if (data.input[2] === undefined) {
-            apps.getpjson(function biddle_version_vers() {
+            apps.getpjson(data.abspath + "package.json", function biddle_version_vers() {
                 console.log(
                     text.cyan + "biddle" + text.nocolor + " - " + data.packjson.version
                 );
