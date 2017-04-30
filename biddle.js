@@ -1096,7 +1096,18 @@
                                                 data
                                                     .installed
                                                     .internal[packjson.name]
-                                                    .version                 = packjson.version;
+                                                    .published               = pubs;
+                                                if (packjson.test === undefined) {
+                                                    data
+                                                        .installed
+                                                        .internal[packjson.name]
+                                                        .test = "";
+                                                } else {
+                                                    data
+                                                        .installed
+                                                        .internal[packjson.name]
+                                                        .test = packjson.test;
+                                                }
                                                 data
                                                     .installed
                                                     .internal[packjson.name]
@@ -1104,7 +1115,7 @@
                                                 data
                                                     .installed
                                                     .internal[packjson.name]
-                                                    .published               = pubs;
+                                                    .version                 = packjson.version;
                                             } else {
                                                 data.installed[packjson.name] = {};
                                                 data
@@ -1112,13 +1123,22 @@
                                                     .location                 = data.address.target;
                                                 data
                                                     .installed[packjson.name]
-                                                    .version                  = packjson.version;
+                                                    .published                = pubs;
+                                                if (packjson.test === undefined) {
+                                                    data
+                                                        .installed[packjson.name]
+                                                        .test = "";
+                                                } else {
+                                                    data
+                                                        .installed[packjson.name]
+                                                        .test = packjson.test;
+                                                }
                                                 data
                                                     .installed[packjson.name]
                                                     .variant                  = variant;
                                                 data
                                                     .installed[packjson.name]
-                                                    .published                = pubs;
+                                                    .version                  = packjson.version;
                                             }
                                             apps.writeFile(
                                                 JSON.stringify(data.installed),
