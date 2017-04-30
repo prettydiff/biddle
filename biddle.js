@@ -1397,6 +1397,9 @@
                                 return bs.replace(/((~+)|(`+))/, bsout);
                             };
                         lines[b].replace(/^(\s+)/, removespaces);
+                        if (spaces === "nospace") {
+                            spaces = "";
+                        }
                         blocks = blockstart();
                         output.push("");
                         b = b + 1;
@@ -1408,6 +1411,7 @@
                                 do {
                                     if (lines[b].indexOf(blocks) > -1 && (/(((`{3,})|(~{3,}))+\s*)$/).test(lines[b]) === true) {
                                         lines[b] = "";
+                                        output.push("");
                                         break;
                                     }
                                     output.push(
@@ -1523,7 +1527,11 @@
                                     chars.splice(0, 0, ind);
                                 }
                             }
-                            start = y - 1;
+                            if (listitem === true) {
+                                start = 2;
+                            } else {
+                                start = y - 1;
+                            }
                         }
                         y = ind.length + 4;
                         if (listitem === true) {
@@ -1548,7 +1556,7 @@
                                     chars.splice(x, 1);
                                     chars[x] = text.yellow + chars[x];
                                     final    = final - 1;
-                                } else if (chars[x] === "_" && ((x === start && chars[x + 1] !== " ") || x > start)) {
+                                } else if ((x === start || (/\s/).test(chars[x - 1]) === true) && chars[x] === "_" && ((x === start && chars[x + 1] !== " ") || x > start)) {
                                     quote = "_";
                                     chars.splice(x, 1);
                                     chars[x] = text.yellow + chars[x];
@@ -1596,7 +1604,7 @@
                                 chars.splice(x, 2);
                                 chars[x - 1] = chars[x - 1] + text.normal;
                                 final        = final - 2;
-                            } else if (chars[x] === "_" && quote === "_") {
+                            } else if (chars[x] === "_" && (x + 1 === final || (/\s/).test(chars[x + 1]) === true) && quote === "_") {
                                 quote = "";
                                 chars.splice(x, 1);
                                 chars[x - 1] = chars[x - 1] + text.nocolor;
@@ -1789,13 +1797,37 @@
                                 } else {
                                     j[i] = "\n";
                                 }
-                                if (j[i + 1] === " " && j[i + 2] === " " && j[i + 3] === " " && j[i + 4] === " ") {
+                                if (j[i + 1] === "`" && j[i + 2] === "`" && j[i + 3] === "`") {
+                                    code = true;
+                                    brace = "```";
+                                } else if (j[i + 1] === " " && j[i + 2] === "`" && j[i + 3] === "`" && j[i + 4] === "`") {
+                                    code = true;
+                                    brace = "```";
+                                } else if (j[i + 1] === " " && j[i + 2] === " " && j[i + 3] === "`" && j[i + 4] === "`" && j[i + 5] === "`") {
+                                    code = true;
+                                    brace = "```";
+                                } else if (j[i + 1] === " " && j[i + 2] === " " && j[i + 3] === " " && j[i + 4] === "`" && j[i + 5] === "`" && j[i + 6] === "`") {
+                                    code = true;
+                                    brace = "```";
+                                } else if (j[i + 1] === " " && j[i + 2] === " " && j[i + 3] === " " && j[i + 4] === " ") {
                                     code = true;
                                 } else {
                                     code = false;
                                 }
                             } else if (j[i] === "\n") {
-                                if (j[i + 1] === " " && j[i + 2] === " " && j[i + 3] === " " && j[i + 4] === " ") {
+                                if (j[i + 1] === "`" && j[i + 2] === "`" && j[i + 3] === "`") {
+                                    code = true;
+                                    brace = "```";
+                                } else if (j[i + 1] === " " && j[i + 2] === "`" && j[i + 3] === "`" && j[i + 4] === "`") {
+                                    code = true;
+                                    brace = "```";
+                                } else if (j[i + 1] === " " && j[i + 2] === " " && j[i + 3] === "`" && j[i + 4] === "`" && j[i + 5] === "`") {
+                                    code = true;
+                                    brace = "```";
+                                } else if (j[i + 1] === " " && j[i + 2] === " " && j[i + 3] === " " && j[i + 4] === "`" && j[i + 5] === "`" && j[i + 6] === "`") {
+                                    code = true;
+                                    brace = "```";
+                                } else if (j[i + 1] === " " && j[i + 2] === " " && j[i + 3] === " " && j[i + 4] === " ") {
                                     code = true;
                                 } else {
                                     code = false;
@@ -1825,6 +1857,9 @@
                             } else {
                                 brace = "";
                             }
+                        } else if (brace === "```" && j[i] === "`" && j[i + 1] === "`" && j[i + 2] === "`" && (/((\r|\n) *)$/).test(j.slice(i - 4, i)) === true) {
+                            code  = false;
+                            brace = "";
                         }
                         if (brace !== ")") {
                             readout.push(j[i]);
@@ -1888,6 +1923,8 @@
                             text.bold + text.red + bullet + text.none
                         );
                         para     = true;
+                    } else if (lines[b].indexOf("    ") === 0) {
+                        lines[b] = text.green + lines[b] + text.nocolor;
                     } else if ((/^\s*>/).test(lines[b]) === true) {
                         listly   = [];
                         lines[b] = parse(lines[b], false, false);
