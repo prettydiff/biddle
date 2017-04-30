@@ -25,6 +25,7 @@ A package.json file is required for publication and installation support by bidd
       * *tasks* - An array of command line tasks to execute in synchronous order
    - Example:
 
+```
     "publication_variants": {
         "min" : {
             "exclusions": [
@@ -36,6 +37,7 @@ A package.json file is required for publication and installation support by bidd
             "exclusions": ["testb"]
         }
     }
+```
 
 ## Recommended Fields
 Although additional data fields are not currently consumed by biddle some additional data is recommended.  Support for this data may be added to biddle at a later time.
