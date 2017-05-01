@@ -208,11 +208,11 @@ Unzip to a specified location.
 ### version
 Prints the version number/name of biddle or a named installed application.
 
-    If no application is specified the current version of biddle is output.
+If no application is specified the current version of biddle is output.
 
     node biddle version
 
-    Output the current version of "myApplication".
+Output the current version of "myApplication".
 
     node biddle version myApplication
 
