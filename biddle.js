@@ -3047,7 +3047,7 @@
                 });
                 exec.on("close", function biddle_test_spawn_close() {
                     console.log(
-                        "biddle has completed test for " + name + " is complete."
+                        "biddle has completed test for " + name + "."
                     );
                 });
             },
