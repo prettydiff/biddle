@@ -1,0 +1,3 @@
+[submodule "applications/prettydiff/JSLint"]
+	path = applications/prettydiff/JSLint
+	url = https://github.com/douglascrockford/JSLint.git

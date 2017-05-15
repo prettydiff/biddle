@@ -1896,7 +1896,7 @@
                         para     = false;
                     } else if ((/^((\*|-|_){3})$/).test(lines[b].replace(/\s+/g, "")) === true && (/^(\s{0,3})/).test(lines[b]) === true && (lines[b].indexOf("-") < 0 || lines[b - 1].length < 1)) {
                         hr("");
-                    } else if (lines[b].slice(1).indexOf("|") > -1 && (/---+\|---+/).test(lines[b + 1]) === true) {
+                    } else if ((/-{3,}\s*\|\s*-{3,}/).test(lines[b + 1]) === true) {
                         table();
                     } else if ((/^(\s*((`{3,})|(~{3,}))+)/).test(lines[b]) === true) {
                         codeblock();
