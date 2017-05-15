@@ -11,6 +11,8 @@
 ## About
 This application is a cross-OS solution to creating zip files for distribution and fetching files via HTTP(S).  The project's goal is to provide a universal application distribution utility that is language agnostic, operating system independent, and platform independent.  The only additional requirement for distributing application packages is online storage on a web server.  This application provides all the utilities to retrieve, bundle, and unpackage applications.
 
+Watch the [video demo](https://asciinema.org/a/118428).
+
 biddle is inspired by the incredible awesomeness of [NPM](http://npmjs.com), but seeks to accomplish a few additional goals:
 
 * *integrity* - Downloaded packages will perform a hash comparison before they are unpackaged.  If the hashes don't match the zip file will be saved in the downloads directory awaiting a human touch.
@@ -208,11 +210,11 @@ Unzip to a specified location.
 ### version
 Prints the version number/name of biddle or a named installed application.
 
-    If no application is specified the current version of biddle is output.
+If no application is specified the current version of biddle is output.
 
     node biddle version
 
-    Output the current version of "myApplication".
+Output the current version of "myApplication".
 
     node biddle version myApplication
 

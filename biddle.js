@@ -2424,10 +2424,10 @@
             data.packjson.name = apps.sanitizef(data.packjson.name);
             if (data.input[3] === undefined || data.address.target !== apps.relToAbs(data.input[3], data.cwd) + node.path.sep) {
                 publoc              = data.address.publications + apps.sanitizef(data.packjson.name) + node.path.sep;
-                data.address.target = publoc;
             } else {
                 publoc = data.address.target + apps.sanitizef(data.packjson.name) + node.path.sep;
             }
+            data.address.target = publoc;
             if (data.published[data.packjson.name] !== undefined && data.input[3] !== undefined) {
                 data.input = data
                     .input
@@ -3047,7 +3047,7 @@
                 });
                 exec.on("close", function biddle_test_spawn_close() {
                     console.log(
-                        "biddle has completed test for " + name + " is complete."
+                        "biddle has completed test for " + name + "."
                     );
                 });
             },
