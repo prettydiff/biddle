@@ -4202,7 +4202,7 @@
                                 "        none           \n      unpublish  " + text.bold + text.green + "✓" +
                                 text.none + "      application name             none           \n      unzip   " +
                                 "   " + text.bold + text.green + "✓" + text.none + "      path to zip file     " +
-                                "        directory path \n      zip",
+                                "        directory path \n      zip        " + text.bold + text.green + "✓\u001b[39m\u001b[0",
                         name         = "biddle_test_markdown_60";
                     if (er !== null) {
                         return apps.errout(
@@ -4364,7 +4364,8 @@
                                 "✓" + text.none + "      path to zip file             directory path \n      zi" +
                                 "p        " + text.bold + text.green + "✓" + text.none + "      file path or di" +
                                 "rectory path  directory path \n\n" + text.underline + text.bold + text.cyan +
-                                "New big Heading" + text.none + "\n  paragraph here to se",
+                                "New big Heading" + text.none + "\n  paragraph here to see if indentation is la" +
+                                "rg",
                         name         = "biddle_test_markdown_80";
                     if (er !== null) {
                         return apps.errout(
@@ -4526,7 +4527,7 @@
                                 "        directory path \n      zip        " + text.bold + text.green + "✓" +
                                 text.none + "      file path or directory path  directory path \n\n" + text.underline +
                                 text.bold + text.cyan + "New big Heading" + text.none + "\n  paragraph here to " +
-                                "see if indentation is largely res",
+                                "see if indentation is largely reset appropriate to the cu",
                         name         = "biddle_test_markdown_120";
                     if (er !== null) {
                         return apps.errout(
